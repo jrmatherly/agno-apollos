@@ -1,0 +1,42 @@
+# =============================================================================
+# Apollos AI — mise configuration
+# =============================================================================
+# Docs: https://mise.jdx.dev/configuration.html
+# Tasks: mise tasks  |  Run: mise run <task>  |  Watch: mise watch -t <task>
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Tools
+# ---------------------------------------------------------------------------
+[tools]
+python = "3.12"
+uv = "latest"
+
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
+[env]
+_.file = ".env"
+
+PYTHONPATH = "{{config_root}}"
+
+# Defaults (overridden by .env when present)
+LITELLM_BASE_URL = "http://localhost:4000/v1"
+MODEL_ID = "gpt-5-mini"
+EMBEDDING_MODEL_ID = "text-embedding-3-small"
+EMBEDDING_DIMENSIONS = "1536"
+
+DB_HOST = "localhost"
+DB_PORT = "5432"
+DB_USER = "ai"
+DB_PASS = "ai"
+DB_DATABASE = "ai"
+DB_DRIVER = "postgresql+psycopg"
+
+RUNTIME_ENV = "dev"
+
+# ---------------------------------------------------------------------------
+# Settings
+# ---------------------------------------------------------------------------
+[settings]
+experimental = true

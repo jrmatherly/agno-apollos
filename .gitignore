@@ -39,6 +39,8 @@ env/
 ENV/
 .env
 .envrc
+mise.local.toml
+mise.*.local.toml
 
 # =========================
 # Jupyter / notebooks

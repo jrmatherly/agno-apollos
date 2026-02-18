@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Load knowledge base documents into vector DB"
+#MISE depends=["docker:up"]
+set -e
+
+echo "Loading knowledge base documents..."
+docker exec -it apollos-api python -m backend.agents.knowledge_agent

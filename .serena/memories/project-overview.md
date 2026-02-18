@@ -28,9 +28,20 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, litellm[proxy]
 
 ## Dev Tools
+- mise (task runner + tool manager, see `mise.toml` and `mise-tasks/`)
 - ruff (line-length=120)
 - mypy (with pydantic plugin)
 - uv package manager (native project management with uv.lock)
+
+## Mise Tasks
+Run `mise tasks` for full list. Key tasks:
+- `mise run setup` - install deps
+- `mise run format` / `lint` / `typecheck` / `validate` - code quality
+- `mise run dev` - docker compose watch
+- `mise run docker:up` / `docker:down` / `docker:logs` / `docker:build`
+- `mise run db` - database only
+- `mise run load-docs` - load knowledge base
+- `mise run ci` / `clean`
 
 ## Adding an Agent
 1. Create `backend/agents/my_agent.py` with Agent definition

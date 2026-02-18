@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Start only the database service"
+set -e
+
+docker compose up -d apollos-db
+echo "Database running at localhost:5432"

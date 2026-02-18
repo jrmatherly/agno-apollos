@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#MISE description="Run all checks (format-check, lint, typecheck)"
+#MISE depends=["lint", "typecheck"]
+set -e
+
+echo "Checking formatting..."
+uv run ruff format --check .
+uv run ruff check --select I .
+echo ""
+echo "All checks passed."

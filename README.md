@@ -9,18 +9,30 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 | Knowledge Agent | Agentic RAG | Answers questions from a knowledge base. |
 | MCP Agent | MCP Tool Use | Connects to external services via MCP. |
 
+## Prerequisites
+
+- [mise](https://mise.jdx.dev) (manages Python, uv, and all dev tasks)
+- [Docker](https://docs.docker.com/get-docker/)
+
 ## Get Started
 
 ```sh
+# Install mise (if not already installed)
+curl https://mise.run | sh
+
 # Configure environment
 cp example.env .env
 # Edit .env and add your LiteLLM API key and proxy URL
 
+# Install tools and dependencies
+mise install
+mise run setup
+
 # Start the application
-docker compose up -d --build
+mise run docker:up
 
 # Load documents for the knowledge agent
-docker exec -it apollos-api python -m backend.agents.knowledge_agent
+mise run load-docs
 ```
 
 Confirm Apollos AI is running at [http://localhost:8000/docs](http://localhost:8000/docs).
@@ -143,19 +155,37 @@ model=Claude(id="claude-sonnet-4-5")
 
 ---
 
-## Local Development
+## Development Tasks
 
-For development without Docker:
+This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and development tasks. Run `mise tasks` to see all available tasks.
+
+| Task | Description |
+|------|-------------|
+| `mise run setup` | Install all dependencies (creates .venv) |
+| `mise run format` | Format code (ruff format + import sorting) |
+| `mise run lint` | Lint code (ruff check) |
+| `mise run typecheck` | Type-check code (mypy) |
+| `mise run validate` | Run all checks (format-check, lint, typecheck) |
+| `mise run dev` | Start stack in watch mode (hot-reload) |
+| `mise run docker:up` | Start the full stack (build + detach) |
+| `mise run docker:down` | Stop all services |
+| `mise run docker:logs` | Tail logs from all services |
+| `mise run docker:build` | Build multi-arch Docker image |
+| `mise run db` | Start only the database service |
+| `mise run load-docs` | Load knowledge base documents |
+| `mise run ci` | Run full CI pipeline |
+| `mise run clean` | Clean build artifacts and caches |
+
+### Local Development (without Docker)
+
 ```sh
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Setup environment (creates .venv, installs all deps)
-uv sync --dev
+# Install tools and deps
+mise install
+mise run setup
 source .venv/bin/activate
 
 # Start PostgreSQL (required)
-docker compose up -d apollos-db
+mise run db
 
 # Run the app
 uv run python -m backend.main
@@ -165,7 +195,7 @@ uv run python -m backend.main
 
 For automatic hot-reload with dependency rebuild:
 ```sh
-docker compose watch
+mise run dev
 ```
 
 This syncs code changes into the container and rebuilds when `pyproject.toml` or `uv.lock` change.

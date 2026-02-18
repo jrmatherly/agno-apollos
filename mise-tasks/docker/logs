@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#MISE description="Tail logs from all services"
+#USAGE flag "-f --follow" help="Follow log output" default="true"
+#USAGE arg "[service]" help="Service name (apollos-api, apollos-db)"
+
+if [ -n "${usage_service:-}" ]; then
+  docker compose logs -f "${usage_service}"
+else
+  docker compose logs -f
+fi

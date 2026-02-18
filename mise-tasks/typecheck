@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Type-check code (mypy)"
+set -e
+
+uv run mypy . --config-file pyproject.toml

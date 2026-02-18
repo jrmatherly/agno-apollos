@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#MISE description="Build multi-arch Docker image (amd64 + arm64)"
+#USAGE flag "-p --push" help="Push image after building"
+#USAGE arg "[tag]" help="Image tag" default="latest"
+set -e
+
+IMAGE_NAME="${IMAGE_NAME:-apollos-ai}"
+IMAGE_TAG="${usage_tag:-latest}"
+
+echo "Building ${IMAGE_NAME}:${IMAGE_TAG} (linux/amd64, linux/arm64)..."
+
+PUSH_FLAG=""
+if [ "${usage_push:-false}" = "true" ]; then
+  PUSH_FLAG="--push"
+fi
+
+docker buildx build \
+  --platform=linux/amd64,linux/arm64 \
+  -t "${IMAGE_NAME}:${IMAGE_TAG}" \
+  -f Dockerfile \
+  ${PUSH_FLAG} \
+  .
+
+echo "Done."

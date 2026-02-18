@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Start stack in watch mode (hot-reload)"
+set -e
+
+docker compose watch

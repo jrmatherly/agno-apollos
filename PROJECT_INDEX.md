@@ -18,15 +18,28 @@ apollos-ai/
 │       ├── __init__.py      # Re-exports: get_postgres_db, create_knowledge, db_url
 │       ├── session.py       # PostgresDb factory + Knowledge factory (pgvector hybrid)
 │       └── url.py           # Builds DB URL from env vars (DB_HOST, DB_PORT, etc.)
-├── scripts/                 # Developer toolchain
-│   ├── build_image.sh       # Multi-arch Docker build (amd64 + arm64) with Buildx
-│   ├── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
-│   ├── format.sh            # ruff format + import sorting
-│   ├── validate.sh          # ruff check + mypy type-check
-│   └── venv_setup.sh        # uv sync --dev (creates .venv, installs everything)
+├── mise-tasks/              # File-based mise tasks (replaces scripts/*.sh)
+│   ├── setup                # Install deps (uv sync --dev)
+│   ├── format               # ruff format + import sorting
+│   ├── lint                 # ruff check
+│   ├── typecheck            # mypy type-check
+│   ├── validate             # All checks (format-check + lint + typecheck)
+│   ├── dev                  # docker compose watch (hot-reload)
+│   ├── db                   # Start database only
+│   ├── load-docs            # Load knowledge base documents
+│   ├── ci                   # Full CI pipeline (install + validate)
+│   ├── clean                # Clean build artifacts
+│   └── docker/              # Docker-specific tasks
+│       ├── up               # Start full stack (build + detach)
+│       ├── down             # Stop all services
+│       ├── logs             # Tail logs
+│       └── build            # Multi-arch image build (amd64 + arm64)
+├── scripts/                 # Container-only scripts
+│   └── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
 ├── .github/workflows/
 │   ├── validate.yml         # CI: format, lint, type-check on push/PR
 │   └── docker-images.yml    # CD: build + push Docker image on release
+├── mise.toml                # Mise config — tools (Python, uv), env vars, settings
 ├── .python-version          # Pins Python 3.12 for uv and CI
 ├── Dockerfile               # agnohq/python:3.12, two-layer caching, uv sync --locked
 ├── compose.yaml             # apollos-api (FastAPI) + apollos-db (pgvector:18) + watch mode
@@ -97,6 +110,8 @@ Uses **uv native project management** (not pip-compatibility mode):
 
 | File | Purpose |
 |------|---------|
+| `mise.toml` | Mise config: tools (Python 3.12, uv), env vars, settings |
+| `mise-tasks/` | File-based mise tasks (dev workflow commands) |
 | `pyproject.toml` | Project metadata, dependencies, [dependency-groups], ruff/mypy config |
 | `uv.lock` | Cross-platform lockfile (auto-managed, committed to git) |
 | `.python-version` | Pins Python 3.12 for uv, pyenv, and CI |
@@ -154,16 +169,19 @@ Uses **uv native project management** (not pip-compatibility mode):
 # 1. Clone and configure
 cp example.env .env  # Add your LITELLM_API_KEY and LITELLM_BASE_URL
 
-# 2. Start the stack
-docker compose up -d --build
+# 2. Install tools and dependencies
+mise install && mise run setup
 
-# 3. Load knowledge base documents
-docker exec -it apollos-api python -m backend.agents.knowledge_agent
+# 3. Start the stack
+mise run docker:up
 
-# 4. Open API docs
+# 4. Load knowledge base documents
+mise run load-docs
+
+# 5. Open API docs
 open http://localhost:8000/docs
 
-# 5. Connect web UI: os.agno.com → Add OS → Local → http://localhost:8000
+# 6. Connect web UI: os.agno.com → Add OS → Local → http://localhost:8000
 ```
 
 ## Test Coverage
@@ -179,4 +197,4 @@ open http://localhost:8000/docs
 - **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`
 - **LLM Provider**: LiteLLM Proxy (all LLM and embedding traffic routes through self-hosted proxy)
 - **Deployment**: Docker Compose with watch mode for dev, multi-arch images for production
-- **Tooling**: `uv` (native project management with lockfile), `ruff` for formatting/linting, `mypy` for type-checking
+- **Tooling**: `mise` (task runner + tool manager), `uv` (native project management with lockfile), `ruff` for formatting/linting, `mypy` for type-checking

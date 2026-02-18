@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run full CI pipeline (install + validate)"
+#MISE depends=["setup", "validate"]
+set -e
+
+echo "CI pipeline complete."

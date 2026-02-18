@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Start the full stack (build + detach)"
+set -e
+
+docker compose up -d --build
+echo ""
+echo "Apollos AI running at http://localhost:8000"

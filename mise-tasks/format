@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="Format code (ruff format + import sorting)"
+#MISE alias="fmt"
+set -e
+
+echo "Formatting..."
+uv run ruff format .
+uv run ruff check --select I --fix .
+echo "Done."
