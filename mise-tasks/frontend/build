@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Build frontend for production"
+set -e
+
+cd "${MISE_PROJECT_ROOT}/frontend"
+pnpm build

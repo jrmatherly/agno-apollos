@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run all frontend checks (lint + format + typecheck)"
+#MISE depends=["frontend:lint", "frontend:format", "frontend:typecheck"]
+set -e
+
+echo "All frontend checks passed."

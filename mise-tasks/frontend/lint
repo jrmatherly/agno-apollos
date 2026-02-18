@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Lint frontend (next lint)"
+set -e
+
+cd "${MISE_PROJECT_ROOT}/frontend"
+pnpm lint

@@ -5,6 +5,8 @@
 All Python backend code lives under `backend/` as a proper package.
 Imports use fully-qualified paths: `from backend.agents.x import y`, `from backend.db import z`.
 Docker WORKDIR `/app` is the project root, not the Python package.
+Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript, pnpm.
+Frontend Dockerfile uses multi-stage build with `output: 'standalone'` in next.config.ts.
 
 ## Commands (mise)
 
@@ -25,7 +27,13 @@ Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 - `mise run ci` - full CI pipeline
 - `mise run clean` - clean build artifacts
 
-Tool versions managed by mise (see `mise.toml`): Python 3.12, uv latest.
+Tool versions managed by mise (see `mise.toml`): Python 3.12, uv latest, Node 24, pnpm latest.
+
+Frontend tasks:
+- `mise run frontend:setup` - install frontend deps (pnpm install)
+- `mise run frontend:dev` - start frontend dev server (port 3000)
+- `mise run frontend:build` - production build
+- `mise run frontend:lint` / `frontend:format` / `frontend:typecheck` / `frontend:validate`
 
 ## Mise Tasks
 
@@ -35,6 +43,12 @@ Tool versions managed by mise (see `mise.toml`): Python 3.12, uv latest.
 - Subdirectories create namespaced tasks: `mise-tasks/docker/up` → `mise run docker:up`
 - `scripts/` is container-only (just `entrypoint.sh`). Dev tasks go in `mise-tasks/`.
 - `mise.local.toml` is gitignored — use for local developer overrides
+
+## Development Workflow
+
+- **Always use `mise run <task>` for project operations** — never run raw commands (pnpm, uv, ruff, mypy, docker compose) directly
+- mise tasks are the single source of truth for how operations are performed
+- If a task doesn't exist for an operation, create one in `mise-tasks/` rather than running ad-hoc commands
 
 ## Conventions
 
@@ -46,6 +60,10 @@ Tool versions managed by mise (see `mise.toml`): Python 3.12, uv latest.
 - ruff line-length: 120
 - Env var defaults live in `mise.toml` [env] section and `backend/db/session.py`
 - Dependencies: `uv add <package>` (auto-updates uv.lock), never edit uv.lock manually
+- Frontend uses pnpm (not npm/yarn). `pnpm install --frozen-lockfile` for CI.
+- Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
+- Docker compose has 3 services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000)
+- CI workflows run backend and frontend validation as parallel jobs
 
 ## Agno Docs Style
 

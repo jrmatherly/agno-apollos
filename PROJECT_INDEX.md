@@ -42,7 +42,7 @@ apollos-ai/
 ├── mise.toml                # Mise config — tools (Python, uv), env vars, settings
 ├── .python-version          # Pins Python 3.12 for uv and CI
 ├── Dockerfile               # agnohq/python:3.12, two-layer caching, uv sync --locked
-├── docker-compose.yaml             # apollos-api (FastAPI) + apollos-db (pgvector:18) + watch mode
+├── docker-compose.yaml             # apollos-backend (FastAPI) + apollos-db (pgvector:18) + watch mode
 ├── pyproject.toml           # Project metadata, deps, [dependency-groups], ruff/mypy config
 ├── uv.lock                  # Cross-platform lockfile (auto-managed by uv)
 ├── example.env              # Template for .env (LiteLLM, model, DB credentials)
@@ -115,7 +115,7 @@ Uses **uv native project management** (not pip-compatibility mode):
 | `pyproject.toml` | Project metadata, dependencies, [dependency-groups], ruff/mypy config |
 | `uv.lock` | Cross-platform lockfile (auto-managed, committed to git) |
 | `.python-version` | Pins Python 3.12 for uv, pyenv, and CI |
-| `docker-compose.yaml` | Docker services + watch mode: `apollos-api` (:8000) + `apollos-db` (:5432) |
+| `docker-compose.yaml` | Docker services + watch mode: `apollos-backend` (:8000) + `apollos-db` (:5432) |
 | `backend/config.yaml` | Agent quick-prompts for the Agno web UI |
 | `example.env` | Template: LiteLLM config, model config, DB credentials |
 | `Dockerfile` | Two-layer cached build: deps layer + project layer, `uv sync --locked` |

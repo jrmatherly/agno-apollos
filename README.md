@@ -52,7 +52,7 @@ Answers questions using hybrid search over a vector database (Agentic RAG).
 **Load documents:**
 
 ```sh
-docker exec -it apollos-api python -m backend.agents.knowledge_agent
+docker exec -it apollos-backend python -m backend.agents.knowledge_agent
 ```
 
 **Try it:**

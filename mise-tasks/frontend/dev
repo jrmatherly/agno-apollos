@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Start frontend dev server (port 3000)"
+set -e
+
+cd "${MISE_PROJECT_ROOT}/frontend"
+pnpm dev

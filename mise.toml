@@ -11,6 +11,8 @@
 [tools]
 python = "3.12"
 uv = "latest"
+node = "24"
+pnpm = "latest"
 
 # ---------------------------------------------------------------------------
 # Environment
@@ -34,6 +36,33 @@ DB_DATABASE = "ai"
 DB_DRIVER = "postgresql+psycopg"
 
 RUNTIME_ENV = "dev"
+
+# ---------------------------------------------------------------------------
+# Available Tasks (mise run <task>)
+# ---------------------------------------------------------------------------
+# setup              Install all dependencies (backend + frontend)
+# format             Format Python code (ruff format + import sorting)
+# lint               Lint Python code (ruff check)
+# typecheck          Type-check Python code (mypy)
+# validate           Run all checks (backend + frontend)
+# dev                Start full stack in watch mode (hot-reload)
+# db                 Start database only (PostgreSQL + pgvector)
+# load-docs          Load knowledge base documents into vector DB
+# ci                 Full CI pipeline (install + validate)
+# clean              Clean build artifacts and caches
+#
+# docker:up          Start full stack (build + detach)
+# docker:down        Stop all services
+# docker:logs        Tail logs from all services
+# docker:build       Build multi-arch Docker image (amd64 + arm64)
+#
+# frontend:dev       Start frontend dev server (Next.js)
+# frontend:build     Build frontend for production
+# frontend:setup     Install frontend dependencies (pnpm)
+# frontend:lint      Lint frontend code (ESLint)
+# frontend:format    Check frontend formatting (Prettier)
+# frontend:typecheck Type-check frontend code (TypeScript)
+# frontend:validate  Run all frontend checks (lint + format + typecheck)
 
 # ---------------------------------------------------------------------------
 # Settings

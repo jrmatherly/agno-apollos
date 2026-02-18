@@ -43,6 +43,13 @@ mise.local.toml
 mise.*.local.toml
 
 # =========================
+# Node / Frontend
+# =========================
+node_modules/
+.next/
+.pnpm-store/
+
+# =========================
 # Jupyter / notebooks
 # =========================
 .ipynb_checkpoints/

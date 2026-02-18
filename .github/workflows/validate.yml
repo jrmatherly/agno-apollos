@@ -27,7 +27,8 @@ on:
       - "example.env"
 
 jobs:
-  validate:
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
 
     steps:
@@ -49,3 +50,31 @@ jobs:
 
       - name: Type-check
         run: uv run mypy .
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up mise
+        uses: jdx/mise-action@v3
+        with:
+          experimental: true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Lint
+        run: pnpm lint
+        working-directory: frontend
+
+      - name: Format check
+        run: pnpm format
+        working-directory: frontend
+
+      - name: Type-check
+        run: pnpm typecheck
+        working-directory: frontend

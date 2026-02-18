@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-#MISE description="Install all dependencies (creates .venv)"
+#MISE description="Install all dependencies (backend + frontend)"
 #MISE alias="install"
 set -e
 
-echo "Installing dependencies..."
+echo "Installing backend dependencies..."
 uv sync --dev
 
 echo ""
-echo "Done. Activate with: source .venv/bin/activate"
-echo "Or run commands with: uv run <command>"
+echo "Installing frontend dependencies..."
+cd "${MISE_PROJECT_ROOT}/frontend"
+pnpm install --frozen-lockfile
+
+echo ""
+echo "Done."

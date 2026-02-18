@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-#MISE description="Run all checks (format-check, lint, typecheck)"
-#MISE depends=["lint", "typecheck"]
+#MISE description="Run all checks (backend + frontend)"
+#MISE depends=["lint", "typecheck", "frontend:validate"]
 set -e
 
-echo "Checking formatting..."
+echo "Checking backend formatting..."
 uv run ruff format --check .
 uv run ruff check --select I .
 echo ""

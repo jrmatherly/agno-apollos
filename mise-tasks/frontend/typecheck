@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Type-check frontend (tsc)"
+set -e
+
+cd "${MISE_PROJECT_ROOT}/frontend"
+pnpm typecheck
