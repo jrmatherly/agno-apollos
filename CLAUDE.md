@@ -25,6 +25,6 @@ Docker WORKDIR `/app` is the project root, not the Python package.
 
 ## Agno Docs Style
 
-When writing documentation, follow `.local_docs/agno-docs/CLAUDE.md`:
+When writing documentation, follow `docs/CLAUDE.md`:
 - No em dashes, no "learn how to", no contrastive negation
 - Code first, explain after. Tables over prose for comparisons.
