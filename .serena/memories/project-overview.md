@@ -17,7 +17,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `backend/agents/mcp_agent.py` - MCP tool-use agent
 - `backend/db/session.py` - PostgresDb and Knowledge factory functions
 - `backend/db/url.py` - Database URL builder from env vars
-- `compose.yaml` - Docker Compose (apollos-db, apollos-api)
+- `docker-compose.yaml` - Docker Compose (apollos-db, apollos-api)
 - `Dockerfile` - Based on agnohq/python:3.12, uses uv
 
 ## Agents
