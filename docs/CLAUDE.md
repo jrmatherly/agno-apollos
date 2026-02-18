@@ -1,8 +1,8 @@
-# CLAUDE.md - Agno Documentation Style Guide
+# CLAUDE.md - Apollos AI Documentation Style Guide
 
 ## Philosophy
 
-Agno docs are direct, concrete, and professional. No marketing fluff. No AI-sounding prose. Every sentence earns its place.
+Apollos AI docs are direct, concrete, and professional. No marketing fluff. No AI-sounding prose. Every sentence earns its place.
 
 We cover a massive surface area. Analogies and commentary add cognitive load without adding understanding. Be direct.
 
@@ -41,7 +41,7 @@ Every page should follow this pattern:
 
 Every page serves one primary documentation need. See [DIATAXIS.md](./DIATAXIS.md) for the complete framework.
 
-| Type | Purpose | Agno Examples |
+| Type | Purpose | Apollos Examples |
 |------|---------|---------------|
 | Tutorial | Guided lesson for new users | First Agent, First Multi-Agent System |
 | How-to Guide | Task directions for competent users | Provider setup pages, usage examples |
@@ -92,10 +92,10 @@ Every page's `description` field should describe what the page covers, not say "
 ❌ "Learn how to run your Agents and process their output."
 ✅ "Execute agents with Agent.run() and process their output."
 
-❌ "Learn how to build Agents with Agno."
+❌ "Learn how to build Agents with Apollos."
 ✅ "Start simple: a model, tools, and instructions."
 
-❌ "Learn about Agno Agents and how they work."
+❌ "Learn about Apollos Agents and how they work."
 ✅ "AI programs where a language model controls the flow of execution."
 ````
 
@@ -149,7 +149,7 @@ Analogies and editorializing waste space.
 | "For more information see the X documentation." | "See X." |
 | "You can also run the agent asynchronously" | "Run asynchronously with `arun()`" |
 | "The `input` parameter is the input to send to the agent. It can be..." | "The `input` parameter accepts:" |
-| "If this is your first time using Agno, you can start here" | "New to Agno? Start with the quickstart." |
+| "If this is your first time using Apollos, you can start here" | "New to Apollos? Start with the quickstart." |
 | "After getting familiarized with" | "After getting familiar with" |
 | "This example shows how to..." | [Remove - let the code speak] |
 | "Here's how it looks:" | [Remove - show the visual] |
@@ -237,7 +237,7 @@ Don't define things by what they aren't. State what they are directly.
 
 ## The Three Pillars
 
-Use consistently when describing Agno:
+Use consistently when describing Apollos:
 
 | Layer | Verb | Description |
 |-------|------|-------------|
