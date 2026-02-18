@@ -41,6 +41,7 @@ ENV/
 .envrc
 mise.local.toml
 mise.*.local.toml
+.mcp.json
 
 # =========================
 # Node / Frontend
@@ -58,7 +59,9 @@ node_modules/
 # IDEs / editors
 # =========================
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
 # =========================
 # OS cruft
@@ -72,6 +75,7 @@ Thumbs.db
 tmp/
 .local_docs/
 .scratchpad/
+.claude/settings.local.json
 
 # Optional: local PyPI creds (uncomment if you ever create it)
 # .pypirc

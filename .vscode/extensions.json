@@ -1,0 +1,28 @@
+{
+  "recommendations": [
+    // Python
+    "ms-python.python",
+    "charliermarsh.ruff",
+    "ms-python.mypy-type-checker",
+
+    // Frontend
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+
+    // Docker
+    "ms-azuretools.vscode-docker",
+
+    // Config files
+    "tamasfe.even-better-toml",
+    "redhat.vscode-yaml"
+  ],
+  "unwantedRecommendations": [
+    // We use ruff for formatting + linting, not these
+    "ms-python.black-formatter",
+    "ms-python.autopep8",
+    "ms-python.flake8",
+    "ms-python.pylint",
+    "ms-python.isort"
+  ]
+}

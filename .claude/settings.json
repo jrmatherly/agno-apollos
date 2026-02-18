@@ -1,0 +1,36 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == *.py ]]; then cd \"$CLAUDE_PROJECT_DIR\" && ruff format --quiet \"$file\" 2>/dev/null && ruff check --fix --quiet \"$file\" 2>/dev/null; fi",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == *.ts || \"$file\" == *.tsx || \"$file\" == *.js || \"$file\" == *.jsx || \"$file\" == *.css ]]; then cd \"$CLAUDE_PROJECT_DIR/frontend\" && npx prettier --write \"$file\" 2>/dev/null; fi",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == */uv.lock || \"$file\" == */pnpm-lock.yaml ]]; then echo 'BLOCK: Do not edit lockfiles directly. Use mise run setup (backend) or mise run frontend:setup (frontend).' >&2; exit 2; fi",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

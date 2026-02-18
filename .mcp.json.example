@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "_comment": "Live documentation lookup for agno, fastapi, next.js, tailwindcss, shadcn/ui, and other libraries"
+    }
+  }
+}

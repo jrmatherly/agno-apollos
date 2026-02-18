@@ -50,6 +50,7 @@ Frontend tasks:
 - **Always use `mise run <task>` for project operations** — never run raw commands (pnpm, uv, ruff, mypy, docker compose) directly
 - mise tasks are the single source of truth for how operations are performed
 - If a task doesn't exist for an operation, create one in `mise-tasks/` rather than running ad-hoc commands
+- For frontend dev, prefer `mise run frontend:dev` over `mise run dev` — compose watch rebuilds the entire container on source changes since standalone Next.js can't hot-reload synced files
 
 ## Conventions
 
@@ -66,6 +67,10 @@ Frontend tasks:
 - Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
 - Docker compose has 3 services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000)
 - CI workflows run backend and frontend validation as parallel jobs
+- `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
+- VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
+- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md
+- example.env must stay in sync when env vars are added/changed across the project
 
 ## Agno Docs Style
 

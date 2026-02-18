@@ -1,0 +1,9 @@
+paths-ignore:
+  - frontend/node_modules
+  - frontend/.next
+  - .venv
+  - .local_docs
+  - .scratchpad
+  - "**/__pycache__"
+  - "**/dist"
+  - "**/build"
