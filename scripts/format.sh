@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-#    Agno Workspace Formatter
+#    Apollos AI Workspace Formatter
 #
 #    Usage: ./scripts/format.sh
 #

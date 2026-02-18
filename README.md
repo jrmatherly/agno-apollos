@@ -1,6 +1,6 @@
-# AgentOS Docker Template
+# Apollos AI
 
-Deploy a multi-agent system on Docker.
+Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.com) framework.
 
 ## What's Included
 
@@ -12,10 +12,6 @@ Deploy a multi-agent system on Docker.
 ## Get Started
 
 ```sh
-# Clone the repo
-git clone https://github.com/agno-agi/agentos-railway-template.git agentos-railway
-cd agentos-railway
-
 # Add OPENAI_API_KEY
 cp example.env .env
 # Edit .env and add your key
@@ -24,10 +20,10 @@ cp example.env .env
 docker compose up -d --build
 
 # Load documents for the knowledge agent
-docker exec -it agentos-api python -m agents.knowledge_agent
+docker exec -it apollos-api python -m agents.knowledge_agent
 ```
 
-Confirm AgentOS is running at [http://localhost:8000/docs](http://localhost:8000/docs).
+Confirm Apollos AI is running at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ### Connect to the Web UI
 
@@ -45,10 +41,7 @@ Answers questions using hybrid search over a vector database (Agentic RAG).
 
 ```sh
 # Local
-docker exec -it agentos-api python -m agents.knowledge_agent
-
-# Railway
-railway run python -m agents.knowledge_agent
+docker exec -it apollos-api python -m agents.knowledge_agent
 ```
 
 **Try it:**
@@ -97,7 +90,7 @@ my_agent = Agent(
 from agents.my_agent import my_agent
 
 agent_os = AgentOS(
-    name="AgentOS",
+    name="Apollos AI",
     agents=[knowledge_agent, mcp_agent, my_agent],
     ...
 )
@@ -124,9 +117,13 @@ my_agent = Agent(
 
 ### Add dependencies
 
-1. Edit `pyproject.toml`
-2. Regenerate requirements: `./scripts/generate_requirements.sh`
-3. Rebuild: `docker compose up -d --build`
+```sh
+# Add a package (auto-updates uv.lock)
+uv add <package>
+
+# Rebuild container
+docker compose up -d --build
+```
 
 ### Use a different model provider
 
@@ -138,7 +135,7 @@ from agno.models.anthropic import Claude
 
 model=Claude(id="claude-sonnet-4-5")
 ```
-1. Add dependency: `anthropic` in `pyproject.toml`
+1. Add dependency: `uv add anthropic`
 
 ---
 
@@ -149,16 +146,25 @@ For development without Docker:
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Setup environment
-./scripts/venv_setup.sh
+# Setup environment (creates .venv, installs all deps)
+uv sync --dev
 source .venv/bin/activate
 
 # Start PostgreSQL (required)
-docker compose up -d agentos-db
+docker compose up -d apollos-db
 
 # Run the app
-python -m app.main
+uv run python -m app.main
 ```
+
+### Using Docker Compose Watch
+
+For automatic hot-reload with dependency rebuild:
+```sh
+docker compose watch
+```
+
+This syncs code changes into the container and rebuilds when `pyproject.toml` or `uv.lock` change.
 
 ## Environment Variables
 

@@ -2,9 +2,9 @@
 
 ############################################################################
 #
-#    Agno Virtual Environment Setup
+#    Apollos AI Virtual Environment Setup
 #
-#    Usage: ./scripts/dev_setup.sh
+#    Usage: ./scripts/venv_setup.sh
 #
 ############################################################################
 
@@ -12,7 +12,6 @@ set -e
 
 CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "${CURR_DIR}")"
-VENV_DIR="${REPO_ROOT}/.venv"
 
 # Colors
 ORANGE='\033[38;5;208m'
@@ -45,25 +44,10 @@ if ! command -v uv &> /dev/null; then
     exit 1
 fi
 
-# Setup
-echo -e "    ${DIM}Removing old environment...${NC}"
-echo -e "    ${DIM}> rm -rf ${VENV_DIR}${NC}"
-rm -rf ${VENV_DIR}
-
+# Setup: creates .venv, installs all deps + dev deps + project (editable)
+echo -e "    ${DIM}> uv sync --dev${NC}"
 echo ""
-echo -e "    ${DIM}Creating Python 3.12 venv...${NC}"
-echo -e "    ${DIM}> uv venv ${VENV_DIR} --python 3.12${NC}"
-uv venv ${VENV_DIR} --python 3.12 --quiet
-
-echo ""
-echo -e "    ${DIM}Installing requirements...${NC}"
-echo -e "    ${DIM}> uv pip install -r requirements.txt --no-cache${NC}"
-VIRTUAL_ENV=${VENV_DIR} uv pip install -r ${REPO_ROOT}/requirements.txt --no-cache --quiet
-
-echo ""
-echo -e "    ${DIM}Installing project in editable mode with dev dependencies...${NC}"
-echo -e "    ${DIM}> uv pip install -e .[dev]${NC}"
-VIRTUAL_ENV=${VENV_DIR} uv pip install -e ${REPO_ROOT}[dev] --quiet
+cd ${REPO_ROOT} && uv sync --dev
 
 # Copy activation command to clipboard
 ACTIVATE_CMD="source .venv/bin/activate"
@@ -81,4 +65,5 @@ echo ""
 echo -e "    ${BOLD}Done.${NC}"
 echo ""
 echo -e "    ${DIM}Activate:${NC}  ${ACTIVATE_CMD} ${DIM}${CLIPBOARD_MSG}${NC}"
+echo -e "    ${DIM}Or run:${NC}    uv run <command>"
 echo ""

@@ -1,7 +1,7 @@
 services:
-  agentos-db:
+  apollos-db:
     image: agnohq/pgvector:18
-    container_name: agentos-db
+    container_name: apollos-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-ai}
@@ -12,27 +12,24 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - agentos
+      - apollos
 
-  agentos-api:
+  apollos-api:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${IMAGE_NAME:-agno-agentos}:${IMAGE_TAG:-latest}
-    container_name: agentos-api
+    image: ${IMAGE_NAME:-apollos-ai}:${IMAGE_TAG:-latest}
+    container_name: apollos-api
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
     ports:
       - "8000:8000"
-    volumes:
-      # Hot-reload: mount source code
-      - .:/app
     environment:
       - RUNTIME_ENV=dev
       - AGNO_DEBUG=True
       - PYTHONPATH=/app
       # Database
-      - DB_HOST=agentos-db
+      - DB_HOST=apollos-db
       - DB_PORT=5432
       - DB_USER=${DB_USER:-ai}
       - DB_PASS=${DB_PASS:-ai}
@@ -43,14 +40,31 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_BASE=${OPENAI_API_BASE}
     depends_on:
-      - agentos-db
+      - apollos-db
     networks:
-      - agentos
+      - apollos
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    develop:
+      watch:
+        # Sync code changes into the container (hot-reload)
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - .venv/
+            - .git/
+            - .mypy_cache/
+            - .ruff_cache/
+            - __pycache__/
+        # Rebuild container when dependencies change
+        - action: rebuild
+          path: ./pyproject.toml
+        - action: rebuild
+          path: ./uv.lock
 
 networks:
-  agentos:
+  apollos:
 
 volumes:
   pgdata:

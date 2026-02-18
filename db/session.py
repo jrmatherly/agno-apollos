@@ -2,7 +2,7 @@
 Database Session
 ----------------
 
-PostgreSQL database connection for AgentOS.
+PostgreSQL database connection for Apollos AI.
 """
 
 from agno.db.postgres import PostgresDb
@@ -12,7 +12,7 @@ from agno.vectordb.pgvector import PgVector, SearchType
 
 from db.url import db_url
 
-DB_ID = "agentos-db"
+DB_ID = "apollos-db"
 
 
 def get_postgres_db(contents_table: str | None = None) -> PostgresDb:

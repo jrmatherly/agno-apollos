@@ -1,8 +1,8 @@
 """
-AgentOS
--------
+Apollos AI
+----------
 
-The main entry point for AgentOS.
+The main entry point for Apollos AI.
 
 Run:
     python -m app.main
@@ -18,10 +18,10 @@ from agents.mcp_agent import mcp_agent
 from db import get_postgres_db
 
 # ---------------------------------------------------------------------------
-# Create AgentOS
+# Create Apollos AI
 # ---------------------------------------------------------------------------
 agent_os = AgentOS(
-    name="AgentOS",
+    name="Apollos AI",
     tracing=True,
     scheduler=True,
     db=get_postgres_db(),

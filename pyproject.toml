@@ -20,7 +20,7 @@ dependencies = [
   "litellm[proxy]>=1.81.13",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = ["mypy", "ruff"]
 
 [build-system]
@@ -47,6 +47,3 @@ exclude = [".venv*"]
 [[tool.mypy.overrides]]
 module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*"]
 ignore_missing_imports = true
-
-[tool.uv.pip]
-no-annotate = true

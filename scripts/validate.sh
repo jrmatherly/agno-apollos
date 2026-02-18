@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-#    Agno Workspace Validator
+#    Apollos AI Workspace Validator
 #
 #    Usage: ./scripts/validate.sh
 #
