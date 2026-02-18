@@ -8,8 +8,10 @@ Run:
     python -m agents.mcp_agent
 """
 
+from os import getenv
+
 from agno.agent import Agent
-from agno.models.openai import OpenAIResponses
+from agno.models.litellm import LiteLLMOpenAI
 from agno.tools.mcp import MCPTools
 
 from db import get_postgres_db
@@ -46,7 +48,10 @@ You are a helpful assistant with access to external tools via MCP (Model Context
 mcp_agent = Agent(
     id="mcp-agent",
     name="MCP Agent",
-    model=OpenAIResponses(id="gpt-5.2"),
+    model=LiteLLMOpenAI(
+        id=getenv("MODEL_ID", "gpt-5-mini"),
+        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
+    ),
     db=agent_db,
     tools=[MCPTools(url="https://docs.agno.com/mcp")],
     instructions=instructions,

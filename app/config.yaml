@@ -1,10 +1,10 @@
 chat:
   quick_prompts:
     knowledge-agent:
-      - "What is Agno?"
+      - "What is Apollos AI?"
       - "How do I create my first agent?"
       - "What documents are in your knowledge base?"
     mcp-agent:
-      - "What is Agno?"
+      - "What is Apollos AI?"
       - "What tools do you have access to?"
       - "What are Learning Machines?"

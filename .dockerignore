@@ -1,27 +1,67 @@
-.DS_Store
-
-docs
-.git
-
-# Cache
-.mypy_cache
-.ruff_cache
-.pytest_cache
-*__pycache__*
-*.egg-info
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[codz]
+*$py.class
 *.pyc
 
-# Machine specific
-.idea
-.vscode
+# Packaging / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
 
-# Ignore .env files
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Type checking / linting
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+.cache
+
+# =========================
+# Virtual envs + secrets
+# =========================
+aienv*
+.venv/
+venv/
+env/
+ENV/
 .env
 .envrc
 
-# ignore virtualenvs
-.venv
-venv*
-aienv*
+# =========================
+# Jupyter / notebooks
+# =========================
+.ipynb_checkpoints/
 
-.ipynb_checkpoints
+# =========================
+# IDEs / editors
+# =========================
+.idea/
+.vscode/
+
+# =========================
+# OS cruft
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Project-specific
+# =========================
+tmp/
+.local_docs/
+.scratchpad/
+docs/
+.git/

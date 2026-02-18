@@ -4,6 +4,7 @@
 __pycache__/
 *.py[codz]
 *$py.class
+*.pyc
 
 # Packaging / build artifacts
 build/
@@ -31,6 +32,7 @@ htmlcov/
 # =========================
 # Virtual envs + secrets
 # =========================
+aienv*
 .venv/
 venv/
 env/
@@ -58,7 +60,7 @@ Thumbs.db
 # =========================
 # Project-specific
 # =========================
-tmp
+tmp/
 .local_docs/
 .scratchpad/
 

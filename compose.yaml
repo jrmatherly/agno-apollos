@@ -1,4 +1,7 @@
 services:
+  ###############################################################
+  # Apollos AI - Database
+  ###############################################################
   apollos-db:
     image: agnohq/pgvector:18
     container_name: apollos-db
@@ -14,6 +17,9 @@ services:
     networks:
       - apollos
 
+  ###############################################################
+  # Apollos AI - API
+  ###############################################################
   apollos-api:
     build:
       context: .
@@ -36,9 +42,12 @@ services:
       - DB_DATABASE=${DB_DATABASE:-ai}
       - WAIT_FOR_DB=True
       - PRINT_ENV_ON_LOAD=True
-      # API keys
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_API_BASE=${OPENAI_API_BASE}
+      # LiteLLM
+      - LITELLM_API_KEY=${LITELLM_API_KEY}
+      - LITELLM_BASE_URL=${LITELLM_BASE_URL:-http://localhost:4000/v1}
+      - MODEL_ID=${MODEL_ID:-gpt-5-mini}
+      - EMBEDDING_MODEL_ID=${EMBEDDING_MODEL_ID:-text-embedding-3-small}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-1536}
     depends_on:
       - apollos-db
     networks:
