@@ -12,7 +12,7 @@ from agno.knowledge import Knowledge
 from agno.knowledge.embedder.openai import OpenAIEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
 
-from db.url import db_url
+from backend.db.url import db_url
 
 LITELLM_BASE_URL = getenv("LITELLM_BASE_URL", "http://localhost:4000/v1")
 LITELLM_API_KEY = getenv("LITELLM_API_KEY", "")

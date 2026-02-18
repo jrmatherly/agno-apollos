@@ -5,7 +5,7 @@ Knowledge Agent
 An agent that answers questions using a knowledge base.
 
 Run:
-    python -m agents.knowledge_agent
+    python -m backend.agents.knowledge_agent
 """
 
 from os import getenv
@@ -13,7 +13,7 @@ from os import getenv
 from agno.agent import Agent
 from agno.models.litellm import LiteLLMOpenAI
 
-from db import create_knowledge, get_postgres_db
+from backend.db import create_knowledge, get_postgres_db
 
 # ---------------------------------------------------------------------------
 # Setup

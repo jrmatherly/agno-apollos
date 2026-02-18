@@ -5,7 +5,7 @@ MCP Agent
 An agent that uses MCP tools to answer questions.
 
 Run:
-    python -m agents.mcp_agent
+    python -m backend.agents.mcp_agent
 """
 
 from os import getenv
@@ -14,7 +14,7 @@ from agno.agent import Agent
 from agno.models.litellm import LiteLLMOpenAI
 from agno.tools.mcp import MCPTools
 
-from db import get_postgres_db
+from backend.db import get_postgres_db
 
 # ---------------------------------------------------------------------------
 # Setup

@@ -5,7 +5,7 @@ Apollos AI
 The main entry point for Apollos AI.
 
 Run:
-    python -m app.main
+    python -m backend.main
 """
 
 from os import getenv
@@ -13,9 +13,9 @@ from pathlib import Path
 
 from agno.os import AgentOS
 
-from agents.knowledge_agent import knowledge_agent
-from agents.mcp_agent import mcp_agent
-from db import get_postgres_db
+from backend.agents.knowledge_agent import knowledge_agent
+from backend.agents.mcp_agent import mcp_agent
+from backend.db import get_postgres_db
 
 # ---------------------------------------------------------------------------
 # Create Apollos AI
@@ -33,6 +33,6 @@ app = agent_os.get_app()
 
 if __name__ == "__main__":
     agent_os.serve(
-        app="main:app",
+        app="backend.main:app",
         reload=getenv("RUNTIME_ENV", "prd") == "dev",
     )

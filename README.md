@@ -12,15 +12,15 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 ## Get Started
 
 ```sh
-# Add OPENAI_API_KEY
+# Configure environment
 cp example.env .env
-# Edit .env and add your key
+# Edit .env and add your LiteLLM API key and proxy URL
 
 # Start the application
 docker compose up -d --build
 
 # Load documents for the knowledge agent
-docker exec -it apollos-api python -m agents.knowledge_agent
+docker exec -it apollos-api python -m backend.agents.knowledge_agent
 ```
 
 Confirm Apollos AI is running at [http://localhost:8000/docs](http://localhost:8000/docs).
@@ -40,8 +40,7 @@ Answers questions using hybrid search over a vector database (Agentic RAG).
 **Load documents:**
 
 ```sh
-# Local
-docker exec -it apollos-api python -m agents.knowledge_agent
+docker exec -it apollos-api python -m backend.agents.knowledge_agent
 ```
 
 **Try it:**
@@ -68,26 +67,31 @@ Find examples of agents with memory
 
 ### Add your own agent
 
-1. Create `agents/my_agent.py`:
+1. Create `backend/agents/my_agent.py`:
 
 ```python
+from os import getenv
+
 from agno.agent import Agent
-from agno.models.openai import OpenAIResponses
-from db import get_postgres_db
+from agno.models.litellm import LiteLLMOpenAI
+from backend.db import get_postgres_db
 
 my_agent = Agent(
     id="my-agent",
     name="My Agent",
-    model=OpenAIResponses(id="gpt-5.2"),
+    model=LiteLLMOpenAI(
+        id=getenv("MODEL_ID", "gpt-5-mini"),
+        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
+    ),
     db=get_postgres_db(),
     instructions="You are a helpful assistant.",
 )
 ```
 
-1. Register in `app/main.py`:
+1. Register in `backend/main.py`:
 
 ```python
-from agents.my_agent import my_agent
+from backend.agents.my_agent import my_agent
 
 agent_os = AgentOS(
     name="Apollos AI",
@@ -154,7 +158,7 @@ source .venv/bin/activate
 docker compose up -d apollos-db
 
 # Run the app
-uv run python -m app.main
+uv run python -m backend.main
 ```
 
 ### Using Docker Compose Watch
@@ -170,7 +174,11 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `OPENAI_API_KEY` | Yes | - | OpenAI API key |
+| `LITELLM_API_KEY` | Yes | - | LiteLLM Proxy API key |
+| `LITELLM_BASE_URL` | No | `http://localhost:4000/v1` | LiteLLM Proxy URL |
+| `MODEL_ID` | No | `gpt-5-mini` | LLM model ID |
+| `EMBEDDING_MODEL_ID` | No | `text-embedding-3-small` | Embedding model ID |
+| `EMBEDDING_DIMENSIONS` | No | `1536` | Embedding vector dimensions |
 | `DB_HOST` | No | `localhost` | Database host |
 | `DB_PORT` | No | `5432` | Database port |
 | `DB_USER` | No | `ai` | Database user |
