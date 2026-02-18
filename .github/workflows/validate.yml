@@ -2,39 +2,50 @@ name: Validate
 
 on:
   push:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
+      - ".dockerignore"
+      - "example.env"
   pull_request:
     types:
       - opened
-      - edited
+      - synchronize
       - reopened
     branches:
-      - "main"
+      - main
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
+      - ".dockerignore"
+      - "example.env"
 
 jobs:
   validate:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - name: Set up mise
+        uses: jdx/mise-action@v3
         with:
-          enable-cache: true
+          experimental: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
-
-      - name: Install the project with dev dependencies
+      - name: Install dependencies
         run: uv sync --locked --dev
 
-      - name: Format with ruff
+      - name: Format check
         run: uv run ruff format --check .
 
-      - name: Lint with ruff
+      - name: Lint
         run: uv run ruff check .
 
-      - name: Type-check with mypy
+      - name: Type-check
         run: uv run mypy .
