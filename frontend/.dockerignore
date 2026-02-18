@@ -1,6 +1,23 @@
 node_modules/
 .next/
 .pnpm-store/
+
+# Secrets
 .env
-.env.local
+.env.*
+
+# Git
 .git/
+.gitignore
+
+# Docs (not needed in image)
+*.md
+LICENSE
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts
+*.tsbuildinfo
+coverage/

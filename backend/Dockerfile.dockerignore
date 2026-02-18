@@ -38,6 +38,7 @@ venv/
 env/
 ENV/
 .env
+.env.*
 .envrc
 
 # =========================
@@ -63,6 +64,19 @@ Thumbs.db
 tmp/
 .local_docs/
 .scratchpad/
+.serena/
 docs/
 .git/
+
+# =========================
+# Not needed in backend image
+# =========================
 frontend/
+mise-tasks/
+.github/
+*.md
+LICENSE
+example.env
+mise.toml
+mise.local.toml
+.python-version

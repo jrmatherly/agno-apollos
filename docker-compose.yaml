@@ -23,7 +23,7 @@ services:
   apollos-backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
     image: apollos-backend:${IMAGE_TAG:-latest}
     container_name: apollos-backend
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
@@ -91,14 +91,12 @@ services:
       - apollos
     develop:
       watch:
-        - action: sync
+        # Standalone Next.js serves pre-built output, so source changes
+        # require a full rebuild (use `mise run frontend:dev` for fast iteration)
+        - action: rebuild
           path: ./frontend/src
-          target: /app/src
-          ignore:
-            - node_modules/
-        - action: sync
+        - action: rebuild
           path: ./frontend/public
-          target: /app/public
         - action: rebuild
           path: ./frontend/package.json
         - action: rebuild

@@ -11,7 +11,7 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 
 ## Prerequisites
 
-- [mise](https://mise.jdx.dev) (manages Python, uv, and all dev tasks)
+- [mise](https://mise.jdx.dev) (manages Python, uv, Node.js, pnpm, and all dev tasks)
 - [Docker](https://docs.docker.com/get-docker/)
 
 ## Get Started
@@ -37,11 +37,13 @@ mise run load-docs
 
 Confirm Apollos AI is running at [http://localhost:8000/docs](http://localhost:8000/docs).
 
-### Connect to the Web UI
+### Open the Web UI
 
-1. Open [os.agno.com](https://os.agno.com) and login
-2. Add OS → Local → `http://localhost:8000`
-3. Click "Connect"
+The self-hosted frontend is available at [http://localhost:3000](http://localhost:3000).
+
+The default backend endpoint is `http://localhost:8000`. You can change this in the sidebar.
+
+To use the cloud-hosted UI instead, go to [os.agno.com](https://os.agno.com) and add your local endpoint.
 
 ## The Agents
 
@@ -175,6 +177,13 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run load-docs` | Load knowledge base documents |
 | `mise run ci` | Run full CI pipeline |
 | `mise run clean` | Clean build artifacts and caches |
+| `mise run frontend:setup` | Install frontend dependencies (pnpm) |
+| `mise run frontend:dev` | Start frontend dev server (port 3000) |
+| `mise run frontend:build` | Build frontend for production |
+| `mise run frontend:lint` | Lint frontend code (ESLint) |
+| `mise run frontend:format` | Check frontend formatting (Prettier) |
+| `mise run frontend:typecheck` | Type-check frontend code (TypeScript) |
+| `mise run frontend:validate` | Run all frontend checks |
 
 ### Local Development (without Docker)
 
@@ -215,6 +224,8 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `DB_PASS` | No | `ai` | Database password |
 | `DB_DATABASE` | No | `ai` | Database name |
 | `RUNTIME_ENV` | No | `prd` | Set to `dev` for auto-reload |
+| `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
+| `NEXT_PUBLIC_OS_SECURITY_KEY` | No | - | Pre-fill auth token in the frontend UI |
 
 ## Learn More
 

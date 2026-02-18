@@ -6,13 +6,14 @@ All Python backend code lives under `backend/` as a proper package.
 Imports use fully-qualified paths: `from backend.agents.x import y`, `from backend.db import z`.
 Docker WORKDIR `/app` is the project root, not the Python package.
 Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript, pnpm.
+Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
 Frontend Dockerfile uses multi-stage build with `output: 'standalone'` in next.config.ts.
 
 ## Commands (mise)
 
 Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 
-- `mise run setup` - install all deps (uv sync --dev)
+- `mise run setup` - install all deps (backend: uv sync --dev, frontend: pnpm install)
 - `mise run format` - format code (ruff format + import sort)
 - `mise run lint` - lint (ruff check)
 - `mise run typecheck` - type check (mypy)
@@ -56,11 +57,12 @@ Frontend tasks:
 - All model/embedding config via env vars (MODEL_ID, EMBEDDING_MODEL_ID, LITELLM_BASE_URL, etc.)
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
 - New agents go in `backend/agents/`, register in `backend/main.py`
-- Keep `agnohq/python:3.12` and `agnohq/pgvector:18` base images
+- Keep `agnohq/python:3.12` and `agnohq/pgvector:18` base images. Frontend uses `node:24-alpine`.
 - ruff line-length: 120
 - Env var defaults live in `mise.toml` [env] section and `backend/db/session.py`
 - Dependencies: `uv add <package>` (auto-updates uv.lock), never edit uv.lock manually
-- Frontend uses pnpm (not npm/yarn). `pnpm install --frozen-lockfile` for CI.
+- Frontend uses pnpm (not npm/yarn). Local setup uses `pnpm install`; CI uses `--frozen-lockfile`.
+- After changing frontend/package.json, run `mise run frontend:setup` to regenerate pnpm-lock.yaml.
 - Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
 - Docker compose has 3 services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000)
 - CI workflows run backend and frontend validation as parallel jobs

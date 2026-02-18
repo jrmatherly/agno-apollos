@@ -10,6 +10,8 @@ apollos-ai/
 │   ├── __init__.py
 │   ├── main.py              # Entry point — creates Apollos AI, registers agents
 │   ├── config.yaml          # UI quick-prompt config for each agent
+│   ├── Dockerfile           # agnohq/python:3.12, two-layer caching, uv sync --locked
+│   ├── Dockerfile.dockerignore  # Build context exclusions (BuildKit convention)
 │   ├── agents/              # AI agent implementations
 │   │   ├── __init__.py
 │   │   ├── knowledge_agent.py   # Agentic RAG agent (hybrid search over pgvector)
@@ -18,38 +20,66 @@ apollos-ai/
 │       ├── __init__.py      # Re-exports: get_postgres_db, create_knowledge, db_url
 │       ├── session.py       # PostgresDb factory + Knowledge factory (pgvector hybrid)
 │       └── url.py           # Builds DB URL from env vars (DB_HOST, DB_PORT, etc.)
-├── mise-tasks/              # File-based mise tasks (replaces scripts/*.sh)
-│   ├── setup                # Install deps (uv sync --dev)
+├── frontend/                # Next.js frontend (Apollos UI)
+│   ├── Dockerfile           # Multi-stage standalone build (node:24-alpine)
+│   ├── .dockerignore        # Excludes node_modules, .next, secrets
+│   ├── package.json         # apollos-ui — deps, scripts, engines
+│   ├── pnpm-lock.yaml       # pnpm lockfile (committed to git)
+│   ├── next.config.ts       # output: 'standalone', devIndicators: false
+│   ├── tsconfig.json        # TypeScript config
+│   ├── tailwind.config.ts   # Tailwind CSS config
+│   ├── postcss.config.mjs   # PostCSS config
+│   ├── src/                 # App source code
+│   │   ├── app/             # Next.js App Router pages
+│   │   ├── components/      # React components (shadcn/ui based)
+│   │   ├── api/             # API client (browser-side fetch to backend)
+│   │   ├── store.ts         # Zustand state (endpoint, auth token)
+│   │   └── lib/             # Utilities
+│   ├── public/              # Static assets
+│   ├── README.md            # Frontend-specific docs
+│   └── CONTRIBUTING.md      # Frontend contribution guide
+├── mise-tasks/              # File-based mise tasks
+│   ├── setup                # Install all deps (backend + frontend)
 │   ├── format               # ruff format + import sorting
 │   ├── lint                 # ruff check
 │   ├── typecheck            # mypy type-check
-│   ├── validate             # All checks (format-check + lint + typecheck)
+│   ├── validate             # All checks (backend + frontend)
 │   ├── dev                  # docker compose watch (hot-reload)
 │   ├── db                   # Start database only
 │   ├── load-docs            # Load knowledge base documents
 │   ├── ci                   # Full CI pipeline (install + validate)
 │   ├── clean                # Clean build artifacts
-│   └── docker/              # Docker-specific tasks
-│       ├── up               # Start full stack (build + detach)
-│       ├── down             # Stop all services
-│       ├── logs             # Tail logs
-│       └── build            # Multi-arch image build (amd64 + arm64)
+│   ├── docker/              # Docker-specific tasks
+│   │   ├── up               # Start full stack (build + detach)
+│   │   ├── down             # Stop all services
+│   │   ├── logs             # Tail logs
+│   │   └── build            # Multi-arch image build (amd64 + arm64)
+│   └── frontend/            # Frontend-specific tasks
+│       ├── setup            # Install frontend deps (pnpm install)
+│       ├── dev              # Start frontend dev server (port 3000)
+│       ├── build            # Production build (next build)
+│       ├── lint             # ESLint
+│       ├── format           # Prettier format check
+│       ├── typecheck        # TypeScript type-check
+│       └── validate         # All frontend checks (lint + format + typecheck)
 ├── scripts/                 # Container-only scripts
 │   └── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
 ├── .github/workflows/
-│   ├── validate.yml         # CI: format, lint, type-check on push/PR
-│   └── docker-images.yml    # CD: build + push Docker image on release
-├── mise.toml                # Mise config — tools (Python, uv), env vars, settings
+│   ├── validate.yml         # CI: parallel backend + frontend validation on push/PR
+│   └── docker-images.yml    # CD: build + push backend + frontend Docker images on release
+├── mise.toml                # Mise config — tools (Python, uv, Node, pnpm), env vars, settings
 ├── .python-version          # Pins Python 3.12 for uv and CI
-├── Dockerfile               # agnohq/python:3.12, two-layer caching, uv sync --locked
-├── docker-compose.yaml             # apollos-backend (FastAPI) + apollos-db (pgvector:18) + watch mode
+├── .python-version          # Pins Python 3.12 for uv and CI
+├── docker-compose.yaml      # apollos-db (:5432) + apollos-backend (:8000) + apollos-frontend (:3000)
 ├── pyproject.toml           # Project metadata, deps, [dependency-groups], ruff/mypy config
 ├── uv.lock                  # Cross-platform lockfile (auto-managed by uv)
-├── example.env              # Template for .env (LiteLLM, model, DB credentials)
+├── example.env              # Template for .env (LiteLLM, model, DB, runtime, frontend config)
 └── README.md                # Setup guide, agent docs, common tasks
 ```
 
 ## Dependency Management
+
+### Backend (Python)
 
 Uses **uv native project management** (not pip-compatibility mode):
 
@@ -58,21 +88,34 @@ Uses **uv native project management** (not pip-compatibility mode):
 | Add a dependency | `uv add <package>` |
 | Remove a dependency | `uv remove <package>` |
 | Upgrade all deps | `uv lock --upgrade` |
-| Sync environment | `uv sync --dev` |
-| Run a command | `uv run <command>` |
+| Sync environment | `mise run setup` |
 
 **Lockfile**: `uv.lock` (cross-platform TOML, auto-managed, committed to git)
 **Dev deps**: Defined in `[dependency-groups]` (PEP 735)
+
+### Frontend (Node.js)
+
+Uses **pnpm** for package management:
+
+| Operation | Command |
+|-----------|---------|
+| Install deps | `mise run frontend:setup` |
+| Add a dependency | `cd frontend && pnpm add <package>` |
+| Remove a dependency | `cd frontend && pnpm remove <package>` |
+| Build for production | `mise run frontend:build` |
+
+**Lockfile**: `frontend/pnpm-lock.yaml` (committed to git)
+**Dev deps**: Defined in `devDependencies` in `frontend/package.json`
 
 ## Entry Points
 
 | Entry Point | Path | Command | Description |
 |-------------|------|---------|-------------|
-| API Server | `backend/main.py` | `uv run python -m backend.main` | Starts Apollos AI FastAPI server on :8000 |
-| Knowledge Loader | `backend/agents/knowledge_agent.py` | `uv run python -m backend.agents.knowledge_agent` | Loads default docs into vector DB |
-| MCP Agent CLI | `backend/agents/mcp_agent.py` | `uv run python -m backend.agents.mcp_agent` | Runs MCP agent interactively |
-| Docker Compose | `docker-compose.yaml` | `docker compose up -d --build` | Full stack (API + pgvector DB) |
-| Docker Watch | `docker-compose.yaml` | `docker compose watch` | Auto-sync code + rebuild on dep changes |
+| API Server | `backend/main.py` | `mise run docker:up` | Starts Apollos AI FastAPI server on :8000 |
+| Frontend UI | `frontend/` | `mise run frontend:dev` | Starts Next.js dev server on :3000 |
+| Knowledge Loader | `backend/agents/knowledge_agent.py` | `mise run load-docs` | Loads default docs into vector DB |
+| Full Stack | `docker-compose.yaml` | `mise run docker:up` | All 3 services (DB + backend + frontend) |
+| Watch Mode | `docker-compose.yaml` | `mise run dev` | Auto-sync code + rebuild on dep changes |
 
 ## Core Modules
 
@@ -106,28 +149,43 @@ Uses **uv native project management** (not pip-compatibility mode):
 - **Exports**: `db_url` (connection string)
 - **Purpose**: Builds `postgresql+psycopg://` URL from env vars with URL-encoded password
 
+### frontend/src/store.ts
+- **Exports**: Zustand store (endpoint, auth token, agent selection)
+- **Purpose**: Client-side state management for API connection settings
+- **Default endpoint**: `http://localhost:8000`
+
+### frontend/src/api/
+- **Purpose**: Browser-side API client for AgentOS
+- **Pattern**: All API calls use dynamic `agentOSUrl` from Zustand store, no hardcoded URLs
+- **Auth**: Bearer token from store, included in all requests
+
 ## Configuration
 
 | File | Purpose |
 |------|---------|
-| `mise.toml` | Mise config: tools (Python 3.12, uv), env vars, settings |
-| `mise-tasks/` | File-based mise tasks (dev workflow commands) |
-| `pyproject.toml` | Project metadata, dependencies, [dependency-groups], ruff/mypy config |
-| `uv.lock` | Cross-platform lockfile (auto-managed, committed to git) |
+| `mise.toml` | Mise config: tools (Python 3.12, uv, Node 24, pnpm), env vars, settings |
+| `mise-tasks/` | File-based mise tasks (21 dev workflow commands) |
+| `pyproject.toml` | Backend metadata, dependencies, [dependency-groups], ruff/mypy config |
+| `uv.lock` | Backend lockfile (auto-managed, committed to git) |
+| `frontend/package.json` | Frontend metadata, dependencies, scripts |
+| `frontend/pnpm-lock.yaml` | Frontend lockfile (committed to git) |
 | `.python-version` | Pins Python 3.12 for uv, pyenv, and CI |
-| `docker-compose.yaml` | Docker services + watch mode: `apollos-backend` (:8000) + `apollos-db` (:5432) |
+| `docker-compose.yaml` | 3 services + watch mode: apollos-db, apollos-backend, apollos-frontend |
 | `backend/config.yaml` | Agent quick-prompts for the Agno web UI |
-| `example.env` | Template: LiteLLM config, model config, DB credentials |
-| `Dockerfile` | Two-layer cached build: deps layer + project layer, `uv sync --locked` |
+| `example.env` | Template: LiteLLM, model, DB, runtime, Docker, frontend config |
+| `backend/Dockerfile` | Backend: two-layer cached build, `uv sync --locked` |
+| `frontend/Dockerfile` | Frontend: multi-stage standalone build, node:24-alpine |
 
 ## CI/CD
 
 | Workflow | Trigger | Steps |
 |----------|---------|-------|
-| `validate.yml` | Push, PR to main | `uv sync --locked --dev`, format (ruff), lint (ruff), type-check (mypy) |
-| `docker-images.yml` | Release published | Build multi-arch image (amd64+arm64), push to DockerHub |
+| `validate.yml` | Push to main, PR | Parallel jobs: backend (ruff, mypy via mise) + frontend (eslint, prettier, tsc via mise) |
+| `docker-images.yml` | Release published | Parallel jobs: build + push apollos-backend and apollos-frontend images to DockerHub |
 
 ## Key Dependencies
+
+### Backend
 
 | Package | Purpose |
 |---------|---------|
@@ -144,6 +202,21 @@ Uses **uv native project management** (not pip-compatibility mode):
 
 **Dev deps** (`[dependency-groups]`): `mypy`, `ruff`
 
+### Frontend
+
+| Package | Purpose |
+|---------|---------|
+| `next` (15.5.10) | React framework (App Router) |
+| `react` / `react-dom` (18) | UI library |
+| `tailwindcss` | Utility-first CSS |
+| `zustand` | State management |
+| `framer-motion` | Animations |
+| `@radix-ui/*` | Accessible UI primitives (shadcn/ui base) |
+| `react-markdown` | Markdown rendering |
+| `nuqs` | URL query state sync |
+
+**Dev deps**: `typescript`, `eslint`, `prettier`, `@types/node`, `@types/react`
+
 ## Environment Variables
 
 | Variable | Required | Default | Description |
@@ -159,7 +232,9 @@ Uses **uv native project management** (not pip-compatibility mode):
 | `DB_PASS` | No | `ai` | PostgreSQL password |
 | `DB_DATABASE` | No | `ai` | PostgreSQL database name |
 | `DB_DRIVER` | No | `postgresql+psycopg` | SQLAlchemy DB driver |
-| `RUNTIME_ENV` | No | `prd` | Set to `dev` for auto-reload |
+| `RUNTIME_ENV` | No | `dev` | Set to `dev` for auto-reload |
+| `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
+| `NEXT_PUBLIC_OS_SECURITY_KEY` | No | — | Pre-fill auth token in the frontend UI |
 | `WAIT_FOR_DB` | No | — | Container waits for DB readiness |
 | `PRINT_ENV_ON_LOAD` | No | — | Print env vars on container start |
 
@@ -178,10 +253,11 @@ mise run docker:up
 # 4. Load knowledge base documents
 mise run load-docs
 
-# 5. Open API docs
-open http://localhost:8000/docs
+# 5. Open the frontend UI
+open http://localhost:3000
 
-# 6. Connect web UI: os.agno.com → Add OS → Local → http://localhost:8000
+# 6. Open API docs
+open http://localhost:8000/docs
 ```
 
 ## Test Coverage
@@ -192,9 +268,10 @@ open http://localhost:8000/docs
 
 ## Architecture Notes
 
-- **Framework**: Apollos AI (built on Agno AgentOS) — orchestrates multiple agents behind a single FastAPI app
-- **Storage**: pgvector (PostgreSQL 18 with vector extension) for both agent state and RAG embeddings
-- **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`
-- **LLM Provider**: LiteLLM Proxy (all LLM and embedding traffic routes through self-hosted proxy)
-- **Deployment**: Docker Compose with watch mode for dev, multi-arch images for production
-- **Tooling**: `mise` (task runner + tool manager), `uv` (native project management with lockfile), `ruff` for formatting/linting, `mypy` for type-checking
+- **Framework**: Apollos AI (built on Agno AgentOS). Orchestrates multiple agents behind a single FastAPI app.
+- **Storage**: pgvector (PostgreSQL 18 with vector extension) for both agent state and RAG embeddings.
+- **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`.
+- **LLM Provider**: LiteLLM Proxy (all LLM and embedding traffic routes through self-hosted proxy).
+- **Frontend**: Next.js 15 with standalone output. Connects to backend via browser-side fetch (not server-side). API URL is configured in the UI, not env vars.
+- **Deployment**: Docker Compose with 3 services and watch mode for dev. Multi-arch images for production.
+- **Tooling**: `mise` (task runner + tool manager), `uv` (backend package management), `pnpm` (frontend package management), `ruff` for formatting/linting, `mypy` for type-checking.
