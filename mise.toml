@@ -38,6 +38,12 @@ DB_DRIVER = "postgresql+psycopg"
 RUNTIME_ENV = "dev"
 
 # ---------------------------------------------------------------------------
+# Settings
+# ---------------------------------------------------------------------------
+[settings]
+experimental = true
+
+# ---------------------------------------------------------------------------
 # Available Tasks (mise run <task>)
 # ---------------------------------------------------------------------------
 # setup              Install all dependencies (backend + frontend)
@@ -63,9 +69,3 @@ RUNTIME_ENV = "dev"
 # frontend:format    Check frontend formatting (Prettier)
 # frontend:typecheck Type-check frontend code (TypeScript)
 # frontend:validate  Run all frontend checks (lint + format + typecheck)
-
-# ---------------------------------------------------------------------------
-# Settings
-# ---------------------------------------------------------------------------
-[settings]
-experimental = true
