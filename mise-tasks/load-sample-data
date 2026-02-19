@@ -4,4 +4,4 @@
 set -euo pipefail
 
 echo "Loading F1 sample data..."
-docker exec -it apollos-backend python -m backend.scripts.load_sample_data
+docker exec apollos-backend python -m backend.scripts.load_sample_data

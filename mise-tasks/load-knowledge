@@ -4,4 +4,4 @@
 set -euo pipefail
 
 echo "Loading knowledge into vector DB..."
-docker exec -it apollos-backend python -m backend.scripts.load_knowledge "$@"
+docker exec apollos-backend python -m backend.scripts.load_knowledge "$@"

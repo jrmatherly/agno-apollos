@@ -72,7 +72,7 @@ Thumbs.db
 # Project-specific
 # =========================
 tmp/
-data/
+data/docs/
 .local_docs/
 .scratchpad/
 .worktrees/

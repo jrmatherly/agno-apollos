@@ -4,4 +4,4 @@
 set -e
 
 echo "Loading knowledge base documents..."
-docker exec -it apollos-backend python -m backend.agents.knowledge_agent
+docker exec apollos-backend python -m backend.agents.knowledge_agent

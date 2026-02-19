@@ -20,7 +20,11 @@ web_researcher = Agent(
     role="Search the web for current information",
     model=get_model(),
     tools=[WebSearchTools(enable_search=True, enable_news=True)],
-    instructions=["Search the web for relevant information.", "Always cite sources with URLs."],
+    instructions=[
+        "Search the web to find relevant, current information.",
+        "Always cite sources with URLs.",
+        "Provide concise, factual summaries.",
+    ],
     markdown=True,
 )
 
@@ -28,7 +32,12 @@ analyst = Agent(
     name="Analyst",
     role="Analyze information and synthesize findings",
     model=get_model(),
-    instructions=["Analyze the information provided by team members.", "Provide structured analysis."],
+    instructions=[
+        "Analyze the information provided by team members.",
+        "Identify patterns, contradictions, and gaps.",
+        "Provide structured analysis with clear conclusions.",
+        "Use the think tool for complex multi-step reasoning.",
+    ],
     markdown=True,
 )
 
@@ -40,7 +49,13 @@ research_team = Team(
     db=get_postgres_db(),
     members=[web_researcher, analyst],
     tools=[ReasoningTools(add_instructions=True)],
-    instructions=["Delegate research to Web Researcher, analysis to Analyst."],
+    instructions=[
+        "You lead a research team with a web researcher and an analyst.",
+        "For factual questions, delegate to the Web Researcher.",
+        "For analysis and synthesis, delegate to the Analyst.",
+        "For complex questions, have the Researcher gather data, then the Analyst synthesize.",
+        "Always provide a final, consolidated answer.",
+    ],
     markdown=True,
     compress_tool_results=True,
     max_iterations=5,

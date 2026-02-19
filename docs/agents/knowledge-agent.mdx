@@ -38,8 +38,12 @@ knowledge_agent = Agent(
         user_memory=UserMemoryConfig(db=agent_db),
     ),
     enable_agentic_memory=True,
-    enable_session_summaries=True,
+    add_datetime_to_context=True,
+    add_history_to_context=True,
+    read_chat_history=True,
+    num_history_runs=5,
     markdown=True,
+    enable_session_summaries=True,
 )
 ```
 
@@ -55,6 +59,8 @@ knowledge_agent = Agent(
 | Custom tools | `search_content`, `list_knowledge_sources`, `add_knowledge_source` |
 | Intent routing | Routes queries by type (factual, exploratory, comparative) |
 | Confidence signaling | Indicates certainty level in responses |
+| Datetime context | `add_datetime_to_context=True` for time-aware queries |
+| Chat history | `read_chat_history=True`, `num_history_runs=5` for multi-turn context |
 | Session summaries | `enable_session_summaries=True` for conversation persistence |
 
 ## Loading documents

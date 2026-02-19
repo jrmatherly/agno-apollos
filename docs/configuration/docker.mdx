@@ -3,13 +3,14 @@ title: "Docker"
 description: "Docker Compose configuration for development and production."
 ---
 
-Apollos AI runs as three Docker services managed by Docker Compose.
+Apollos AI runs as three core Docker services managed by Docker Compose, plus an optional docs service.
 
-| Service | Port | Image |
-|---------|------|-------|
-| `apollos-db` | 5432 | `agnohq/pgvector:18` |
-| `apollos-backend` | 8000 | Built from `backend/Dockerfile` |
-| `apollos-frontend` | 3000 | Built from `frontend/Dockerfile` |
+| Service | Port | Image | Profile |
+|---------|------|-------|---------|
+| `apollos-db` | 5432 | `agnohq/pgvector:18` | default |
+| `apollos-backend` | 8000 | Built from `backend/Dockerfile` | default |
+| `apollos-frontend` | 3000 | Built from `frontend/Dockerfile` | default |
+| `apollos-docs` | 3333 | Built from `docs/Dockerfile` | `docs` (opt-in) |
 
 ## Two compose files
 
@@ -24,6 +25,12 @@ Start the full stack with local builds:
 
 ```bash
 mise run docker:up
+```
+
+Include the docs service:
+
+```bash
+mise run docker:up --docs
 ```
 
 For hot-reload with automatic rebuilds:
@@ -70,17 +77,20 @@ mise run docker:build --platform arm64
 |------|---------|
 | Start full stack | `mise run docker:up` |
 | Start full stack (production) | `mise run docker:up --prod` |
+| Include docs service | `mise run docker:up --docs` |
 | Stop all services | `mise run docker:down` |
 | Tail logs | `mise run docker:logs` |
 | Start database only | `mise run db` |
 | Build images | `mise run docker:build` |
-| Restart after code changes | `docker compose restart` |
+| Start docs standalone | `mise run docs:docker` |
 
 ## Dockerfiles
 
 **Backend** (`backend/Dockerfile`): Based on `agnohq/python:3.12`. Uses two-layer caching with `uv sync --locked`. Build context is the project root (needs `pyproject.toml`, `uv.lock`, `scripts/`). Exclusions in `backend/Dockerfile.dockerignore` (BuildKit naming convention).
 
 **Frontend** (`frontend/Dockerfile`): Multi-stage build on `node:24-alpine`. Outputs a standalone Next.js application. Build context is `frontend/`. Exclusions in `frontend/.dockerignore`.
+
+**Docs** (`docs/Dockerfile`): Based on `node:24-alpine`. Builds and serves the Mintlify documentation site. Behind the `docs` Docker Compose profile, so it only starts when explicitly requested via `--docs`.
 
 ## CI/CD
 

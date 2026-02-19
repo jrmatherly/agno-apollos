@@ -66,16 +66,22 @@ experimental = true
 # dev                Start full stack in watch mode (hot-reload)
 # db                 Start database only (PostgreSQL + pgvector)
 # load-docs          Load knowledge base documents into vector DB
+# load-sample-data   Load F1 sample data into PostgreSQL for dev/demo/evals
+# load-knowledge     Load knowledge files into vector DB (--recreate to rebuild)
 # ci                 Full CI pipeline (install + validate)
 # clean              Clean build artifacts and caches
 # release            Create a GitHub release (interactive version prompt)
+# test               Run integration tests (requires running backend)
+# evals:run          Run agent eval suite (-c -v -g -r --direct)
+# auth:generate-token Generate a test JWT token for development
+# schedules:setup    Create default scheduler schedules
 #
-# docker:up [--prod]  Start full stack (--prod pulls GHCR images instead of building)
+# docker:up [--prod] [--docs] Start full stack (--prod for GHCR, --docs for docs service)
 # docker:down [--prod] Stop all services (--prod targets production compose file)
 # docker:logs [--prod] Tail logs from all services
 # docker:build [--platform amd64|arm64] Build Docker images (default: native arch)
 #
-# frontend:dev       Start frontend dev server (Next.js)
+# frontend:dev       Start frontend dev server (Next.js, port 3000)
 # frontend:build     Build frontend for production
 # frontend:setup [--ci] Install frontend dependencies (--ci for frozen lockfile)
 # frontend:lint      Lint frontend code (ESLint)
@@ -85,3 +91,4 @@ experimental = true
 #
 # docs:dev           Preview docs site locally (Mintlify, port 3333)
 # docs:validate      Validate docs build and check for broken links
+# docs:docker        Start docs site in Docker (--prod for GHCR image)

@@ -77,8 +77,8 @@ mise run format --check
 # Add a package (auto-updates uv.lock)
 uv add <package>
 
-# Rebuild container
-docker compose up -d --build
+# Rebuild containers
+mise run docker:up
 ```
 
 ### Frontend (Node.js)
@@ -86,8 +86,9 @@ docker compose up -d --build
 ```bash
 cd frontend && pnpm add <package>
 
-# Regenerate lockfile
+# Regenerate lockfile and rebuild
 mise run frontend:setup
+mise run docker:up
 ```
 
 ## Full task reference

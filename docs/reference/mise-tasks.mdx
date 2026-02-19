@@ -81,11 +81,18 @@ Requires `JWT_SECRET_KEY` to be set in `.env`. See [security configuration](/con
 |------|-------------|
 | `mise run schedules:setup` | Configure agent scheduled tasks |
 
-## Other tasks
+## Data tasks
 
 | Task | Description |
 |------|-------------|
 | `mise run load-docs` | Load knowledge base documents into pgvector |
+| `mise run load-sample-data` | Load F1 sample dataset into PostgreSQL |
+| `mise run load-knowledge` | Load table metadata, queries, and business rules into data agent knowledge base |
+
+## Other tasks
+
+| Task | Description |
+|------|-------------|
 | `mise run release` | Create GitHub release (interactive version prompt) |
 
 ## Release workflow

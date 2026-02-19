@@ -125,7 +125,7 @@ Auth and scheduling tasks:
 - Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions (pyproject.toml, package.json, uv.lock) → tags → GitHub release → Docker image builds
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
 - VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
-- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, docs/ (Mintlify site — especially agents/overview.mdx, teams/overview.mdx, workflows/overview.mdx, reference/architecture.mdx)
+- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, mise.toml (task listing comment block), docs/ (Mintlify site — especially agents/overview.mdx, teams/overview.mdx, workflows/overview.mdx, reference/architecture.mdx)
 - example.env must stay in sync when env vars are added/changed across the project
 - `.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based
 

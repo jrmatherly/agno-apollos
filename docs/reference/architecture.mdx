@@ -5,29 +5,16 @@ description: "How the backend, frontend, database, and LLM proxy connect."
 
 ## System overview
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Docker Compose                    │
-│                                                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │  apollos-    │  │  apollos-    │  │  apollos-  │ │
-│  │  frontend    │  │  backend     │  │  db        │ │
-│  │  :3000       │──│  :8000       │──│  :5432     │ │
-│  │  Next.js 15  │  │  FastAPI     │  │  PG 18 +   │ │
-│  │              │  │  AgentOS     │  │  pgvector  │ │
-│  └──────────────┘  └──────┬───────┘  └────────────┘ │
-│                           │                         │
-└───────────────────────────┼─────────────────────────┘
-                            │
-                   ┌────────▼────────┐
-                   │  LiteLLM Proxy  │
-                   │  (external)     │
-                   └────────┬────────┘
-                            │
-                   ┌────────▼────────┐
-                   │  LLM Provider   │
-                   │  (OpenAI, etc.) │
-                   └─────────────────┘
+```mermaid
+graph TD
+    subgraph Docker Compose
+        FE["apollos-frontend<br/>:3000<br/>Next.js 15"]
+        BE["apollos-backend<br/>:8000<br/>FastAPI · AgentOS"]
+        DB["apollos-db<br/>:5432<br/>PG 18 + pgvector"]
+        FE --> BE --> DB
+    end
+    BE --> PROXY["LiteLLM Proxy<br/>(external)"]
+    PROXY --> LLM["LLM Provider<br/>(OpenAI, etc.)"]
 ```
 
 ## Components
@@ -44,11 +31,12 @@ FastAPI application using Agno's `AgentOS` as the runtime. Registers agents, tea
 | `backend/agents/` | Agent modules (each exports an `Agent` instance) |
 | `backend/teams/` | Multi-agent team definitions |
 | `backend/workflows/` | Multi-step workflow pipelines |
-| `backend/tools/` | Custom tools (search, awareness, approval-gated operations) |
-| `backend/context/` | Agent context providers (semantic model for Data Analyst) |
+| `backend/tools/` | Custom tools (search, awareness, approval-gated ops, introspect, save_query) |
+| `backend/context/` | Agent context providers (semantic model, business rules, intent routing) |
 | `backend/knowledge/` | Document loaders for the knowledge base |
+| `backend/scripts/` | Data loading scripts (sample data, knowledge base) |
 | `backend/db/` | Database layer (connection factory, URL builder, knowledge factory) |
-| `backend/evals/` | LLM-based evaluation harness |
+| `backend/evals/` | Evaluation harness (LLM grading, golden SQL comparison, Rich CLI) |
 | `backend/telemetry.py` | OpenTelemetry trace export configuration |
 
 ### Frontend (`apollos-frontend`)
@@ -59,6 +47,7 @@ Next.js 15 (App Router) with standalone output. Connects to the backend via brow
 |------|---------|
 | `frontend/src/store.ts` | Zustand state: endpoint URL, auth token, agent selection |
 | `frontend/src/api/` | Browser-side API client for AgentOS |
+| `frontend/src/hooks/` | React hooks (AI streaming, chat actions, session loader) |
 | `frontend/src/components/` | React components (shadcn/ui based) |
 
 ### Database (`apollos-db`)
@@ -106,12 +95,22 @@ apollos-ai/
 │   ├── tools/               # Custom tools
 │   │   ├── search.py
 │   │   ├── awareness.py
-│   │   └── approved_ops.py
+│   │   ├── approved_ops.py
+│   │   ├── introspect.py
+│   │   └── save_query.py
 │   ├── context/             # Agent context providers
-│   │   └── semantic_model.py
+│   │   ├── semantic_model.py
+│   │   ├── business_rules.py
+│   │   └── intent_routing.py
 │   ├── knowledge/           # Document loaders
 │   │   └── loaders.py
+│   ├── scripts/             # Data loading scripts
+│   │   ├── load_sample_data.py
+│   │   └── load_knowledge.py
 │   ├── evals/               # Evaluation harness
+│   │   ├── test_cases.py
+│   │   ├── grader.py
+│   │   └── run_evals.py
 │   ├── db/                  # Database layer
 │   │   ├── session.py       # PostgresDb + Knowledge factories
 │   │   └── url.py           # DB URL builder
@@ -121,6 +120,7 @@ apollos-ai/
 │   ├── src/
 │   │   ├── app/             # App Router pages
 │   │   ├── components/      # React components
+│   │   ├── hooks/           # React hooks (streaming, chat, sessions)
 │   │   ├── api/             # API client
 │   │   └── store.ts         # Zustand state
 │   ├── Dockerfile
@@ -129,7 +129,11 @@ apollos-ai/
 │   ├── docs.json            # Mintlify config
 │   ├── Dockerfile
 │   └── *.mdx               # Documentation pages
-├── data/docs/               # Knowledge base source docs (PDF, CSV)
+├── data/
+│   ├── docs/                # Knowledge base source docs (PDF, CSV)
+│   ├── tables/              # F1 table metadata JSON files
+│   ├── queries/             # Validated SQL query patterns
+│   └── business/            # Business rules and metrics definitions
 ├── tests/                   # Integration tests
 ├── mise-tasks/              # Dev workflow tasks
 ├── scripts/                 # Container-only scripts
@@ -149,6 +153,7 @@ apollos-ai/
 |---------|---------|
 | `agno` | Agent framework (Agent, AgentOS, Team, Workflow, Knowledge, tools) |
 | `fastapi[standard]` | HTTP API with uvicorn |
+| `openai` | OpenAI client (used by Agno embedders and LiteLLM) |
 | `pgvector` | Vector similarity search for PostgreSQL |
 | `psycopg[binary]` | PostgreSQL adapter |
 | `sqlalchemy` | ORM / database toolkit |
@@ -157,7 +162,11 @@ apollos-ai/
 | `ddgs` | Web search backend for WebSearchTools |
 | `fastmcp` | MCP server for AgentOS (`enable_mcp_server`) |
 | `pypdf` | PDF document loading for knowledge base |
-| `opentelemetry-exporter-otlp-proto-http` | OTel trace export (opt-in) |
+| `pandas` | Data loading and CSV processing for sample data |
+| `httpx` | HTTP client for downloading sample datasets |
+| `rich` | Rich CLI output for the evaluation runner |
+| `opentelemetry-*` | OTel trace export (opt-in) |
+| `openinference-instrumentation-agno` | Agno-specific OTel instrumentation |
 
 ### Frontend
 
