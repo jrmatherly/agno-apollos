@@ -92,7 +92,7 @@ Auth and scheduling tasks:
 - All model/embedding config via env vars (MODEL_ID, EMBEDDING_MODEL_ID, LITELLM_BASE_URL, etc.)
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
 - New agents go in `backend/agents/`, new teams in `backend/teams/`, new workflows in `backend/workflows/`. Register all in `backend/main.py`.
-- All agents must have guardrails: `pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()]`
+- All agents must have guardrails: `pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()]` — includes inline/ephemeral agents in workflows
 - Agents with learning use `LearningMachine(learned_knowledge=LearnedKnowledgeConfig(mode=LearningMode.AGENTIC, knowledge=...))` from `agno.learn`
 - JWT auth is opt-in: empty `JWT_SECRET_KEY` env var = auth disabled. Set a value to enable RBAC.
 - Telemetry is opt-in: empty `OTEL_EXPORTER_OTLP_ENDPOINT` env var = traces not exported.
@@ -116,7 +116,7 @@ Auth and scheduling tasks:
 - Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions (pyproject.toml, package.json, uv.lock) → tags → GitHub release → Docker image builds
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
 - VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
-- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, docs/ (Mintlify site)
+- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, docs/ (Mintlify site — especially agents/overview.mdx, teams/overview.mdx, workflows/overview.mdx, reference/architecture.mdx)
 - example.env must stay in sync when env vars are added/changed across the project
 - `.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based
 
@@ -131,6 +131,7 @@ Known gotchas:
 - `member_timeout` and `max_interactions_to_share` do not exist on Team in current version
 - Workflow Step: takes `agent=` or `executor=` (no `instructions` or `timeout_seconds` params)
 - Condition: takes `evaluator` + `steps` + `else_steps` (not `on_true`/`on_false`)
+- Loop `end_condition`: receives `List[StepOutput]`, returns `True` to break. Condition `evaluator`: receives `StepInput`, returns `True` for primary path. Check `step_input.input` for user query (not `previous_step_content` which has accumulated output).
 - Knowledge readers: `agno.knowledge.reader.pdf_reader.PDFReader` (not `agno.document.reader`)
 - `include_tools`/`exclude_tools`: On base `Toolkit` class, passed via `**kwargs` to PostgresTools etc.
 - Model API for direct calls: `model.response(messages=[Message(role="user", content=...)])` (not `model.invoke(str)`)

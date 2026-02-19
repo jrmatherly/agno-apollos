@@ -18,9 +18,9 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `backend/telemetry.py` - OpenTelemetry trace export (opt-in)
 - `backend/agents/` - Agent definitions (knowledge, mcp, web_search, reasoning, data)
 - `backend/teams/research_team.py` - Multi-agent research team (coordinate mode)
-- `backend/workflows/research_workflow.py` - Research pipeline (web search → reasoning)
+- `backend/workflows/research_workflow.py` - Quality-gated research pipeline (Loop + Condition)
 - `backend/tools/` - Custom tools (search, awareness, approved_ops with @approval)
-- `backend/context/` - Context modules (semantic_model, intent_routing)
+- `backend/context/` - Context modules (6-table semantic_model, intent_routing)
 - `backend/knowledge/loaders.py` - PDF/CSV document loaders from `data/docs/`
 - `backend/evals/` - LLM-based eval harness (grader, test cases, runner)
 - `backend/db/session.py` - PostgresDb and Knowledge factory functions
@@ -39,10 +39,10 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 5. **Data Analyst** (`data-agent`): Read-only PostgreSQL queries (Dash pattern), learning from successful queries
 
 ## Teams
-1. **Research Team** (`research-team`): Coordinate-mode multi-agent research (web_researcher + analyst)
+1. **Research Team** (`research-team`): Coordinate-mode multi-agent research (web_researcher + analyst), safety parameters (max_iterations=5, num_history_runs=5, add_datetime_to_context)
 
 ## Workflows
-1. **Research Workflow** (`research-workflow`): Web search → reasoning analysis pipeline
+1. **Research Workflow** (`research-workflow`): Quality-gated research pipeline (Search → Loop refinement → Conditional analysis)
 
 ## Dependencies (pyproject.toml)
 agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, litellm, ddgs, fastmcp, pypdf, aiofiles
@@ -97,13 +97,14 @@ Run `mise tasks` for full list. Key tasks:
 - `GHCR_OWNER` (GHCR image owner for prod compose, default: jrmatherly)
 - `JWT_SECRET_KEY` (empty = auth disabled; set to enable JWT RBAC)
 - `OTEL_EXPORTER_OTLP_ENDPOINT` (empty = traces not exported; set for OTel)
+- `NEXT_PUBLIC_DEFAULT_ENDPOINT` (default endpoint shown in frontend UI, default: http://localhost:8000)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
 
 ## Documentation
 - Mintlify site in `docs/` (MDX pages, `docs.json` config)
 - Preview on port 3333 (`mise run docs:dev`) to avoid frontend port conflict
 - Style guide at `docs/CLAUDE.md` (excluded from Mintlify build via `.mintignore`)
-- Sections: Getting started, Agents, Configuration, Reference, Contributing
+- Sections: Getting started, Agents, Teams, Workflows, Configuration, Reference, Contributing
 
 ## Security & CI/CD
 - CodeQL scanning on push/PR to main + weekly (Python, JS/TS, Actions)

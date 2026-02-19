@@ -42,7 +42,13 @@ research_team = Team(
     tools=[ReasoningTools(add_instructions=True)],
     instructions=["Delegate research to Web Researcher, analysis to Analyst."],
     markdown=True,
+    compress_tool_results=True,
+    max_iterations=5,
+    store_history_messages=True,
+    share_member_interactions=True,
+    num_history_runs=5,
     enable_agentic_memory=True,
+    add_datetime_to_context=True,
 )
 ```
 
@@ -64,8 +70,11 @@ The team leader uses `ReasoningTools` for complex multi-step delegation and `Tea
 | Coordination mode | `TeamMode.coordinate` routes tasks to members |
 | Shared memory | `share_member_interactions=True` for cross-member context |
 | History | `store_history_messages=True` persists team conversations |
+| History depth | `num_history_runs=5` controls context window for team history |
+| Iteration cap | `max_iterations=5` prevents runaway coordination loops |
 | Reasoning | `ReasoningTools(add_instructions=True)` for the coordinator |
 | Compression | `compress_tool_results=True` reduces token usage |
+| Datetime context | `add_datetime_to_context=True` provides temporal awareness |
 | Session memory | `db=get_postgres_db()` persists across sessions |
 
 ## Team modes

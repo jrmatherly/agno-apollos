@@ -69,7 +69,10 @@ research_team = Team(
     ],
     markdown=True,
     compress_tool_results=True,
+    max_iterations=5,
     store_history_messages=True,
     share_member_interactions=True,
+    num_history_runs=5,
     enable_agentic_memory=True,
+    add_datetime_to_context=True,
 )

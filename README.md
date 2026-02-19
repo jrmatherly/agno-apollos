@@ -24,7 +24,7 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 
 | Workflow | Steps | Description |
 |----------|-------|-------------|
-| Research Workflow | Web Search → Analysis | Automated research pipeline with structured reports. |
+| Research Workflow | Search → Quality Loop → Analysis | Iterative research with quality gates and conditional deep analysis. |
 
 ## Prerequisites
 

@@ -1,31 +1,45 @@
 ---
 title: "Workflows"
-description: "Multi-step pipelines that chain agents together for automated processing."
+description: "Multi-step pipelines with iterative loops, quality gates, and conditional routing."
 ---
 
-Workflows chain agents into sequential steps. Each step's output feeds into the next, producing structured results from multi-stage processing.
+Workflows chain agents into multi-stage pipelines using `Step`, `Loop`, and `Condition` primitives. Each step's output feeds into the next, with loops for iterative refinement and conditions for dynamic routing.
 
 ```python
 from agno.workflow import Workflow
+from agno.workflow.condition import Condition
+from agno.workflow.loop import Loop
 from agno.workflow.step import Step
 
 from backend.agents.reasoning_agent import reasoning_agent
 from backend.agents.web_search_agent import web_search_agent
+from backend.models import get_model
+
+quality_reviewer = Agent(
+    name="Quality Reviewer",
+    model=get_model(),
+    instructions=["Evaluate research completeness. End with QUALITY_PASS or QUALITY_FAIL."],
+)
 
 research_workflow = Workflow(
     id="research-workflow",
     name="Research Workflow",
-    description="Search the web for a topic, then analyze and synthesize findings.",
     steps=[
-        Step(
-            name="Web Research",
-            description="Search the web for information on the given topic.",
-            agent=web_search_agent,
+        Step(name="Initial Research", agent=web_search_agent, max_retries=2),
+        Loop(
+            name="Quality Refinement",
+            max_iterations=3,
+            end_condition=research_quality_met,  # breaks when QUALITY_PASS found
+            steps=[
+                Step(name="Quality Review", agent=quality_reviewer),
+                Step(name="Fill Gaps", agent=web_search_agent, skip_on_failure=True),
+            ],
         ),
-        Step(
-            name="Analysis & Synthesis",
-            description="Analyze the research findings and produce a structured report.",
-            agent=reasoning_agent,
+        Condition(
+            name="Complexity Check",
+            evaluator=is_complex_topic,  # routes based on topic complexity
+            steps=[Step(name="Deep Analysis", agent=reasoning_agent)],
+            else_steps=[Step(name="Basic Synthesis", agent=reasoning_agent)],
         ),
     ],
 )
@@ -33,24 +47,37 @@ research_workflow = Workflow(
 
 ## Research Workflow
 
-The built-in Research Workflow runs two steps sequentially:
+The built-in Research Workflow runs three stages:
 
-| Step | Agent | Purpose |
-|------|-------|---------|
-| 1. Web Research | Web Search Agent | Gathers information from the web |
-| 2. Analysis & Synthesis | Reasoning Agent | Analyzes findings and produces a structured report |
+| Stage | Type | Agent(s) | Purpose |
+|-------|------|----------|---------|
+| 1. Initial Research | `Step` | Web Search Agent | Broad web search on the topic |
+| 2. Quality Refinement | `Loop` (max 3) | Quality Reviewer + Web Search Agent | Review completeness, fill gaps until quality threshold met |
+| 3. Complexity Check | `Condition` | Reasoning Agent | Deep analysis for complex topics, concise synthesis for simple ones |
 
-The web search agent collects sources with citations, then the reasoning agent synthesizes the findings into a coherent analysis.
+The quality gate uses a `QUALITY_PASS` / `QUALITY_FAIL` keyword protocol. The loop breaks early when the quality reviewer signals that research is sufficient. The complexity condition checks for analytical keywords (compare, evaluate, trade-offs) to route to the appropriate analysis depth.
+
+## Workflow primitives
+
+| Primitive | Purpose | Key parameters |
+|-----------|---------|----------------|
+| `Step` | Execute a single agent | `agent`, `max_retries`, `skip_on_failure`, `add_workflow_history` |
+| `Loop` | Iterate steps until a condition is met | `steps`, `max_iterations`, `end_condition` |
+| `Condition` | Branch execution based on an evaluator | `evaluator`, `steps` (true path), `else_steps` (false path) |
+
+`end_condition` receives `List[StepOutput]` and returns `True` to break the loop. `evaluator` receives `StepInput` and returns `True` for the primary path or `False` for the else path.
 
 ## Teams vs workflows
 
 | Aspect | Teams | Workflows |
 |--------|-------|-----------|
-| Execution | Dynamic delegation by a coordinator | Fixed sequential steps |
-| Control | Leader decides which member handles what | Steps always run in order |
-| Use case | Open-ended research, complex queries | Repeatable pipelines with known stages |
+| Execution | Dynamic delegation by a coordinator | Structured steps with loops and conditions |
+| Control | Leader decides which member handles what | Control flow defined declaratively |
+| Iteration | Members can be re-engaged dynamically | `Loop` primitive with explicit end conditions |
+| Branching | Leader routes based on judgment | `Condition` primitive with evaluator functions |
+| Use case | Open-ended research, complex queries | Repeatable pipelines with quality gates |
 
-Use teams when the task requires adaptive delegation. Use workflows when the processing stages are fixed and predictable.
+Use teams when the task requires adaptive delegation. Use workflows when the processing stages benefit from structured iteration and conditional routing.
 
 ## Workflow registration
 
@@ -69,14 +96,17 @@ agent_os = AgentOS(
 
 1. Create a file in `backend/workflows/`
 2. Define `Step` instances with an `agent` for each stage
-3. Combine steps into a `Workflow`
-4. Register in `backend/main.py`
+3. Add `Loop` for iterative refinement with an `end_condition`
+4. Add `Condition` for dynamic routing with an `evaluator`
+5. Combine into a `Workflow` with `add_workflow_history_to_steps=True`
+6. Register in `backend/main.py`
 
-See the [Agno Workflows docs](https://docs.agno.com/workflows/introduction) for advanced features like conditional steps and parallel execution.
+See the [Agno Workflows docs](https://docs.agno.com/workflows/introduction) for additional features.
 
 ## Example queries
 
 ```
 Research the impact of AI on healthcare and produce a report
+Compare the top 3 cloud providers for enterprise AI workloads
 Investigate recent breakthroughs in battery technology
 ```

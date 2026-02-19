@@ -12,6 +12,7 @@ Uses Agno's Loop + Condition primitives for iterative refinement.
 from typing import List
 
 from agno.agent import Agent
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
 from agno.workflow import Workflow
 from agno.workflow.condition import Condition
 from agno.workflow.loop import Loop
@@ -24,8 +25,10 @@ from backend.db import get_postgres_db
 from backend.models import get_model
 
 # ---------------------------------------------------------------------------
-# Quality Gate: Inline Agents
+# Quality Gate: Inline Agent
 # ---------------------------------------------------------------------------
+# Ephemeral workflow-internal agent — no DB persistence or memory needed.
+# Guardrails included per project convention (workflow history may contain user input).
 quality_reviewer = Agent(
     name="Quality Reviewer",
     role="Evaluate research completeness",
@@ -37,19 +40,7 @@ quality_reviewer = Agent(
         "If gaps remain, list the specific gaps and end with: QUALITY_FAIL",
         "Be strict - research must have multiple sources and address the core question.",
     ],
-    markdown=True,
-)
-
-gap_filler = Agent(
-    name="Gap Filler",
-    role="Fill research gaps identified by quality review",
-    model=get_model(),
-    instructions=[
-        "You are given feedback about gaps in research.",
-        "Search the web to fill those specific gaps.",
-        "Focus on the missing information identified by the reviewer.",
-        "Always cite sources with URLs.",
-    ],
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     markdown=True,
 )
 
@@ -72,23 +63,20 @@ def research_quality_met(outputs: List[StepOutput]) -> bool:
 # Complexity Evaluator
 # ---------------------------------------------------------------------------
 def is_complex_topic(step_input: StepInput) -> bool:
-    """Return True if the input appears to be a complex multi-faceted topic."""
-    text = str(step_input.previous_step_content or step_input.input or "").lower()
+    """Return True if the user's original query requests complex analysis."""
+    # Check only the original user input, not accumulated research content.
+    # Research output naturally contains words like "history" and "impact",
+    # which would cause false positives if we checked previous_step_content.
+    text = str(step_input.input or "").lower()
     complexity_signals = [
         "compare",
         "analyze",
         "evaluate",
         "trade-off",
         "pros and cons",
-        "impact",
-        "implications",
-        "history",
-        "evolution",
         "comprehensive",
         "deep dive",
         "in-depth",
-        "thorough",
-        "detailed",
     ]
     return any(signal in text for signal in complexity_signals)
 

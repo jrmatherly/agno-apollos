@@ -23,32 +23,32 @@ Ask the user for:
 Create `backend/agents/{id_with_underscores}.py` following this pattern:
 
 ```python
-from os import getenv
-
 from agno.agent import Agent
-from agno.models.litellm import LiteLLMOpenAI
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+
 from backend.db import get_postgres_db
+from backend.models import get_model
 
 {variable_name} = Agent(
     id="{agent-id}",
     name="{Agent Name}",
-    model=LiteLLMOpenAI(
-        id=getenv("MODEL_ID", "gpt-5-mini"),
-        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
-    ),
+    model=get_model(),
     db=get_postgres_db(),
-    add_history_to_messages=True,
-    num_history_responses=5,
+    instructions=["{description}"],
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    enable_agentic_memory=True,
+    enable_session_summaries=True,
+    add_datetime_to_context=True,
+    num_history_runs=5,
     markdown=True,
-    instructions="{description}",
 )
 ```
 
 Key conventions:
-- Import `getenv` from `os`, not `os.getenv`
-- Use `LiteLLMOpenAI` (never direct OpenAI or Anthropic classes)
+- Use `get_model()` from `backend/models.py` (never inline `LiteLLMOpenAI`)
 - Always pass `db=get_postgres_db()` for persistent state
-- Use env vars for MODEL_ID and LITELLM_BASE_URL (never hardcode)
+- Always include guardrails (`pre_hooks`) — this is mandatory for all agents
+- Enable agentic memory and session summaries by default
 
 ### 3. Register in main.py
 
@@ -74,10 +74,24 @@ If the agent uses tools that require new packages, add them:
 uv add <package>
 ```
 
-### 6. Confirm
+### 6. Create Docs Page
+
+Create `docs/agents/{id}.mdx` with frontmatter, code example, features, and example queries.
+Add the page to `docs/docs.json` navigation under the Agents group.
+
+### 7. Update Documentation
+
+Update these files to reflect the new agent:
+- `README.md` — Agents table
+- `PROJECT_INDEX.md` — Agents section and core modules
+- `.serena/memories/project-overview.md` — Agents list
+- `docs/agents/overview.mdx` — Agents table and card group
+
+### 8. Confirm
 
 Tell the user:
 - File created at `backend/agents/{name}.py`
 - Registered in `backend/main.py`
 - Config added to `backend/config.yaml`
+- Docs page created at `docs/agents/{id}.mdx`
 - Restart needed: `mise run docker:up` or `docker compose restart`

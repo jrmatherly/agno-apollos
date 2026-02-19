@@ -26,7 +26,7 @@ apollos-ai/
 │   │   └── research_team.py     # Coordinate-mode research team
 │   ├── workflows/           # Workflow definitions
 │   │   ├── __init__.py
-│   │   └── research_workflow.py # Web search → reasoning pipeline
+│   │   └── research_workflow.py # Quality-gated research pipeline (Loop + Condition)
 │   ├── tools/               # Custom tool factory
 │   │   ├── __init__.py
 │   │   ├── search.py            # Content search tool
@@ -34,7 +34,7 @@ apollos-ai/
 │   │   └── approved_ops.py      # Approval-gated tools (@tool + @approval)
 │   ├── context/             # Context modules for agents
 │   │   ├── __init__.py
-│   │   ├── semantic_model.py    # Database schema context for data agent
+│   │   ├── semantic_model.py    # 6-table semantic model (Dash pattern) for data agent
 │   │   └── intent_routing.py    # Intent routing guide for knowledge agent
 │   ├── knowledge/           # Document loaders
 │   │   ├── __init__.py
@@ -51,18 +51,30 @@ apollos-ai/
 ├── frontend/                # Next.js frontend (Apollos UI)
 │   ├── Dockerfile           # Multi-stage standalone build (node:24-alpine)
 │   ├── .dockerignore        # Excludes node_modules, .next, secrets
-│   ├── package.json         # apollos-ui — deps, scripts, engines
+│   ├── package.json         # apollos-ui v1.0.7 — deps, scripts, engines
 │   ├── pnpm-lock.yaml       # pnpm lockfile (committed to git)
 │   ├── next.config.ts       # output: 'standalone', devIndicators: false
+│   ├── components.json      # shadcn/ui component registry config
 │   ├── tsconfig.json        # TypeScript config
 │   ├── tailwind.config.ts   # Tailwind CSS config
 │   ├── postcss.config.mjs   # PostCSS config
 │   ├── src/                 # App source code
-│   │   ├── app/             # Next.js App Router pages
-│   │   ├── components/      # React components (shadcn/ui based)
+│   │   ├── app/             # Next.js App Router pages (layout.tsx, page.tsx)
+│   │   ├── components/      # React components
+│   │   │   ├── chat/        # Chat UI (ChatArea, Sidebar, Messages, Multimedia)
+│   │   │   └── ui/          # shadcn/ui primitives (button, dialog, select, etc.)
 │   │   ├── api/             # API client (browser-side fetch to backend)
-│   │   ├── store.ts         # Zustand state (endpoint, auth token)
-│   │   └── lib/             # Utilities
+│   │   │   ├── os.ts        # AgentOS API functions (agents, teams, sessions, runs)
+│   │   │   └── routes.ts    # Route constants
+│   │   ├── hooks/           # React hooks
+│   │   │   ├── useAIResponseStream.tsx  # SSE stream handler
+│   │   │   ├── useAIStreamHandler.tsx   # Stream event processing
+│   │   │   ├── useChatActions.ts        # Chat actions (send, clear, endpoint)
+│   │   │   └── useSessionLoader.tsx     # Session history loader
+│   │   ├── types/           # TypeScript type definitions
+│   │   │   └── os.ts        # AgentOS types (RunEvent, ChatMessage, Agent, Team)
+│   │   ├── store.ts         # Zustand state (endpoint, auth token, agents, teams)
+│   │   └── lib/             # Utilities (audio, endpoint URL, model provider)
 │   ├── public/              # Static assets
 │   ├── README.md            # Frontend-specific docs
 │   └── CONTRIBUTING.md      # Frontend contribution guide
@@ -104,6 +116,9 @@ apollos-ai/
 │       └── docker           # Start docs in Docker (--prod for GHCR image)
 ├── scripts/                 # Container-only scripts
 │   └── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
+├── .vscode/                 # VS Code settings
+│   ├── settings.json        # Format-on-save, ruff for Python, prettier for TS
+│   └── extensions.json      # Recommended extensions for contributors
 ├── .github/workflows/
 │   ├── codeql.yml           # Security: CodeQL scanning (Python, JS/TS, Actions) on push/PR + weekly
 │   ├── validate.yml         # CI: parallel backend + frontend validation on push/PR
@@ -125,12 +140,14 @@ apollos-ai/
 │   ├── quickstart.mdx       # Getting started guide
 │   ├── development.mdx      # Development workflow
 │   ├── contributing.mdx     # Contributing guide
-│   ├── agents/              # Agent documentation
-│   ├── configuration/       # Environment and Docker config
-│   ├── reference/           # Architecture and task reference
+│   ├── agents/              # Agent documentation (overview + per-agent pages + creating guide)
+│   ├── teams/               # Team documentation (overview)
+│   ├── workflows/           # Workflow documentation (overview)
+│   ├── configuration/       # Environment, security, telemetry, Docker config
+│   ├── reference/           # Architecture and mise-tasks reference
 │   ├── logo/                # Apollos AI logo assets
 │   ├── images/              # Documentation images
-│   └── CLAUDE.md            # Docs style guide (excluded from build)
+│   └── CLAUDE.md            # Docs style guide (excluded from build via .mintignore)
 ├── data/                    # Data storage
 │   └── docs/                # Document files for knowledge agent (PDF, CSV)
 │       └── .gitkeep
@@ -220,15 +237,21 @@ Uses **pnpm** for package management:
 - **Features**: Agentic memory, guardrails, session summaries, learning system, semantic model context
 - **Tools**: PostgresTools (show_tables, describe_table, summarize_table, inspect_query only)
 
+### backend/context/semantic_model.py
+- **Exports**: `SEMANTIC_MODEL` (dict), `SEMANTIC_MODEL_STR` (formatted markdown)
+- **Purpose**: 6-table database schema context injected into data agent instructions (Dash pattern)
+- **Tables**: `agno_agent_sessions`, `agno_agent_runs`, `agno_memories`, `agno_team_sessions`, `agno_workflow_sessions`, `agno_approvals`
+
 ### backend/teams/research_team.py
 - **Exports**: `research_team` (Team instance)
 - **Purpose**: Multi-agent research team (coordinate mode) with web_researcher + analyst members
-- **Features**: Shared history, agentic memory, ReasoningTools
+- **Features**: Shared history, agentic memory, ReasoningTools, safety parameters (max_iterations=5, num_history_runs=5, add_datetime_to_context)
 
 ### backend/workflows/research_workflow.py
 - **Exports**: `research_workflow` (Workflow instance)
-- **Purpose**: Two-step pipeline: web search → reasoning analysis
-- **Steps**: Web Research (web_search_agent) → Analysis & Synthesis (reasoning_agent)
+- **Purpose**: Quality-gated research pipeline with iterative refinement and conditional analysis
+- **Steps**: Initial Research (web_search_agent) → Quality Refinement Loop (quality_reviewer + gap filling, max 3 iterations) → Complexity-based Condition (deep analysis vs basic synthesis via reasoning_agent)
+- **Primitives**: Uses Agno `Loop` (with `end_condition` callback) and `Condition` (with `evaluator` function)
 
 ### backend/main.py
 - **Exports**: `agent_os` (AgentOS), `app` (FastAPI app)
@@ -262,7 +285,7 @@ Uses **pnpm** for package management:
 | File | Purpose |
 |------|---------|
 | `mise.toml` | Mise config: tools (Python 3.12, uv, Node 24, pnpm), env vars, settings |
-| `mise-tasks/` | File-based mise tasks (22 dev workflow commands) |
+| `mise-tasks/` | File-based mise tasks (25 dev workflow commands) |
 | `pyproject.toml` | Backend metadata, dependencies, [dependency-groups], ruff/mypy config |
 | `uv.lock` | Backend lockfile (auto-managed, committed to git) |
 | `frontend/package.json` | Frontend metadata, dependencies, scripts |
@@ -383,7 +406,7 @@ open http://localhost:8000/docs
 - **Storage**: pgvector (PostgreSQL 18 with vector extension) for agent state, RAG embeddings, learnings, and user profiles.
 - **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`. All agents use `get_model()` from `backend/models.py`, guardrails (PII + prompt injection), agentic memory, and session summaries.
 - **Teams**: Multi-agent teams in `backend/teams/`, using Agno's `Team` class with coordinate mode.
-- **Workflows**: Multi-step pipelines in `backend/workflows/`, using Agno's `Workflow` + `Step` classes.
+- **Workflows**: Multi-step pipelines in `backend/workflows/`, using Agno's `Workflow`, `Step`, `Loop`, and `Condition` classes for iterative refinement and conditional routing.
 - **Security**: JWT RBAC auth (opt-in via `JWT_SECRET_KEY`), human-in-the-loop approval workflows (`@approval` decorator on tools).
 - **Observability**: OpenTelemetry trace export (opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`), Agno native tracing, MCP server endpoint.
 - **Learning**: Agents use `LearningMachine` for agentic learning. Knowledge agent has user profiles and memory.

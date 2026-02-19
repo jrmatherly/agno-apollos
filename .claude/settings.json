@@ -16,6 +16,11 @@
             "type": "command",
             "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == *.ts || \"$file\" == *.tsx || \"$file\" == *.js || \"$file\" == *.jsx || \"$file\" == *.css ]]; then cd \"$CLAUDE_PROJECT_DIR/frontend\" && npx prettier --write \"$file\" 2>/dev/null; fi",
             "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == *.py ]]; then if grep -qE '(member_timeout|max_interactions_to_share|timeout_seconds|show_tool_calls)' \"$file\" 2>/dev/null; then echo 'WARNING: File contains known invalid Agno params (member_timeout, max_interactions_to_share, timeout_seconds, show_tool_calls). Verify with: python3 -c \"import inspect; from agno.X import Y; print(inspect.signature(Y.__init__))\"' >&2; fi; fi",
+            "timeout": 5000
           }
         ]
       }
@@ -43,6 +48,11 @@
             "type": "command",
             "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '\\bgit commit\\b'; then cd \"$CLAUDE_PROJECT_DIR\" && mise run validate 2>&1 | tail -20; exit_code=$?; if [ $exit_code -ne 0 ]; then echo 'BLOCK: Validation failed. Fix issues before committing.' >&2; exit 2; fi; fi",
             "timeout": 120000
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '\\bgit commit\\b'; then changed=$(cd \"$CLAUDE_PROJECT_DIR\" && git diff --cached --name-only 2>/dev/null); if echo \"$changed\" | grep -qE 'backend/(agents|teams|workflows)/'; then if ! echo \"$changed\" | grep -qE '(docs/|README.md|PROJECT_INDEX.md)'; then echo 'WARNING: Backend agent/team/workflow files staged but no docs updated. Consider updating: README.md, PROJECT_INDEX.md, docs/, .serena/memories/project-overview.md' >&2; fi; fi; fi",
+            "timeout": 5000
           }
         ]
       }
