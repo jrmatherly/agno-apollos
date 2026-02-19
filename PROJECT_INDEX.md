@@ -1,6 +1,6 @@
 # Project Index: Apollos AI
 
-Generated: 2026-02-18
+Generated: 2026-02-19
 
 ## Project Structure
 
@@ -12,10 +12,38 @@ apollos-ai/
 │   ├── config.yaml          # UI quick-prompt config for each agent
 │   ├── Dockerfile           # agnohq/python:3.12, two-layer caching, uv sync --locked
 │   ├── Dockerfile.dockerignore  # Build context exclusions (BuildKit convention)
+│   ├── models.py              # Shared model factory (get_model())
+│   ├── telemetry.py           # OpenTelemetry trace export (opt-in via env var)
 │   ├── agents/              # AI agent implementations
 │   │   ├── __init__.py
-│   │   ├── knowledge_agent.py   # Agentic RAG agent (hybrid search over pgvector)
-│   │   └── mcp_agent.py         # MCP tool-use agent (external services via MCP)
+│   │   ├── knowledge_agent.py   # Agentic RAG agent (hybrid search, learning, user profiles)
+│   │   ├── mcp_agent.py         # MCP tool-use agent (external services via MCP)
+│   │   ├── web_search_agent.py  # Web research agent (DuckDuckGo)
+│   │   ├── reasoning_agent.py   # Chain-of-thought reasoning agent
+│   │   └── data_agent.py        # Data analyst agent (read-only PostgreSQL)
+│   ├── teams/               # Multi-agent team definitions
+│   │   ├── __init__.py
+│   │   └── research_team.py     # Coordinate-mode research team
+│   ├── workflows/           # Workflow definitions
+│   │   ├── __init__.py
+│   │   └── research_workflow.py # Web search → reasoning pipeline
+│   ├── tools/               # Custom tool factory
+│   │   ├── __init__.py
+│   │   ├── search.py            # Content search tool
+│   │   ├── awareness.py         # Knowledge source listing tool
+│   │   └── approved_ops.py      # Approval-gated tools (@tool + @approval)
+│   ├── context/             # Context modules for agents
+│   │   ├── __init__.py
+│   │   ├── semantic_model.py    # Database schema context for data agent
+│   │   └── intent_routing.py    # Intent routing guide for knowledge agent
+│   ├── knowledge/           # Document loaders
+│   │   ├── __init__.py
+│   │   └── loaders.py           # PDF/CSV loaders from data/docs/
+│   ├── evals/               # LLM-based evaluation harness
+│   │   ├── __init__.py
+│   │   ├── grader.py            # LLM response grader
+│   │   ├── test_cases.py        # Evaluation test cases
+│   │   └── run_evals.py         # Eval runner
 │   └── db/                  # Database layer
 │       ├── __init__.py      # Re-exports: get_postgres_db, create_knowledge, db_url
 │       ├── session.py       # PostgresDb factory + Knowledge factory (pgvector hybrid)
@@ -50,6 +78,13 @@ apollos-ai/
 │   ├── ci                   # Full CI pipeline (install + validate)
 │   ├── clean                # Clean build artifacts
 │   ├── release              # Create GitHub release (tag + publish, triggers Docker builds)
+│   ├── test                 # Run integration tests (pytest)
+│   ├── auth/                # Auth tasks
+│   │   └── generate-token   # Generate dev JWT tokens for RBAC testing
+│   ├── evals/               # Evaluation tasks
+│   │   └── run              # Run LLM-based evaluation suite
+│   ├── schedules/           # Scheduler tasks
+│   │   └── setup            # Initialize scheduler tables
 │   ├── docker/              # Docker-specific tasks
 │   │   ├── up               # Start full stack (--prod for GHCR images)
 │   │   ├── down             # Stop all services (--prod for production)
@@ -96,7 +131,16 @@ apollos-ai/
 │   ├── logo/                # Apollos AI logo assets
 │   ├── images/              # Documentation images
 │   └── CLAUDE.md            # Docs style guide (excluded from build)
-├── example.env              # Template for .env (LiteLLM, model, DB, runtime, frontend config)
+├── data/                    # Data storage
+│   └── docs/                # Document files for knowledge agent (PDF, CSV)
+│       └── .gitkeep
+├── tests/                   # Integration tests
+│   ├── conftest.py          # Test fixtures (backend health wait)
+│   ├── test_health.py       # Health and agent list tests
+│   ├── test_agents.py       # Agent run request tests
+│   ├── test_teams.py        # Team list and run tests
+│   └── test_schedules.py    # Scheduler endpoint tests
+├── example.env              # Template for .env (LiteLLM, model, DB, auth, telemetry, frontend config)
 └── README.md                # Setup guide, agent docs, common tasks
 ```
 
@@ -143,24 +187,54 @@ Uses **pnpm** for package management:
 
 ## Core Modules
 
+### backend/models.py
+- **Exports**: `get_model()` factory function
+- **Purpose**: Shared model factory — all agents use this instead of inline `LiteLLMOpenAI`
+- **Config**: `MODEL_ID`, `LITELLM_BASE_URL`, `LITELLM_API_KEY` env vars
+
 ### backend/agents/knowledge_agent.py
-- **Exports**: `knowledge_agent` (Agent instance)
+- **Exports**: `knowledge_agent` (Agent instance), `load_default_documents()` function
 - **Purpose**: RAG agent using pgvector hybrid search over ingested documents
-- **Model**: `LiteLLMOpenAI` via LiteLLM Proxy (configurable via `MODEL_ID` env var)
-- **Features**: Agentic memory, history context, knowledge search, markdown output
-- **Knowledge source**: Loads from `docs.agno.com` (introduction + first-agent)
+- **Features**: Agentic memory, intent routing, confidence signaling, learning system (LearningMachine), user profiles (UserProfileConfig, UserMemoryConfig), guardrails, session summaries, custom tools (search_content, list_knowledge_sources, add_knowledge_source)
+- **Knowledge source**: Loads from `docs.agno.com` + PDF/CSV files from `data/docs/`
 
 ### backend/agents/mcp_agent.py
 - **Exports**: `mcp_agent` (Agent instance)
 - **Purpose**: Tool-use agent connecting to external services via MCP protocol
-- **Model**: `LiteLLMOpenAI` via LiteLLM Proxy (configurable via `MODEL_ID` env var)
 - **MCP endpoint**: `https://docs.agno.com/mcp`
-- **Features**: Agentic memory, history context, markdown output
+- **Features**: Agentic memory, guardrails, session summaries
+
+### backend/agents/web_search_agent.py
+- **Exports**: `web_search_agent` (Agent instance)
+- **Purpose**: Web research agent using DuckDuckGo search + news
+- **Features**: Agentic memory, guardrails, session summaries, source citations
+
+### backend/agents/reasoning_agent.py
+- **Exports**: `reasoning_agent` (Agent instance)
+- **Purpose**: Chain-of-thought reasoning with configurable step depth (2-6 steps)
+- **Features**: Agentic memory, guardrails, session summaries, `reasoning=True`
+
+### backend/agents/data_agent.py
+- **Exports**: `data_agent` (Agent instance)
+- **Purpose**: Data analyst with read-only PostgreSQL access (Dash pattern)
+- **Features**: Agentic memory, guardrails, session summaries, learning system, semantic model context
+- **Tools**: PostgresTools (show_tables, describe_table, summarize_table, inspect_query only)
+
+### backend/teams/research_team.py
+- **Exports**: `research_team` (Team instance)
+- **Purpose**: Multi-agent research team (coordinate mode) with web_researcher + analyst members
+- **Features**: Shared history, agentic memory, ReasoningTools
+
+### backend/workflows/research_workflow.py
+- **Exports**: `research_workflow` (Workflow instance)
+- **Purpose**: Two-step pipeline: web search → reasoning analysis
+- **Steps**: Web Research (web_search_agent) → Analysis & Synthesis (reasoning_agent)
 
 ### backend/main.py
 - **Exports**: `agent_os` (AgentOS), `app` (FastAPI app)
-- **Purpose**: Creates and configures Apollos AI with both agents, tracing, scheduler
+- **Purpose**: Creates and configures Apollos AI with all agents, teams, workflows, tracing, scheduler
 - **Config**: Reads `backend/config.yaml` for UI quick-prompts
+- **Features**: JWT RBAC auth (opt-in), MCP server endpoint, telemetry export
 - **Dev mode**: Auto-reload when `RUNTIME_ENV=dev`
 
 ### backend/db/session.py
@@ -225,10 +299,14 @@ Uses **pnpm** for package management:
 | `sqlalchemy` | ORM / database toolkit |
 | `mcp` | Model Context Protocol client |
 | `opentelemetry-api/sdk` | Distributed tracing |
+| `opentelemetry-exporter-otlp-proto-http` | OTLP HTTP trace exporter |
 | `openinference-instrumentation-agno` | Agno-specific OTel instrumentation |
 | `litellm[proxy]` | Multi-provider LLM proxy / routing |
+| `duckduckgo-search` | Web search backend for web_search_agent |
+| `pypdf` | PDF document reader for knowledge loaders |
+| `aiofiles` | Async file I/O for document loading |
 
-**Dev deps** (`[dependency-groups]`): `mypy`, `ruff`
+**Dev deps** (`[dependency-groups]`): `mypy`, `ruff`, `pytest`, `requests`
 
 ### Frontend
 
@@ -265,6 +343,8 @@ Uses **pnpm** for package management:
 | `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by docker-compose.prod.yaml) |
 | `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | — | Pre-fill auth token in the frontend UI |
+| `JWT_SECRET_KEY` | No | — | Enable JWT RBAC auth (empty = auth disabled) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OTel trace export endpoint (empty = traces not exported) |
 | `WAIT_FOR_DB` | No | — | Container waits for DB readiness |
 | `PRINT_ENV_ON_LOAD` | No | — | Print env vars on container start |
 
@@ -292,15 +372,20 @@ open http://localhost:8000/docs
 
 ## Test Coverage
 
-- **Unit tests**: 0 files (no test directory present)
-- **Integration tests**: 0 files
-- **CI validation**: Format, lint, type-check only (no test runner in CI)
+- **Integration tests**: `tests/` — 5 files (health, agents, teams, schedules). Run via `mise run test` (requires running backend).
+- **Eval harness**: `backend/evals/` — LLM-based grading of agent responses. Run via `mise run evals:run`.
+- **CI validation**: Format, lint, type-check (backend + frontend). No test runner in CI yet (tests require live backend).
 
 ## Architecture Notes
 
-- **Framework**: Apollos AI (built on Agno AgentOS). Orchestrates multiple agents behind a single FastAPI app.
-- **Storage**: pgvector (PostgreSQL 18 with vector extension) for both agent state and RAG embeddings.
-- **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`.
+- **Framework**: Apollos AI (built on Agno AgentOS). Orchestrates agents, teams, and workflows behind a single FastAPI app.
+- **Storage**: pgvector (PostgreSQL 18 with vector extension) for agent state, RAG embeddings, learnings, and user profiles.
+- **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`. All agents use `get_model()` from `backend/models.py`, guardrails (PII + prompt injection), agentic memory, and session summaries.
+- **Teams**: Multi-agent teams in `backend/teams/`, using Agno's `Team` class with coordinate mode.
+- **Workflows**: Multi-step pipelines in `backend/workflows/`, using Agno's `Workflow` + `Step` classes.
+- **Security**: JWT RBAC auth (opt-in via `JWT_SECRET_KEY`), human-in-the-loop approval workflows (`@approval` decorator on tools).
+- **Observability**: OpenTelemetry trace export (opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`), Agno native tracing, MCP server endpoint.
+- **Learning**: Agents use `LearningMachine` for agentic learning. Knowledge agent has user profiles and memory.
 - **LLM Provider**: LiteLLM Proxy (all LLM and embedding traffic routes through self-hosted proxy).
 - **Frontend**: Next.js 15 with standalone output. Connects to backend via browser-side fetch (not server-side). Default endpoint configurable via `NEXT_PUBLIC_DEFAULT_ENDPOINT` env var (defaults to `http://localhost:8000`).
 - **Deployment**: Two compose files: `docker-compose.yaml` (dev, local builds) and `docker-compose.prod.yaml` (prod, GHCR images). Multi-arch images for production.

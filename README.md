@@ -4,10 +4,27 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 
 ## What's Included
 
+### Agents
+
 | Agent | Pattern | Description |
 |-------|---------|-------------|
-| Knowledge Agent | Agentic RAG | Answers questions from a knowledge base. |
+| Knowledge Agent | Agentic RAG | Answers questions from a knowledge base with learning and user profiles. |
 | MCP Agent | MCP Tool Use | Connects to external services via MCP. |
+| Web Search Agent | Web Research | Searches the web using DuckDuckGo with source citations. |
+| Reasoning Agent | Chain-of-Thought | Step-by-step reasoning with configurable depth. |
+| Data Analyst | SQL Analysis | Read-only PostgreSQL queries following the Dash pattern. |
+
+### Teams
+
+| Team | Mode | Description |
+|------|------|-------------|
+| Research Team | Coordinate | Multi-agent research combining web search and analysis. |
+
+### Workflows
+
+| Workflow | Steps | Description |
+|----------|-------|-------------|
+| Research Workflow | Web Search → Analysis | Automated research pipeline with structured reports. |
 
 ## Prerequisites
 
@@ -49,7 +66,7 @@ To use the cloud-hosted UI instead, go to [os.agno.com](https://os.agno.com) and
 
 ### Knowledge Agent
 
-Answers questions using hybrid search over a vector database (Agentic RAG).
+Answers questions using hybrid search over a vector database (Agentic RAG). Features intent routing, confidence signaling, learning system, and user profiles.
 
 **Load documents:**
 
@@ -77,6 +94,36 @@ Search the docs for how to use LearningMachine
 Find examples of agents with memory
 ```
 
+### Web Search Agent
+
+Searches the web for current information with source citations.
+
+**Try it:**
+
+```
+What are the latest developments in AI?
+```
+
+### Reasoning Agent
+
+Step-by-step reasoning with configurable depth (2-6 steps).
+
+**Try it:**
+
+```
+Walk me through the pros and cons of microservices vs monoliths.
+```
+
+### Data Analyst Agent
+
+Queries PostgreSQL with read-only tools and learns from successful queries.
+
+**Try it:**
+
+```
+What tables are available in the database?
+```
+
 ## Common Tasks
 
 ### Add your own agent
@@ -84,37 +131,38 @@ Find examples of agents with memory
 1. Create `backend/agents/my_agent.py`:
 
 ```python
-from os import getenv
-
 from agno.agent import Agent
-from agno.models.litellm import LiteLLMOpenAI
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+
 from backend.db import get_postgres_db
+from backend.models import get_model
 
 my_agent = Agent(
     id="my-agent",
     name="My Agent",
-    model=LiteLLMOpenAI(
-        id=getenv("MODEL_ID", "gpt-5-mini"),
-        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
-    ),
+    model=get_model(),
     db=get_postgres_db(),
     instructions="You are a helpful assistant.",
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    enable_agentic_memory=True,
+    markdown=True,
+    enable_session_summaries=True,
 )
 ```
 
-1. Register in `backend/main.py`:
+2. Register in `backend/main.py`:
 
 ```python
 from backend.agents.my_agent import my_agent
 
 agent_os = AgentOS(
     name="Apollos AI",
-    agents=[knowledge_agent, mcp_agent, my_agent],
+    agents=[..., my_agent],
     ...
 )
 ```
 
-1. Restart: `docker compose restart`
+3. Restart: `docker compose restart`
 
 ### Add tools to an agent
 
@@ -188,6 +236,10 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run docs:dev` | Preview docs site locally (port 3333) |
 | `mise run docs:validate` | Validate docs build and check broken links |
 | `mise run docs:docker` | Start docs in Docker (`--prod` for GHCR image) |
+| `mise run test` | Run integration tests (requires running backend) |
+| `mise run evals:run` | Run LLM-based evaluation suite |
+| `mise run auth:generate-token` | Generate dev JWT tokens for RBAC testing |
+| `mise run schedules:setup` | Initialize scheduler tables |
 
 ### Local Development (without Docker)
 
@@ -231,6 +283,8 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
 | `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by `docker-compose.prod.yaml`) |
 | `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
+| `JWT_SECRET_KEY` | No | - | Enable JWT RBAC auth (empty = disabled) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | - | OTel trace export endpoint (empty = disabled) |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | - | Pre-fill auth token in the frontend UI |
 
 ## Learn More

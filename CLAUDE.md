@@ -10,6 +10,19 @@ Documentation lives at `docs/` — Mintlify site (MDX pages, `docs.json` config)
 Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`, `docs/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
 Frontend Dockerfile uses multi-stage build with `output: 'standalone'` in next.config.ts.
 
+Backend packages:
+- `backend/models.py` — Shared model factory (`get_model()`). All agents use this instead of inline `LiteLLMOpenAI`.
+- `backend/agents/` — Agent definitions (knowledge, mcp, web_search, reasoning, data)
+- `backend/teams/` — Multi-agent team definitions (research_team)
+- `backend/workflows/` — Workflow definitions (research_workflow)
+- `backend/tools/` — Custom tools (search, awareness, approved_ops)
+- `backend/context/` — Context modules (semantic_model, intent_routing)
+- `backend/knowledge/` — Document loaders (PDF/CSV from `data/docs/`)
+- `backend/evals/` — LLM-based eval harness (grader, test cases, runner)
+- `backend/telemetry.py` — OpenTelemetry trace export (opt-in)
+- `tests/` — Integration tests (pytest + requests)
+- `data/docs/` — Document storage for knowledge agent loaders
+
 ## Commands (mise)
 
 Task runner: `mise run <task>` (or `mise <task>` if no conflict).
@@ -43,6 +56,14 @@ Docs tasks:
 - `mise run docs:validate` - validate docs build and check for broken links
 - `mise run docs:docker` - start docs in Docker (add `--prod` for GHCR image)
 
+Testing and evaluation tasks:
+- `mise run test` - run integration tests (pytest, requires running backend)
+- `mise run evals:run` - run LLM-based evaluation suite
+
+Auth and scheduling tasks:
+- `mise run auth:generate-token` - generate dev JWT tokens for RBAC testing
+- `mise run schedules:setup` - initialize scheduler tables
+
 ## Mise Tasks
 
 - Tasks are file-based scripts in `mise-tasks/` (not inline in `mise.toml`)
@@ -62,10 +83,15 @@ Docs tasks:
 
 ## Conventions
 
-- Model provider: `LiteLLMOpenAI` from `agno.models.litellm` (proxy class, uses `base_url`)
+- Model provider: `LiteLLMOpenAI` from `agno.models.litellm` (proxy class, uses `base_url`). Use `backend/models.py:get_model()` — never inline model creation.
 - All model/embedding config via env vars (MODEL_ID, EMBEDDING_MODEL_ID, LITELLM_BASE_URL, etc.)
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
-- New agents go in `backend/agents/`, register in `backend/main.py`
+- New agents go in `backend/agents/`, new teams in `backend/teams/`, new workflows in `backend/workflows/`. Register all in `backend/main.py`.
+- All agents must have guardrails: `pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()]`
+- Agents with learning use `LearningMachine(learned_knowledge=LearnedKnowledgeConfig(mode=LearningMode.AGENTIC, knowledge=...))` from `agno.learn`
+- JWT auth is opt-in: empty `JWT_SECRET_KEY` env var = auth disabled. Set a value to enable RBAC.
+- Telemetry is opt-in: empty `OTEL_EXPORTER_OTLP_ENDPOINT` env var = traces not exported.
+- When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
 - Keep `agnohq/python:3.12` and `agnohq/pgvector:18` base images. Frontend and docs use `node:24-alpine`.
 - ruff line-length: 120
 - Env var defaults live in `mise.toml` [[env]] section and `backend/db/session.py`
@@ -77,7 +103,6 @@ Docs tasks:
 - Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
 - Two compose files: `docker-compose.yaml` (dev, builds locally) and `docker-compose.prod.yaml` (prod, pulls GHCR images)
 - Docker compose env vars use `${VAR:-default}` substitution — never hardcode values. Defaults must match `mise.toml` and `example.env`.
-- When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
 - Docker compose has 3 core services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000), plus optional `apollos-docs` (:3333, behind `docs` profile)
 - CI workflows run backend and frontend validation as parallel jobs using mise tasks
 - CI workflows use pinned action SHAs (not tags) for supply-chain security
@@ -89,6 +114,22 @@ Docs tasks:
 - When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, docs/ (Mintlify site)
 - example.env must stay in sync when env vars are added/changed across the project
 - `.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based
+
+## Agno Framework API Notes
+
+Always verify Agno API signatures with `python3 -c "import inspect; from agno.X import Y; print(inspect.signature(Y))"` before using. Docs and examples frequently have wrong signatures.
+
+Known gotchas:
+- `@tool` must be outer decorator, `@approval` inner (otherwise mypy error on Function type)
+- Team: use `id=` (not `team_id=`), `mode=TeamMode.coordinate` (not string). Import `from agno.team.team import TeamMode`.
+- `member_timeout` and `max_interactions_to_share` do not exist on Team in current version
+- Workflow Step: takes `agent=` or `executor=` (no `instructions` or `timeout_seconds` params)
+- Condition: takes `evaluator` + `steps` + `else_steps` (not `on_true`/`on_false`)
+- Knowledge readers: `agno.knowledge.reader.pdf_reader.PDFReader` (not `agno.document.reader`)
+- `include_tools`/`exclude_tools`: On base `Toolkit` class, passed via `**kwargs` to PostgresTools etc.
+- Model API for direct calls: `model.response(messages=[Message(role="user", content=...)])` (not `model.invoke(str)`)
+- `enable_session_summaries` is on Agent (not AgentOS); `enable_mcp_server` is on AgentOS
+- `show_tool_calls` is NOT a valid Agent parameter
 
 ## Agno Docs Style
 

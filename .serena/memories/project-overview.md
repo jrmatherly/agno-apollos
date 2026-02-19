@@ -12,27 +12,41 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - **Model**: LiteLLM Proxy via `agno.models.litellm.LiteLLMOpenAI`
 
 ## Key Files
-- `backend/main.py` - Apollos AI entry point, registers agents
+- `backend/main.py` - Entry point: registers agents, teams, workflows, auth, telemetry, MCP server
+- `backend/models.py` - Shared model factory (`get_model()`)
 - `backend/config.yaml` - Chat quick prompts config
-- `backend/agents/knowledge_agent.py` - Agentic RAG agent with knowledge base
-- `backend/agents/mcp_agent.py` - MCP tool-use agent
+- `backend/telemetry.py` - OpenTelemetry trace export (opt-in)
+- `backend/agents/` - Agent definitions (knowledge, mcp, web_search, reasoning, data)
+- `backend/teams/research_team.py` - Multi-agent research team (coordinate mode)
+- `backend/workflows/research_workflow.py` - Research pipeline (web search → reasoning)
+- `backend/tools/` - Custom tools (search, awareness, approved_ops with @approval)
+- `backend/context/` - Context modules (semantic_model, intent_routing)
+- `backend/knowledge/loaders.py` - PDF/CSV document loaders from `data/docs/`
+- `backend/evals/` - LLM-based eval harness (grader, test cases, runner)
 - `backend/db/session.py` - PostgresDb and Knowledge factory functions
 - `backend/db/url.py` - Database URL builder from env vars
+- `tests/` - Integration tests (health, agents, teams, schedules)
 - `frontend/src/store.ts` - Zustand state (endpoint default: localhost:8000)
 - `frontend/src/api/` - Browser-side API client (fetch, Bearer token auth)
-- `frontend/Dockerfile` - Multi-stage standalone build (node:24-alpine)
-- `docs/Dockerfile` - Docs container (node:24-alpine, Mintlify CLI `mint dev` on port 3333)
 - `docker-compose.yaml` - Dev compose (3 core services + optional docs behind `docs` profile)
 - `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
-- `backend/Dockerfile` - Backend, based on agnohq/python:3.12, uses uv
-- `backend/Dockerfile.dockerignore` - Backend build context exclusions (BuildKit convention)
 
 ## Agents
-1. **Knowledge Agent** (`knowledge-agent`): RAG with pgvector hybrid search, loads docs from agno.com
+1. **Knowledge Agent** (`knowledge-agent`): RAG with pgvector hybrid search, learning system, user profiles, intent routing, custom tools
 2. **MCP Agent** (`mcp-agent`): Connects to external tools via MCP protocol
+3. **Web Search Agent** (`web-search-agent`): Web research via DuckDuckGo with source citations
+4. **Reasoning Agent** (`reasoning-agent`): Chain-of-thought reasoning (2-6 steps)
+5. **Data Analyst** (`data-agent`): Read-only PostgreSQL queries (Dash pattern), learning from successful queries
+
+## Teams
+1. **Research Team** (`research-team`): Coordinate-mode multi-agent research (web_researcher + analyst)
+
+## Workflows
+1. **Research Workflow** (`research-workflow`): Web search → reasoning analysis pipeline
 
 ## Dependencies (pyproject.toml)
-agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, litellm[proxy]
+agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, litellm[proxy], duckduckgo-search, pypdf, aiofiles
+Dev: mypy, ruff, pytest, requests
 
 ## Frontend Dependencies (package.json)
 next, react, react-dom, tailwindcss, zustand, framer-motion, @radix-ui/*, react-markdown, nuqs
@@ -57,6 +71,10 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run load-docs` - load knowledge base
 - `mise run ci` / `clean`
 - `mise run release` - create GitHub release (interactive version prompt)
+- `mise run test` - integration tests (pytest, requires running backend)
+- `mise run evals:run` - LLM-based evaluation suite
+- `mise run auth:generate-token` - generate dev JWT tokens
+- `mise run schedules:setup` - initialize scheduler tables
 - `mise run frontend:setup` / `frontend:dev` / `frontend:build`
 - `mise run frontend:lint` / `frontend:format` / `frontend:typecheck` / `frontend:validate`
 - `mise run docs:dev` - preview docs site locally (port 3333)
@@ -77,6 +95,8 @@ Run `mise tasks` for full list. Key tasks:
 - `RUNTIME_ENV` (dev enables auto-reload)
 - `IMAGE_TAG` (Docker image tag, default: latest)
 - `GHCR_OWNER` (GHCR image owner for prod compose, default: jrmatherly)
+- `JWT_SECRET_KEY` (empty = auth disabled; set to enable JWT RBAC)
+- `OTEL_EXPORTER_OTLP_ENDPOINT` (empty = traces not exported; set for OTel)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
 
 ## Documentation
