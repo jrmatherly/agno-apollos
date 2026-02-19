@@ -1,0 +1,107 @@
+---
+title: "Quickstart"
+description: "Set up Apollos AI and run your first agent conversation."
+---
+
+## Prerequisites
+
+- [mise](https://mise.jdx.dev) (manages Python, uv, Node.js, pnpm, and all dev tasks)
+- [Docker](https://docs.docker.com/get-docker/)
+- A [LiteLLM Proxy](https://docs.litellm.ai/docs/) instance with an API key
+
+## Setup
+
+<Steps>
+  <Step title="Install mise">
+    ```bash
+    curl https://mise.run | sh
+    ```
+  </Step>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/jrmatherly/agno-apollos.git
+    cd agno-apollos
+    ```
+  </Step>
+  <Step title="Configure environment">
+    ```bash
+    cp example.env .env
+    ```
+
+    Open `.env` and set your LiteLLM API key and proxy URL:
+
+    ```bash
+    LITELLM_API_KEY=your-api-key-here
+    LITELLM_BASE_URL=http://your-litellm-proxy:4000/v1
+    ```
+  </Step>
+  <Step title="Install tools and dependencies">
+    ```bash
+    mise install
+    mise run setup
+    ```
+
+    This installs Python 3.12, uv, Node.js 24, pnpm, and all project dependencies.
+  </Step>
+  <Step title="Start the application">
+    ```bash
+    mise run docker:up
+    ```
+
+    Three services start:
+
+    | Service | URL | Description |
+    |---------|-----|-------------|
+    | `apollos-db` | `localhost:5432` | PostgreSQL + pgvector |
+    | `apollos-backend` | `localhost:8000` | FastAPI + AgentOS |
+    | `apollos-frontend` | `localhost:3000` | Next.js UI |
+  </Step>
+  <Step title="Load knowledge base documents">
+    ```bash
+    mise run load-docs
+    ```
+
+    This populates the vector database with documents for the Knowledge Agent.
+  </Step>
+</Steps>
+
+## Verify
+
+Open [http://localhost:8000/docs](http://localhost:8000/docs) to confirm the backend API is running.
+
+Open [http://localhost:3000](http://localhost:3000) to access the frontend UI. The default backend endpoint is `http://localhost:8000`, configurable in the sidebar.
+
+<Tip>
+You can also use the cloud-hosted Agno UI at [os.agno.com](https://os.agno.com) and point it at your local backend endpoint.
+</Tip>
+
+## Try the agents
+
+Select an agent in the sidebar and start a conversation.
+
+**Knowledge Agent:**
+
+```
+What is Agno?
+How do I create my first agent?
+What documents are in your knowledge base?
+```
+
+**MCP Agent:**
+
+```
+What tools do you have access to?
+Search the docs for how to use LearningMachine
+Find examples of agents with memory
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Create your own agent" icon="plus" href="/agents/creating-agents">
+    Add a custom agent with tools and instructions.
+  </Card>
+  <Card title="Environment variables" icon="key" href="/configuration/environment">
+    Configure models, database, and runtime settings.
+  </Card>
+</CardGroup>

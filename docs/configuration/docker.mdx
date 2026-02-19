@@ -1,0 +1,95 @@
+---
+title: "Docker"
+description: "Docker Compose configuration for development and production."
+---
+
+Apollos AI runs as three Docker services managed by Docker Compose.
+
+| Service | Port | Image |
+|---------|------|-------|
+| `apollos-db` | 5432 | `agnohq/pgvector:18` |
+| `apollos-backend` | 8000 | Built from `backend/Dockerfile` |
+| `apollos-frontend` | 3000 | Built from `frontend/Dockerfile` |
+
+## Two compose files
+
+| File | Use case | Command |
+|------|----------|---------|
+| `docker-compose.yaml` | Development (local builds, hot-reload, debug) | `mise run docker:up` |
+| `docker-compose.prod.yaml` | Production (GHCR images, no reload) | `mise run docker:up --prod` |
+
+## Development
+
+Start the full stack with local builds:
+
+```bash
+mise run docker:up
+```
+
+For hot-reload with automatic rebuilds:
+
+```bash
+mise run dev
+```
+
+This runs Docker Compose in watch mode. Backend code changes sync into the container. Changes to `pyproject.toml` or `uv.lock` trigger a full rebuild.
+
+<Note>
+The frontend container uses `action: rebuild` (not sync) because standalone Next.js cannot hot-reload synced files. For faster frontend iteration, use `mise run frontend:dev` instead of compose watch.
+</Note>
+
+## Production
+
+Pull pre-built images from GHCR:
+
+```bash
+mise run docker:up --prod
+```
+
+This uses `docker-compose.prod.yaml`, which pulls images from:
+
+- `ghcr.io/<GHCR_OWNER>/apollos-backend:<IMAGE_TAG>`
+- `ghcr.io/<GHCR_OWNER>/apollos-frontend:<IMAGE_TAG>`
+
+Set `GHCR_OWNER` and `IMAGE_TAG` in your `.env` file. Defaults: `jrmatherly` and `latest`.
+
+## Building images locally
+
+```bash
+# Build both backend and frontend (native architecture)
+mise run docker:build
+
+# Build for a specific platform
+mise run docker:build --platform amd64
+mise run docker:build --platform arm64
+```
+
+## Common operations
+
+| Task | Command |
+|------|---------|
+| Start full stack | `mise run docker:up` |
+| Start full stack (production) | `mise run docker:up --prod` |
+| Stop all services | `mise run docker:down` |
+| Tail logs | `mise run docker:logs` |
+| Start database only | `mise run db` |
+| Build images | `mise run docker:build` |
+| Restart after code changes | `docker compose restart` |
+
+## Dockerfiles
+
+**Backend** (`backend/Dockerfile`): Based on `agnohq/python:3.12`. Uses two-layer caching with `uv sync --locked`. Build context is the project root (needs `pyproject.toml`, `uv.lock`, `scripts/`). Exclusions in `backend/Dockerfile.dockerignore` (BuildKit naming convention).
+
+**Frontend** (`frontend/Dockerfile`): Multi-stage build on `node:24-alpine`. Outputs a standalone Next.js application. Build context is `frontend/`. Exclusions in `frontend/.dockerignore`.
+
+## CI/CD
+
+Docker images are built and pushed to GHCR automatically when a GitHub release is published. The `docker-images.yml` workflow builds both backend and frontend images in parallel.
+
+Create a release:
+
+```bash
+mise run release
+```
+
+This validates, bumps versions, tags, creates a GitHub release, and triggers the Docker image build workflow.

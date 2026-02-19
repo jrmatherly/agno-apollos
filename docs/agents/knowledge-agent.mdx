@@ -1,0 +1,80 @@
+---
+title: "Knowledge Agent"
+description: "Agentic RAG agent with hybrid search over a pgvector knowledge base."
+---
+
+The Knowledge Agent answers questions using hybrid search (vector + keyword) over documents stored in PostgreSQL with pgvector.
+
+```python
+from agno.agent import Agent
+from agno.models.litellm import LiteLLMOpenAI
+from agno.knowledge.url import UrlKnowledge
+from backend.db import get_postgres_db, create_knowledge
+
+knowledge_agent = Agent(
+    id="knowledge-agent",
+    name="Knowledge Agent",
+    model=LiteLLMOpenAI(
+        id=getenv("MODEL_ID", "gpt-5-mini"),
+        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
+    ),
+    knowledge=create_knowledge(
+        sources=[
+            UrlKnowledge(urls=["https://docs.agno.com/introduction"]),
+            UrlKnowledge(urls=["https://docs.agno.com/agents/first-agent"]),
+        ]
+    ),
+    db=get_postgres_db(),
+    search_knowledge=True,
+    add_history_to_messages=True,
+    markdown=True,
+)
+```
+
+## Key features
+
+| Feature | Configuration |
+|---------|--------------|
+| Hybrid search | `search_knowledge=True` on agent, `search_type=SearchType.hybrid` on Knowledge |
+| Session memory | `db=get_postgres_db()` persists conversations across sessions |
+| History context | `add_history_to_messages=True` includes previous messages |
+| Markdown output | `markdown=True` renders responses in markdown |
+
+## Loading documents
+
+The knowledge base must be populated before the agent can answer questions:
+
+```bash
+mise run load-docs
+```
+
+This runs `backend/agents/knowledge_agent.py` as a module, which loads the configured URL sources into pgvector.
+
+You can also load documents manually from inside the container:
+
+```bash
+docker exec -it apollos-backend python -m backend.agents.knowledge_agent
+```
+
+## Knowledge sources
+
+The default configuration loads from `docs.agno.com`. To add your own documents, modify the `sources` list in `knowledge_agent.py`:
+
+```python
+knowledge=create_knowledge(
+    sources=[
+        UrlKnowledge(urls=["https://your-docs-site.com/page1"]),
+        UrlKnowledge(urls=["https://your-docs-site.com/page2"]),
+    ]
+)
+```
+
+Agno supports 20+ knowledge source types beyond URLs. See the [Agno knowledge docs](https://docs.agno.com/knowledge/introduction) for file paths, S3, GCS, PDFs, and more.
+
+## Example queries
+
+```
+What is Agno?
+How do I create my first agent?
+What documents are in your knowledge base?
+```

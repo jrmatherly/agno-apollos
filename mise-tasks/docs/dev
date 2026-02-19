@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Preview docs site locally (port 3333)"
+set -e
+
+cd docs
+mint dev --port 3333

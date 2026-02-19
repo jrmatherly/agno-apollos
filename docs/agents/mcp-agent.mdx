@@ -1,0 +1,63 @@
+---
+title: "MCP Agent"
+description: "Tool-use agent connecting to external services via the Model Context Protocol."
+---
+
+The MCP Agent connects to external tools using the [Model Context Protocol](https://modelcontextprotocol.io/). It discovers and calls tools exposed by MCP servers.
+
+```python
+from agno.agent import Agent
+from agno.models.litellm import LiteLLMOpenAI
+from agno.tools.mcp import MCPTools
+from backend.db import get_postgres_db
+
+mcp_agent = Agent(
+    id="mcp-agent",
+    name="MCP Agent",
+    model=LiteLLMOpenAI(
+        id=getenv("MODEL_ID", "gpt-5-mini"),
+        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
+    ),
+    tools=[MCPTools(url="https://docs.agno.com/mcp")],
+    db=get_postgres_db(),
+    add_history_to_messages=True,
+    markdown=True,
+)
+```
+
+## Key features
+
+| Feature | Configuration |
+|---------|--------------|
+| MCP tool discovery | `MCPTools(url=...)` connects to any MCP server |
+| Session memory | `db=get_postgres_db()` persists conversations |
+| History context | `add_history_to_messages=True` includes previous messages |
+
+## MCP endpoint
+
+The default configuration connects to the Agno documentation MCP server at `https://docs.agno.com/mcp`. This exposes tools for searching and querying Agno documentation.
+
+To connect to a different MCP server, change the `url` parameter:
+
+```python
+tools=[MCPTools(url="https://your-mcp-server.com/mcp")]
+```
+
+You can connect to multiple MCP servers by adding more `MCPTools` instances:
+
+```python
+tools=[
+    MCPTools(url="https://docs.agno.com/mcp"),
+    MCPTools(url="https://your-other-server.com/mcp"),
+]
+```
+
+See the [Agno MCP docs](https://docs.agno.com/tools/mcp) for advanced MCP configuration, including SSE transport and dynamic headers.
+
+## Example queries
+
+```
+What tools do you have access to?
+Search the docs for how to use LearningMachine
+Find examples of agents with memory
+```

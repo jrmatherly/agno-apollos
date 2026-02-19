@@ -1,0 +1,87 @@
+---
+title: "Contributing"
+description: "How to contribute to Apollos AI."
+---
+
+## Prerequisites
+
+- [mise](https://mise.jdx.dev)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Git](https://git-scm.com/)
+
+## Setup
+
+```bash
+git clone https://github.com/jrmatherly/agno-apollos.git
+cd agno-apollos
+cp example.env .env
+mise install
+mise run setup
+```
+
+## Development workflow
+
+1. Create a feature branch from `main`
+2. Make changes
+3. Run validation:
+
+```bash
+# Backend
+mise run validate
+
+# Frontend
+mise run frontend:validate
+```
+
+4. Commit and push
+5. Open a pull request against `main`
+
+## Code quality standards
+
+All checks must pass before merging:
+
+| Check | Command | Tool |
+|-------|---------|------|
+| Format (backend) | `mise run format --check` | ruff |
+| Lint (backend) | `mise run lint` | ruff |
+| Type-check (backend) | `mise run typecheck` | mypy |
+| Lint (frontend) | `mise run frontend:lint` | ESLint |
+| Format (frontend) | `mise run frontend:format` | Prettier |
+| Type-check (frontend) | `mise run frontend:typecheck` | TypeScript |
+
+CI runs both backend and frontend validation as parallel jobs on every push and pull request.
+
+## Conventions
+
+- Use `mise run <task>` for all operations, never raw commands
+- Backend imports use fully-qualified paths: `from backend.agents.x import y`
+- ruff line-length: 120
+- Model provider: `LiteLLMOpenAI` from `agno.models.litellm`
+- New agents go in `backend/agents/`, registered in `backend/main.py`
+- When adding environment variables, update: `mise.toml`, `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
+
+## Documentation
+
+The docs site uses [Mintlify](https://mintlify.com) and lives in the `docs/` directory.
+
+Preview locally:
+
+```bash
+mise run docs:dev
+```
+
+<Note>
+This runs on port 3333 to avoid conflicts with the frontend dev server (port 3000).
+</Note>
+
+Validate before committing:
+
+```bash
+mise run docs:validate
+```
+
+The style guide is at `docs/CLAUDE.md`. Key rules: code first, no em dashes, no "learn how to", tables over prose.
+
+## VS Code
+
+The repository includes `.vscode/settings.json` and `.vscode/extensions.json` for format-on-save, ruff integration, and recommended extensions. Install the recommended extensions when prompted.

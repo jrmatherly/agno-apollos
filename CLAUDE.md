@@ -6,6 +6,7 @@ All Python backend code lives under `backend/` as a proper package.
 Imports use fully-qualified paths: `from backend.agents.x import y`, `from backend.db import z`.
 Docker WORKDIR `/app` is the project root, not the Python package.
 Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript, pnpm.
+Documentation lives at `docs/` — Mintlify site (MDX pages, `docs.json` config). Preview on port 3333 to avoid frontend conflict.
 Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
 Frontend Dockerfile uses multi-stage build with `output: 'standalone'` in next.config.ts.
 
@@ -37,6 +38,10 @@ Frontend tasks:
 - `mise run frontend:build` - production build
 - `mise run frontend:lint` / `frontend:format` / `frontend:typecheck` / `frontend:validate`
 
+Docs tasks:
+- `mise run docs:dev` - preview docs site locally (port 3333, avoids frontend port conflict)
+- `mise run docs:validate` - validate docs build and check for broken links
+
 ## Mise Tasks
 
 - Tasks are file-based scripts in `mise-tasks/` (not inline in `mise.toml`)
@@ -62,13 +67,16 @@ Frontend tasks:
 - New agents go in `backend/agents/`, register in `backend/main.py`
 - Keep `agnohq/python:3.12` and `agnohq/pgvector:18` base images. Frontend uses `node:24-alpine`.
 - ruff line-length: 120
-- Env var defaults live in `mise.toml` [env] section and `backend/db/session.py`
+- Env var defaults live in `mise.toml` [[env]] section and `backend/db/session.py`
+- `mise.toml` uses `[[env]]` array-of-tables: defaults in first block, `_.file = ".env"` in second block, so `.env` wins. Never use single `[env]` with both `_.file` and explicit values — explicit values override `_.file` regardless of position.
 - Dependencies: `uv add <package>` (auto-updates uv.lock), never edit uv.lock manually
 - `uv.lock` records the project version — any version bump in pyproject.toml requires `uv lock` to keep the lockfile in sync
 - Frontend uses pnpm (not npm/yarn). Use `--ci` flag on setup/frontend:setup tasks for locked/frozen mode in CI.
 - After changing frontend/package.json, run `mise run frontend:setup` to regenerate pnpm-lock.yaml.
 - Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
 - Two compose files: `docker-compose.yaml` (dev, builds locally) and `docker-compose.prod.yaml` (prod, pulls GHCR images)
+- Docker compose env vars use `${VAR:-default}` substitution — never hardcode values. Defaults must match `mise.toml` and `example.env`.
+- When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
 - Docker compose has 3 services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000)
 - CI workflows run backend and frontend validation as parallel jobs using mise tasks
 - CI workflows use pinned action SHAs (not tags) for supply-chain security
@@ -77,11 +85,24 @@ Frontend tasks:
 - Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions (pyproject.toml, package.json, uv.lock) → tags → GitHub release → Docker image builds
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
 - VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
-- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md
+- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, docs/ (Mintlify site)
 - example.env must stay in sync when env vars are added/changed across the project
+- `.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based
 
 ## Agno Docs Style
 
 When writing documentation, follow `docs/CLAUDE.md`:
 - No em dashes, no "learn how to", no contrastive negation
 - Code first, explain after. Tables over prose for comparisons.
+
+## Documentation Site (Mintlify)
+
+- Docs site lives at `docs/` — Mintlify MDX pages with `docs.json` config
+- Preview: `mise run docs:dev` (port 3333, avoids frontend :3000 conflict)
+- Validate: `mise run docs:validate` (runs `mint validate` + `mint broken-links`)
+- Navigation structure defined in `docs/docs.json` — add new pages there or they won't appear in sidebar
+- `docs/CLAUDE.md` is the docs style guide (excluded from build via `.mintignore`)
+- `.mintignore` auto-excludes README.md, LICENSE.md, CHANGELOG.md, CONTRIBUTING.md — manually exclude other non-doc files
+- Every MDX page needs `title` and `description` in frontmatter
+- Internal links use root-relative paths without extensions: `/agents/overview` not `./agents/overview.mdx`
+- Logo assets in `docs/logo/`, images in `docs/images/`

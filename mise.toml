@@ -76,3 +76,6 @@ experimental = true
 # frontend:format    Check frontend formatting (Prettier)
 # frontend:typecheck Type-check frontend code (TypeScript)
 # frontend:validate  Run all frontend checks (lint + format + typecheck)
+#
+# docs:dev           Preview docs site locally (Mintlify, port 3333)
+# docs:validate      Validate docs build and check for broken links

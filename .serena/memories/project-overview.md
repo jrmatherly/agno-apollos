@@ -57,6 +57,8 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run release` - create GitHub release (interactive version prompt)
 - `mise run frontend:setup` / `frontend:dev` / `frontend:build`
 - `mise run frontend:lint` / `frontend:format` / `frontend:typecheck` / `frontend:validate`
+- `mise run docs:dev` - preview docs site locally (port 3333)
+- `mise run docs:validate` - validate docs build + check broken links
 
 ## Adding an Agent
 1. Create `backend/agents/my_agent.py` with Agent definition
@@ -74,6 +76,12 @@ Run `mise tasks` for full list. Key tasks:
 - `IMAGE_TAG` (Docker image tag, default: latest)
 - `GHCR_OWNER` (GHCR image owner for prod compose, default: jrmatherly)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
+
+## Documentation
+- Mintlify site in `docs/` (MDX pages, `docs.json` config)
+- Preview on port 3333 (`mise run docs:dev`) to avoid frontend port conflict
+- Style guide at `docs/CLAUDE.md` (excluded from Mintlify build via `.mintignore`)
+- Sections: Getting started, Agents, Configuration, Reference, Contributing
 
 ## Security & CI/CD
 - CodeQL scanning on push/PR to main + weekly (Python, JS/TS, Actions)

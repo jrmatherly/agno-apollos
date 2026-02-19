@@ -1,0 +1,95 @@
+---
+title: "Development"
+description: "Local development workflow, mise tasks, and hot-reload."
+---
+
+All project operations use [mise](https://mise.jdx.dev) as the task runner. Never run raw `pnpm`, `uv`, `ruff`, `mypy`, or `docker compose` commands directly.
+
+```bash
+mise tasks
+```
+
+## Docker Compose watch
+
+For automatic hot-reload during development:
+
+```bash
+mise run dev
+```
+
+This starts Docker Compose in watch mode. Code changes sync into the container, and dependency changes (`pyproject.toml`, `uv.lock`) trigger a rebuild.
+
+<Note>
+The frontend container uses `action: rebuild` (not sync) because standalone Next.js cannot hot-reload synced files. For faster frontend iteration, use `mise run frontend:dev` instead.
+</Note>
+
+## Local development (without Docker)
+
+Run the backend directly on your machine:
+
+```bash
+# Install tools and deps
+mise install
+mise run setup
+source .venv/bin/activate
+
+# Start PostgreSQL (required)
+mise run db
+
+# Run the app
+uv run python -m backend.main
+```
+
+For frontend development:
+
+```bash
+mise run frontend:dev
+```
+
+This starts the Next.js dev server on port 3000 with fast refresh.
+
+## Code quality
+
+```bash
+# Run all checks (format, lint, typecheck)
+mise run validate
+
+# Individual checks
+mise run format      # ruff format + import sorting
+mise run lint        # ruff check
+mise run typecheck   # mypy
+
+# Frontend checks
+mise run frontend:validate   # ESLint + Prettier + TypeScript
+```
+
+Use `--check` flag on format tasks for CI mode (check-only, no writes):
+
+```bash
+mise run format --check
+```
+
+## Adding dependencies
+
+### Backend (Python)
+
+```bash
+# Add a package (auto-updates uv.lock)
+uv add <package>
+
+# Rebuild container
+docker compose up -d --build
+```
+
+### Frontend (Node.js)
+
+```bash
+cd frontend && pnpm add <package>
+
+# Regenerate lockfile
+mise run frontend:setup
+```
+
+## Full task reference
+
+See [mise tasks](/reference/mise-tasks) for the complete list of available tasks.

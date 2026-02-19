@@ -55,14 +55,17 @@ apollos-ai/
 │   │   ├── down             # Stop all services (--prod for production)
 │   │   ├── logs             # Tail logs (--prod for production)
 │   │   └── build            # Build images locally (--platform amd64|arm64)
-│   └── frontend/            # Frontend-specific tasks
-│       ├── setup            # Install frontend deps (pnpm install)
-│       ├── dev              # Start frontend dev server (port 3000)
-│       ├── build            # Production build (next build)
-│       ├── lint             # ESLint
-│       ├── format           # Prettier format check
-│       ├── typecheck        # TypeScript type-check
-│       └── validate         # All frontend checks (lint + format + typecheck)
+│   ├── frontend/            # Frontend-specific tasks
+│   │   ├── setup            # Install frontend deps (pnpm install)
+│   │   ├── dev              # Start frontend dev server (port 3000)
+│   │   ├── build            # Production build (next build)
+│   │   ├── lint             # ESLint
+│   │   ├── format           # Prettier format check
+│   │   ├── typecheck        # TypeScript type-check
+│   │   └── validate         # All frontend checks (lint + format + typecheck)
+│   └── docs/                # Documentation tasks
+│       ├── dev              # Preview docs site locally (port 3333)
+│       └── validate         # Validate docs build + check broken links
 ├── scripts/                 # Container-only scripts
 │   └── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
 ├── .github/workflows/
@@ -77,6 +80,18 @@ apollos-ai/
 ├── docker-compose.prod.yaml # Prod: GHCR images, no reload, no debug
 ├── pyproject.toml           # Project metadata, deps, [dependency-groups], ruff/mypy config
 ├── uv.lock                  # Cross-platform lockfile (auto-managed by uv)
+├── docs/                    # Mintlify documentation site
+│   ├── docs.json            # Site config (navigation, theme, branding)
+│   ├── index.mdx            # Introduction page
+│   ├── quickstart.mdx       # Getting started guide
+│   ├── development.mdx      # Development workflow
+│   ├── contributing.mdx     # Contributing guide
+│   ├── agents/              # Agent documentation
+│   ├── configuration/       # Environment and Docker config
+│   ├── reference/           # Architecture and task reference
+│   ├── logo/                # Apollos AI logo assets
+│   ├── images/              # Documentation images
+│   └── CLAUDE.md            # Docs style guide (excluded from build)
 ├── example.env              # Template for .env (LiteLLM, model, DB, runtime, frontend config)
 └── README.md                # Setup guide, agent docs, common tasks
 ```

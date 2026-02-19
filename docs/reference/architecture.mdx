@@ -1,0 +1,131 @@
+---
+title: "Architecture"
+description: "How the backend, frontend, database, and LLM proxy connect."
+---
+
+## System overview
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Docker Compose                     │
+│                                                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
+│  │  apollos-    │  │  apollos-    │  │  apollos-  │ │
+│  │  frontend    │  │  backend     │  │  db        │ │
+│  │  :3000       │──│  :8000       │──│  :5432     │ │
+│  │  Next.js 15  │  │  FastAPI     │  │  PG 18 +   │ │
+│  │              │  │  AgentOS     │  │  pgvector  │ │
+│  └──────────────┘  └──────┬───────┘  └────────────┘ │
+│                           │                          │
+└───────────────────────────┼──────────────────────────┘
+                            │
+                   ┌────────▼────────┐
+                   │  LiteLLM Proxy  │
+                   │  (external)     │
+                   └────────┬────────┘
+                            │
+                   ┌────────▼────────┐
+                   │  LLM Provider   │
+                   │  (OpenAI, etc.) │
+                   └─────────────────┘
+```
+
+## Components
+
+### Backend (`apollos-backend`)
+
+FastAPI application using Agno's `AgentOS` as the runtime. Registers agents, handles API requests, manages sessions, and routes LLM traffic through LiteLLM Proxy.
+
+| File | Purpose |
+|------|---------|
+| `backend/main.py` | Entry point. Creates AgentOS, registers agents, exports FastAPI app |
+| `backend/config.yaml` | Quick-prompt configuration for the UI |
+| `backend/agents/` | Agent modules (each exports an `Agent` instance) |
+| `backend/db/` | Database layer (connection factory, URL builder, knowledge factory) |
+
+### Frontend (`apollos-frontend`)
+
+Next.js 15 (App Router) with standalone output. Connects to the backend via browser-side fetch (not server-side rendering). State managed by Zustand.
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/store.ts` | Zustand state: endpoint URL, auth token, agent selection |
+| `frontend/src/api/` | Browser-side API client for AgentOS |
+| `frontend/src/components/` | React components (shadcn/ui based) |
+
+### Database (`apollos-db`)
+
+PostgreSQL 18 with the pgvector extension. Stores:
+
+- Agent session data and conversation history
+- Vector embeddings for RAG knowledge bases
+- User context and agent memory
+
+### LLM proxy (external)
+
+A [LiteLLM Proxy](https://docs.litellm.ai/docs/) instance that you host separately. All model and embedding requests from the backend route through it, providing a single point of control for API keys, rate limits, and provider switching.
+
+## Data flow
+
+1. User sends a message through the frontend UI
+2. Frontend makes a browser-side fetch to `apollos-backend` at the configured endpoint
+3. Backend receives the request via FastAPI, routes to the selected agent
+4. Agent processes the request: searches knowledge base (pgvector), calls tools, generates a response via LiteLLM Proxy
+5. Response streams back to the frontend
+
+## Project structure
+
+```
+apollos-ai/
+├── backend/                 # Python backend
+│   ├── main.py              # Entry point, agent registration
+│   ├── config.yaml          # UI quick-prompts
+│   ├── agents/              # Agent modules
+│   │   ├── knowledge_agent.py
+│   │   └── mcp_agent.py
+│   ├── db/                  # Database layer
+│   │   ├── session.py       # PostgresDb + Knowledge factories
+│   │   └── url.py           # DB URL builder
+│   ├── Dockerfile
+│   └── Dockerfile.dockerignore
+├── frontend/                # Next.js frontend
+│   ├── src/
+│   │   ├── app/             # App Router pages
+│   │   ├── components/      # React components
+│   │   ├── api/             # API client
+│   │   └── store.ts         # Zustand state
+│   ├── Dockerfile
+│   └── .dockerignore
+├── mise-tasks/              # Dev workflow tasks
+├── scripts/                 # Container-only scripts
+│   └── entrypoint.sh
+├── docker-compose.yaml      # Dev compose
+├── docker-compose.prod.yaml # Prod compose
+├── pyproject.toml           # Python project config
+├── mise.toml                # Mise config
+└── example.env              # Environment template
+```
+
+## Key dependencies
+
+### Backend
+
+| Package | Purpose |
+|---------|---------|
+| `agno` | Agent framework (Agent, AgentOS, Knowledge, tools) |
+| `fastapi[standard]` | HTTP API with uvicorn |
+| `pgvector` | Vector similarity search for PostgreSQL |
+| `psycopg[binary]` | PostgreSQL adapter |
+| `sqlalchemy` | ORM / database toolkit |
+| `mcp` | Model Context Protocol client |
+| `litellm[proxy]` | Multi-provider LLM routing |
+
+### Frontend
+
+| Package | Purpose |
+|---------|---------|
+| `next` (15) | React framework (App Router) |
+| `react` (18) | UI library |
+| `tailwindcss` | Utility-first CSS |
+| `zustand` | State management |
+| `@radix-ui/*` | Accessible UI primitives (shadcn/ui) |

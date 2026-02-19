@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Validate docs build and check for broken links"
+set -e
+
+cd docs
+mint validate
+mint broken-links

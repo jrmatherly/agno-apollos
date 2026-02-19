@@ -1,0 +1,58 @@
+---
+title: "Agents overview"
+description: "The built-in AI agents and how the agent system works."
+---
+
+Apollos AI ships with two agents. Each agent is a standalone Python module that exports an `Agent` instance, registered in `backend/main.py`.
+
+| Agent | ID | Pattern | Source |
+|-------|----|---------|--------|
+| Knowledge Agent | `knowledge-agent` | Agentic RAG | `backend/agents/knowledge_agent.py` |
+| MCP Agent | `mcp-agent` | MCP Tool Use | `backend/agents/mcp_agent.py` |
+
+## How agents work
+
+Every agent uses the [Agno](https://docs.agno.com) framework. An agent consists of:
+
+| Component | Purpose |
+|-----------|---------|
+| `model` | The LLM that powers the agent (routed through LiteLLM Proxy) |
+| `instructions` | System prompt defining behavior |
+| `tools` | Functions the agent can call |
+| `knowledge` | Vector database for RAG retrieval |
+| `db` | PostgresDb for session memory and history |
+
+All agents connect to the same PostgreSQL + pgvector database for persistence and use `LiteLLMOpenAI` as the model provider, which routes requests through your LiteLLM Proxy to any supported LLM.
+
+## Agent registration
+
+Agents are registered in `backend/main.py`:
+
+```python
+from agno.agent_os import AgentOS
+from backend.agents.knowledge_agent import knowledge_agent
+from backend.agents.mcp_agent import mcp_agent
+
+agent_os = AgentOS(
+    name="Apollos AI",
+    agents=[knowledge_agent, mcp_agent],
+    # ...
+)
+```
+
+Adding a new agent means creating a module and adding it to this list. See [creating agents](/agents/creating-agents).
+
+<CardGroup cols={2}>
+  <Card title="Knowledge Agent" icon="book" href="/agents/knowledge-agent">
+    RAG agent with hybrid vector search over ingested documents.
+  </Card>
+  <Card title="MCP Agent" icon="plug" href="/agents/mcp-agent">
+    Tool-use agent connecting to external services via MCP.
+  </Card>
+  <Card title="Create your own" icon="plus" href="/agents/creating-agents">
+    Add a custom agent with tools and instructions.
+  </Card>
+  <Card title="Agno agent docs" icon="arrow-up-right-from-square" href="https://docs.agno.com/agents/introduction">
+    Full Agno Agent reference and capabilities.
+  </Card>
+</CardGroup>

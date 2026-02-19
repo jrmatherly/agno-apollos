@@ -185,6 +185,8 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run frontend:format` | Check frontend formatting (Prettier) |
 | `mise run frontend:typecheck` | Type-check frontend code (TypeScript) |
 | `mise run frontend:validate` | Run all frontend checks |
+| `mise run docs:dev` | Preview docs site locally (port 3333) |
+| `mise run docs:validate` | Validate docs build and check broken links |
 
 ### Local Development (without Docker)
 

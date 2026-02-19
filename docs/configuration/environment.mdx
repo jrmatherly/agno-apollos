@@ -1,0 +1,81 @@
+---
+title: "Environment variables"
+description: "All configurable environment variables for Apollos AI."
+---
+
+Copy `example.env` to `.env` and set your values:
+
+```bash
+cp example.env .env
+```
+
+## LiteLLM Proxy (required)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `LITELLM_API_KEY` | Yes | - | API key for your LiteLLM Proxy |
+| `LITELLM_BASE_URL` | No | `http://localhost:4000/v1` | LiteLLM Proxy endpoint |
+
+All LLM and embedding requests route through a [LiteLLM Proxy](https://docs.litellm.ai/docs/). This lets you use any supported model provider (OpenAI, Anthropic, Azure, etc.) without changing agent code.
+
+## Models
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MODEL_ID` | `gpt-5-mini` | LLM model ID passed to LiteLLM |
+| `EMBEDDING_MODEL_ID` | `text-embedding-3-small` | Embedding model for knowledge base |
+| `EMBEDDING_DIMENSIONS` | `1536` | Vector dimensions for embeddings |
+
+## Database
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_HOST` | `apollos-db` | PostgreSQL host (use Docker service name) |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_USER` | `ai` | PostgreSQL user |
+| `DB_PASS` | `ai` | PostgreSQL password |
+| `DB_DATABASE` | `ai` | PostgreSQL database name |
+| `DB_DRIVER` | `postgresql+psycopg` | SQLAlchemy database driver |
+
+<Warning>
+`.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based. For local development without Docker, override `DB_HOST=localhost`.
+</Warning>
+
+## Runtime
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RUNTIME_ENV` | `dev` | Set to `dev` for auto-reload, `prd` for production |
+| `AGNO_DEBUG` | `True` | Enable Agno debug logging |
+| `WAIT_FOR_DB` | - | Container waits for database readiness before starting |
+| `PRINT_ENV_ON_LOAD` | - | Print environment variables on container start |
+
+## Docker
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `IMAGE_TAG` | `latest` | Tag applied to backend and frontend images |
+| `GHCR_OWNER` | `jrmatherly` | GHCR image owner (used by `docker-compose.prod.yaml`) |
+
+## Frontend
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_DEFAULT_ENDPOINT` | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
+| `NEXT_PUBLIC_OS_SECURITY_KEY` | - | Pre-fill the auth token in the frontend UI |
+| `NEXT_TELEMETRY_DISABLED` | - | Set to `1` to disable Next.js telemetry |
+
+<Note>
+Frontend API calls are browser-side (client fetch), not server-side. The API URL is configured in the UI sidebar, not through environment variables alone.
+</Note>
+
+## Where defaults are defined
+
+| Source | Purpose |
+|--------|---------|
+| `mise.toml` (`[[env]]` blocks) | Development defaults, overridden by `.env` |
+| `example.env` | Template for `.env` with documented defaults |
+| `docker-compose.yaml` | Container defaults via `${VAR:-default}` |
+| `backend/db/session.py` | Python fallback defaults for DB config |
+
+When adding or changing environment variables, update all four locations to stay in sync.

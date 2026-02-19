@@ -1,0 +1,134 @@
+---
+title: "Creating agents"
+description: "Add a custom agent to Apollos AI with tools and instructions."
+---
+
+## Create the agent module
+
+Create a new file in `backend/agents/`:
+
+```python
+# backend/agents/my_agent.py
+from os import getenv
+
+from agno.agent import Agent
+from agno.models.litellm import LiteLLMOpenAI
+from backend.db import get_postgres_db
+
+my_agent = Agent(
+    id="my-agent",
+    name="My Agent",
+    model=LiteLLMOpenAI(
+        id=getenv("MODEL_ID", "gpt-5-mini"),
+        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
+    ),
+    db=get_postgres_db(),
+    instructions="You are a helpful assistant.",
+    add_history_to_messages=True,
+    markdown=True,
+)
+```
+
+## Register the agent
+
+Add the agent to the `agents` list in `backend/main.py`:
+
+```python
+from backend.agents.my_agent import my_agent
+
+agent_os = AgentOS(
+    name="Apollos AI",
+    agents=[knowledge_agent, mcp_agent, my_agent],
+    # ...
+)
+```
+
+## Restart
+
+```bash
+docker compose restart
+```
+
+The new agent appears in the frontend sidebar.
+
+## Add tools
+
+Agno includes [100+ tool integrations](https://docs.agno.com/tools/toolkits). Import and add them to your agent's `tools` list:
+
+```python
+from agno.tools.slack import SlackTools
+from agno.tools.google_calendar import GoogleCalendarTools
+
+my_agent = Agent(
+    # ...
+    tools=[
+        SlackTools(),
+        GoogleCalendarTools(),
+    ],
+)
+```
+
+Install the required packages for the tools you use:
+
+```bash
+uv add slack-sdk google-api-python-client
+```
+
+## Add knowledge
+
+Give your agent RAG capabilities by adding a knowledge source:
+
+```python
+from agno.knowledge.url import UrlKnowledge
+from backend.db import create_knowledge
+
+my_agent = Agent(
+    # ...
+    knowledge=create_knowledge(
+        sources=[
+            UrlKnowledge(urls=["https://your-docs.com/page"]),
+        ]
+    ),
+    search_knowledge=True,
+)
+```
+
+## Use a different model provider
+
+Swap `LiteLLMOpenAI` for a direct provider client:
+
+```python
+from agno.models.anthropic import Claude
+
+my_agent = Agent(
+    # ...
+    model=Claude(id="claude-sonnet-4-5"),
+)
+```
+
+Add the dependency:
+
+```bash
+uv add anthropic
+```
+
+<Note>
+When using a direct provider instead of `LiteLLMOpenAI`, you must set the provider's API key environment variable (e.g., `ANTHROPIC_API_KEY`) in your `.env` file.
+</Note>
+
+## Agent configuration options
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `str` | Unique identifier for the agent |
+| `name` | `str` | Display name in the UI |
+| `model` | `Model` | LLM model instance |
+| `instructions` | `str` | System prompt |
+| `tools` | `list` | Tool instances the agent can use |
+| `knowledge` | `Knowledge` | RAG knowledge source |
+| `db` | `Db` | Database for session persistence |
+| `search_knowledge` | `bool` | Enable knowledge base search |
+| `add_history_to_messages` | `bool` | Include conversation history |
+| `markdown` | `bool` | Render output as markdown |
+
+See the [Agno Agent reference](https://docs.agno.com/agents/introduction) for all available options.

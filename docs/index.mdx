@@ -1,0 +1,45 @@
+---
+title: "Apollos AI"
+description: "A multi-agent system on Docker, powered by the Agno framework."
+---
+
+Apollos AI is a self-hosted, containerized platform for running multiple AI agents behind a single FastAPI backend. It uses [Agno](https://docs.agno.com) for agent orchestration, PostgreSQL with pgvector for storage and retrieval, and a Next.js frontend for the control plane UI.
+
+## What's included
+
+| Agent | Pattern | Description |
+|-------|---------|-------------|
+| Knowledge Agent | Agentic RAG | Answers questions from a vector knowledge base using hybrid search |
+| MCP Agent | MCP Tool Use | Connects to external services via the Model Context Protocol |
+
+## Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Python 3.12, FastAPI, Agno framework |
+| Frontend | Next.js 15, React 18, TypeScript, Tailwind CSS, shadcn/ui |
+| Database | PostgreSQL 18 + pgvector |
+| LLM routing | LiteLLM Proxy (any provider) |
+| Tooling | mise (task runner), uv (Python), pnpm (frontend) |
+| Deployment | Docker Compose (dev + prod configurations) |
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Set up Apollos AI and run your first agent in minutes.
+  </Card>
+  <Card title="Agents" icon="robot" href="/agents/overview">
+    Explore the built-in agents and create your own.
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/environment">
+    Environment variables, Docker, and model settings.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
+    How the backend, frontend, and database connect.
+  </Card>
+</CardGroup>
+
+## External resources
+
+- [Agno documentation](https://docs.agno.com)
+- [AgentOS documentation](https://docs.agno.com/agent-os/introduction)
+- [Agno Discord](https://agno.com/discord)
