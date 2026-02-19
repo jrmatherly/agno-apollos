@@ -169,10 +169,10 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run typecheck` | Type-check code (mypy) |
 | `mise run validate` | Run all checks (format-check, lint, typecheck) |
 | `mise run dev` | Start stack in watch mode (hot-reload) |
-| `mise run docker:up` | Start full stack (`--prod` for GHCR images) |
+| `mise run docker:up` | Start full stack (`--prod` for GHCR images, `--docs` to include docs) |
 | `mise run docker:down` | Stop all services (`--prod` for production) |
 | `mise run docker:logs` | Tail logs (`--prod` for production) |
-| `mise run docker:build` | Build images locally (`--platform amd64\|arm64`) |
+| `mise run docker:build` | Build all images locally (`--platform amd64\|arm64`) |
 | `mise run db` | Start only the database service |
 | `mise run load-docs` | Load knowledge base documents |
 | `mise run ci` | Run full CI pipeline |
@@ -187,6 +187,7 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run frontend:validate` | Run all frontend checks |
 | `mise run docs:dev` | Preview docs site locally (port 3333) |
 | `mise run docs:validate` | Validate docs build and check broken links |
+| `mise run docs:docker` | Start docs in Docker (`--prod` for GHCR image) |
 
 ### Local Development (without Docker)
 

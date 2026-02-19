@@ -7,7 +7,7 @@ Imports use fully-qualified paths: `from backend.agents.x import y`, `from backe
 Docker WORKDIR `/app` is the project root, not the Python package.
 Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript, pnpm.
 Documentation lives at `docs/` — Mintlify site (MDX pages, `docs.json` config). Preview on port 3333 to avoid frontend conflict.
-Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
+Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`, `docs/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
 Frontend Dockerfile uses multi-stage build with `output: 'standalone'` in next.config.ts.
 
 ## Commands (mise)
@@ -20,10 +20,10 @@ Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 - `mise run typecheck` - type check (mypy)
 - `mise run validate` - all checks (format-check + lint + typecheck)
 - `mise run dev` - docker compose watch (hot-reload)
-- `mise run docker:up` - start full stack (add `--prod` to pull GHCR images instead of building)
+- `mise run docker:up` - start full stack (add `--prod` for GHCR images, `--docs` to include docs service)
 - `mise run docker:down` - stop stack (add `--prod` for production compose file)
 - `mise run docker:logs` - tail logs (add `--prod` for production compose file)
-- `mise run docker:build` - build both backend + frontend images locally (add `--platform amd64` or `arm64`)
+- `mise run docker:build` - build backend, frontend, and docs images locally (add `--platform amd64` or `arm64`)
 - `mise run db` - start database only
 - `mise run load-docs` - load knowledge base documents
 - `mise run ci` - full CI pipeline
@@ -41,6 +41,7 @@ Frontend tasks:
 Docs tasks:
 - `mise run docs:dev` - preview docs site locally (port 3333, avoids frontend port conflict)
 - `mise run docs:validate` - validate docs build and check for broken links
+- `mise run docs:docker` - start docs in Docker (add `--prod` for GHCR image)
 
 ## Mise Tasks
 
@@ -65,7 +66,7 @@ Docs tasks:
 - All model/embedding config via env vars (MODEL_ID, EMBEDDING_MODEL_ID, LITELLM_BASE_URL, etc.)
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
 - New agents go in `backend/agents/`, register in `backend/main.py`
-- Keep `agnohq/python:3.12` and `agnohq/pgvector:18` base images. Frontend uses `node:24-alpine`.
+- Keep `agnohq/python:3.12` and `agnohq/pgvector:18` base images. Frontend and docs use `node:24-alpine`.
 - ruff line-length: 120
 - Env var defaults live in `mise.toml` [[env]] section and `backend/db/session.py`
 - `mise.toml` uses `[[env]]` array-of-tables: defaults in first block, `_.file = ".env"` in second block, so `.env` wins. Never use single `[env]` with both `_.file` and explicit values — explicit values override `_.file` regardless of position.
@@ -77,11 +78,11 @@ Docs tasks:
 - Two compose files: `docker-compose.yaml` (dev, builds locally) and `docker-compose.prod.yaml` (prod, pulls GHCR images)
 - Docker compose env vars use `${VAR:-default}` substitution — never hardcode values. Defaults must match `mise.toml` and `example.env`.
 - When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
-- Docker compose has 3 services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000)
+- Docker compose has 3 core services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000), plus optional `apollos-docs` (:3333, behind `docs` profile)
 - CI workflows run backend and frontend validation as parallel jobs using mise tasks
 - CI workflows use pinned action SHAs (not tags) for supply-chain security
 - CodeQL security scanning runs on push/PR to main + weekly schedule (security-extended suite)
-- Docker images publish to GHCR (`ghcr.io/<owner>/apollos-backend`, `ghcr.io/<owner>/apollos-frontend`)
+- Docker images publish to GHCR (`ghcr.io/<owner>/apollos-backend`, `ghcr.io/<owner>/apollos-frontend`, `ghcr.io/<owner>/apollos-docs`)
 - Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions (pyproject.toml, package.json, uv.lock) → tags → GitHub release → Docker image builds
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
 - VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations

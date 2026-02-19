@@ -21,8 +21,9 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `frontend/src/store.ts` - Zustand state (endpoint default: localhost:8000)
 - `frontend/src/api/` - Browser-side API client (fetch, Bearer token auth)
 - `frontend/Dockerfile` - Multi-stage standalone build (node:24-alpine)
-- `docker-compose.yaml` - Dev compose (local builds, hot-reload, debug)
-- `docker-compose.prod.yaml` - Prod compose (GHCR images, no reload, no debug)
+- `docs/Dockerfile` - Docs container (node:24-alpine, Mintlify CLI `mint dev` on port 3333)
+- `docker-compose.yaml` - Dev compose (3 core services + optional docs behind `docs` profile)
+- `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
 - `backend/Dockerfile` - Backend, based on agnohq/python:3.12, uses uv
 - `backend/Dockerfile.dockerignore` - Backend build context exclusions (BuildKit convention)
 
@@ -49,8 +50,9 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run setup` - install all deps (`--ci` for locked/frozen mode)
 - `mise run format` / `lint` / `typecheck` / `validate` - backend code quality
 - `mise run dev` - docker compose watch
-- `mise run docker:up` / `docker:down` / `docker:logs` (all support `--prod` flag)
-- `mise run docker:build` - build images locally (`--platform amd64|arm64`)
+- `mise run docker:up` / `docker:down` / `docker:logs` (all support `--prod` flag; `docker:up` also supports `--docs`)
+- `mise run docker:build` - build all images locally (`--platform amd64|arm64`)
+- `mise run docs:docker` - start docs in Docker (`--prod` for GHCR image)
 - `mise run db` - database only
 - `mise run load-docs` - load knowledge base
 - `mise run ci` / `clean`
@@ -88,4 +90,5 @@ Run `mise tasks` for full list. Key tasks:
 - CI workflows use pinned action SHAs for supply-chain security
 - CI workflows use mise tasks (not raw commands) for consistency
 - Explicit `permissions` block on all workflows (least-privilege)
-- Docker images publish to GHCR (ghcr.io/<owner>/apollos-backend, apollos-frontend)
+- Docker images publish to GHCR (ghcr.io/<owner>/apollos-backend, apollos-frontend, apollos-docs)
+- Docs image builds on push to main (docs/** changes), backend/frontend images build on release

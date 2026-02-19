@@ -54,7 +54,7 @@ apollos-ai/
 │   │   ├── up               # Start full stack (--prod for GHCR images)
 │   │   ├── down             # Stop all services (--prod for production)
 │   │   ├── logs             # Tail logs (--prod for production)
-│   │   └── build            # Build images locally (--platform amd64|arm64)
+│   │   └── build            # Build all images locally (--platform amd64|arm64)
 │   ├── frontend/            # Frontend-specific tasks
 │   │   ├── setup            # Install frontend deps (pnpm install)
 │   │   ├── dev              # Start frontend dev server (port 3000)
@@ -65,13 +65,15 @@ apollos-ai/
 │   │   └── validate         # All frontend checks (lint + format + typecheck)
 │   └── docs/                # Documentation tasks
 │       ├── dev              # Preview docs site locally (port 3333)
-│       └── validate         # Validate docs build + check broken links
+│       ├── validate         # Validate docs build + check broken links
+│       └── docker           # Start docs in Docker (--prod for GHCR image)
 ├── scripts/                 # Container-only scripts
 │   └── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
 ├── .github/workflows/
 │   ├── codeql.yml           # Security: CodeQL scanning (Python, JS/TS, Actions) on push/PR + weekly
 │   ├── validate.yml         # CI: parallel backend + frontend validation on push/PR
-│   └── docker-images.yml    # CD: build + push backend + frontend Docker images on release
+│   ├── docker-images.yml    # CD: build + push backend + frontend Docker images on release
+│   └── docs-image.yml       # CD: build + push docs Docker image on docs/** push to main
 ├── .github/codeql/
 │   └── codeql-config.yml    # CodeQL paths-ignore configuration
 ├── mise.toml                # Mise config — tools (Python, uv, Node, pnpm), env vars, settings
@@ -82,6 +84,8 @@ apollos-ai/
 ├── uv.lock                  # Cross-platform lockfile (auto-managed by uv)
 ├── docs/                    # Mintlify documentation site
 │   ├── docs.json            # Site config (navigation, theme, branding)
+│   ├── Dockerfile           # Docs container (node:24-alpine, mint dev)
+│   ├── .dockerignore        # Docs build context exclusions
 │   ├── index.mdx            # Introduction page
 │   ├── quickstart.mdx       # Getting started guide
 │   ├── development.mdx      # Development workflow
@@ -133,7 +137,8 @@ Uses **pnpm** for package management:
 | API Server | `backend/main.py` | `mise run docker:up` | Starts Apollos AI FastAPI server on :8000 |
 | Frontend UI | `frontend/` | `mise run frontend:dev` | Starts Next.js dev server on :3000 |
 | Knowledge Loader | `backend/agents/knowledge_agent.py` | `mise run load-docs` | Loads default docs into vector DB |
-| Full Stack | `docker-compose.yaml` | `mise run docker:up` | All 3 services (DB + backend + frontend) |
+| Full Stack | `docker-compose.yaml` | `mise run docker:up` | Core services (DB + backend + frontend) |
+| Docs Site | `docs/Dockerfile` | `mise run docs:docker` | Documentation on :3333 |
 | Watch Mode | `docker-compose.yaml` | `mise run dev` | Auto-sync code + rebuild on dep changes |
 
 ## Core Modules
@@ -189,12 +194,13 @@ Uses **pnpm** for package management:
 | `frontend/package.json` | Frontend metadata, dependencies, scripts |
 | `frontend/pnpm-lock.yaml` | Frontend lockfile (committed to git) |
 | `.python-version` | Pins Python 3.12 for uv, pyenv, and CI |
-| `docker-compose.yaml` | Dev: 3 services + watch mode (local builds, hot-reload, debug) |
-| `docker-compose.prod.yaml` | Prod: 3 services (GHCR images, no reload, no debug) |
+| `docker-compose.yaml` | Dev: 3 core services + optional docs (local builds, hot-reload, debug) |
+| `docker-compose.prod.yaml` | Prod: 3 core services + optional docs (GHCR images, no reload, no debug) |
 | `backend/config.yaml` | Agent quick-prompts for the Agno web UI |
 | `example.env` | Template: LiteLLM, model, DB, runtime, Docker, frontend config |
 | `backend/Dockerfile` | Backend: two-layer cached build, `uv sync --locked` |
 | `frontend/Dockerfile` | Frontend: multi-stage standalone build, node:24-alpine |
+| `docs/Dockerfile` | Docs: node:24-alpine, Mintlify CLI (`mint dev`) |
 
 ## CI/CD
 
@@ -203,6 +209,7 @@ Uses **pnpm** for package management:
 | `codeql.yml` | Push to main, PR, weekly Mon 6am UTC | CodeQL security scanning: Python, JavaScript/TypeScript, Actions (security-extended suite) |
 | `validate.yml` | Push to main, PR | Parallel jobs: backend (format, lint, typecheck via mise) + frontend (validate via mise) |
 | `docker-images.yml` | Release published | Parallel jobs: build + push apollos-backend and apollos-frontend images to GHCR |
+| `docs-image.yml` | Push to main (docs/**) | Build + push apollos-docs image to GHCR |
 
 ## Key Dependencies
 
