@@ -59,7 +59,7 @@ def run_agent_api(agent_id: str, question: str) -> str:
     import requests
 
     r = requests.post(
-        f"{BACKEND_URL}/v1/agents/{agent_id}/runs",
+        f"{BACKEND_URL}/agents/{agent_id}/runs",
         json={"message": question, "stream": False},
         timeout=120,
     )

@@ -72,6 +72,9 @@ Thumbs.db
 # Project-specific
 # =========================
 tmp/
+# Exclude user-supplied knowledge docs (loaded at runtime via load-docs).
+# data/tables/, data/queries/, data/business/ are included (needed by load-knowledge
+# and business_rules.py at startup).
 data/docs/
 .local_docs/
 .scratchpad/
