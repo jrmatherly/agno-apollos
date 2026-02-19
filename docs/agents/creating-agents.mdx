@@ -1,6 +1,6 @@
 ---
 title: "Creating agents"
-description: "Add a custom agent to Apollos AI with tools and instructions."
+description: "Add a custom agent with tools, guardrails, and learning."
 ---
 
 ## Create the agent module
@@ -9,25 +9,26 @@ Create a new file in `backend/agents/`:
 
 ```python
 # backend/agents/my_agent.py
-from os import getenv
-
 from agno.agent import Agent
-from agno.models.litellm import LiteLLMOpenAI
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+
 from backend.db import get_postgres_db
+from backend.models import get_model
 
 my_agent = Agent(
     id="my-agent",
     name="My Agent",
-    model=LiteLLMOpenAI(
-        id=getenv("MODEL_ID", "gpt-5-mini"),
-        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
-    ),
+    model=get_model(),
     db=get_postgres_db(),
     instructions="You are a helpful assistant.",
-    add_history_to_messages=True,
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    enable_agentic_memory=True,
+    enable_session_summaries=True,
     markdown=True,
 )
 ```
+
+All agents should use `get_model()` from `backend/models.py` for consistent LLM routing, and include guardrails via `pre_hooks`.
 
 ## Register the agent
 
@@ -38,7 +39,7 @@ from backend.agents.my_agent import my_agent
 
 agent_os = AgentOS(
     name="Apollos AI",
-    agents=[knowledge_agent, mcp_agent, my_agent],
+    agents=[knowledge_agent, mcp_agent, web_search_agent, data_agent, reasoning_agent, my_agent],
     # ...
 )
 ```
@@ -46,7 +47,7 @@ agent_os = AgentOS(
 ## Restart
 
 ```bash
-docker compose restart
+mise run docker:up
 ```
 
 The new agent appears in the frontend sidebar.
@@ -68,7 +69,7 @@ my_agent = Agent(
 )
 ```
 
-Install the required packages for the tools you use:
+Install the required packages:
 
 ```bash
 uv add slack-sdk google-api-python-client
@@ -79,30 +80,48 @@ uv add slack-sdk google-api-python-client
 Give your agent RAG capabilities by adding a knowledge source:
 
 ```python
-from agno.knowledge.url import UrlKnowledge
 from backend.db import create_knowledge
 
 my_agent = Agent(
     # ...
-    knowledge=create_knowledge(
-        sources=[
-            UrlKnowledge(urls=["https://your-docs.com/page"]),
-        ]
-    ),
+    knowledge=create_knowledge("My Agent", "my_agent_docs"),
     search_knowledge=True,
 )
 ```
 
+## Add learning
+
+Enable agentic learning so the agent improves over time:
+
+```python
+from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode
+from backend.db import create_knowledge
+
+my_learnings = create_knowledge("My Agent Learnings", "my_agent_learnings")
+
+my_agent = Agent(
+    # ...
+    learning=LearningMachine(
+        learned_knowledge=LearnedKnowledgeConfig(
+            mode=LearningMode.AGENTIC,
+            knowledge=my_learnings,
+        ),
+    ),
+)
+```
+
+In `AGENTIC` mode, the agent decides when to save useful patterns. Learnings are stored in pgvector and retrieved for future similar queries.
+
 ## Use a different model provider
 
-Swap `LiteLLMOpenAI` for a direct provider client:
+Swap `get_model()` for a direct provider client:
 
 ```python
 from agno.models.anthropic import Claude
 
 my_agent = Agent(
     # ...
-    model=Claude(id="claude-sonnet-4-5"),
+    model=Claude(id="claude-sonnet-4-5-20250514"),
 )
 ```
 
@@ -113,7 +132,7 @@ uv add anthropic
 ```
 
 <Note>
-When using a direct provider instead of `LiteLLMOpenAI`, you must set the provider's API key environment variable (e.g., `ANTHROPIC_API_KEY`) in your `.env` file.
+When using a direct provider instead of `get_model()`, set the provider's API key environment variable (e.g., `ANTHROPIC_API_KEY`) in your `.env` file.
 </Note>
 
 ## Agent configuration options
@@ -122,13 +141,17 @@ When using a direct provider instead of `LiteLLMOpenAI`, you must set the provid
 |-----------|------|-------------|
 | `id` | `str` | Unique identifier for the agent |
 | `name` | `str` | Display name in the UI |
-| `model` | `Model` | LLM model instance |
-| `instructions` | `str` | System prompt |
-| `tools` | `list` | Tool instances the agent can use |
+| `model` | `Model` | LLM model instance (use `get_model()`) |
+| `instructions` | `str \| list` | System prompt |
+| `tools` | `list` | Tool instances the agent can call |
 | `knowledge` | `Knowledge` | RAG knowledge source |
 | `db` | `Db` | Database for session persistence |
+| `pre_hooks` | `list` | Guardrails that run before each message |
+| `learning` | `LearningMachine` | Agentic learning configuration |
 | `search_knowledge` | `bool` | Enable knowledge base search |
-| `add_history_to_messages` | `bool` | Include conversation history |
+| `enable_agentic_memory` | `bool` | Enable memory across sessions |
+| `enable_session_summaries` | `bool` | Generate session summaries |
+| `reasoning` | `bool` | Enable chain-of-thought reasoning |
 | `markdown` | `bool` | Render output as markdown |
 
 See the [Agno Agent reference](https://docs.agno.com/agents/introduction) for all available options.

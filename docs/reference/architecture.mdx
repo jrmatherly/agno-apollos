@@ -34,24 +34,32 @@ description: "How the backend, frontend, database, and LLM proxy connect."
 
 ### Backend (`apollos-backend`)
 
-FastAPI application using Agno's `AgentOS` as the runtime. Registers agents, handles API requests, manages sessions, and routes LLM traffic through LiteLLM Proxy.
+FastAPI application using Agno's `AgentOS` as the runtime. Registers agents, teams, and workflows, handles API requests, manages sessions, and routes LLM traffic through LiteLLM Proxy.
 
-| File                  | Purpose                                                             |
-| --------------------- | ------------------------------------------------------------------- |
-| `backend/main.py`     | Entry point. Creates AgentOS, registers agents, exports FastAPI app |
-| `backend/config.yaml` | Quick-prompt configuration for the UI                               |
-| `backend/agents/`     | Agent modules (each exports an `Agent` instance)                    |
-| `backend/db/`         | Database layer (connection factory, URL builder, knowledge factory) |
+| Directory | Purpose |
+|-----------|---------|
+| `backend/main.py` | Entry point. Creates AgentOS, registers agents/teams/workflows |
+| `backend/models.py` | Shared model factory (`get_model()`) for all agents |
+| `backend/config.yaml` | Quick-prompt configuration for the UI |
+| `backend/agents/` | Agent modules (each exports an `Agent` instance) |
+| `backend/teams/` | Multi-agent team definitions |
+| `backend/workflows/` | Multi-step workflow pipelines |
+| `backend/tools/` | Custom tools (search, awareness, approval-gated operations) |
+| `backend/context/` | Agent context providers (semantic model for Data Analyst) |
+| `backend/knowledge/` | Document loaders for the knowledge base |
+| `backend/db/` | Database layer (connection factory, URL builder, knowledge factory) |
+| `backend/evals/` | LLM-based evaluation harness |
+| `backend/telemetry.py` | OpenTelemetry trace export configuration |
 
 ### Frontend (`apollos-frontend`)
 
 Next.js 15 (App Router) with standalone output. Connects to the backend via browser-side fetch (not server-side rendering). State managed by Zustand.
 
-| File                       | Purpose                                                  |
-| -------------------------- | -------------------------------------------------------- |
-| `frontend/src/store.ts`    | Zustand state: endpoint URL, auth token, agent selection |
-| `frontend/src/api/`        | Browser-side API client for AgentOS                      |
-| `frontend/src/components/` | React components (shadcn/ui based)                       |
+| File | Purpose |
+|------|---------|
+| `frontend/src/store.ts` | Zustand state: endpoint URL, auth token, agent selection |
+| `frontend/src/api/` | Browser-side API client for AgentOS |
+| `frontend/src/components/` | React components (shadcn/ui based) |
 
 ### Database (`apollos-db`)
 
@@ -59,7 +67,9 @@ PostgreSQL 18 with the pgvector extension. Stores:
 
 - Agent session data and conversation history
 - Vector embeddings for RAG knowledge bases
-- User context and agent memory
+- Learned knowledge from LearningMachine
+- User profiles and per-user memory
+- Team and workflow state
 
 ### LLM proxy (external)
 
@@ -69,20 +79,39 @@ A [LiteLLM Proxy](https://docs.litellm.ai/docs/) instance that you host separate
 
 1. User sends a message through the frontend UI
 2. Frontend makes a browser-side fetch to `apollos-backend` at the configured endpoint
-3. Backend receives the request via FastAPI, routes to the selected agent
-4. Agent processes the request: searches knowledge base (pgvector), calls tools, generates a response via LiteLLM Proxy
+3. Backend receives the request via FastAPI, routes to the selected agent (or team/workflow)
+4. Agent processes the request: searches knowledge base (pgvector), calls tools, checks guardrails, generates a response via LiteLLM Proxy
 5. Response streams back to the frontend
+6. Session data, learnings, and user context are persisted to PostgreSQL
 
 ## Project structure
 
 ```
 apollos-ai/
 ├── backend/                 # Python backend
-│   ├── main.py              # Entry point, agent registration
+│   ├── main.py              # Entry point, agent/team/workflow registration
+│   ├── models.py            # Shared model factory (get_model)
 │   ├── config.yaml          # UI quick-prompts
+│   ├── telemetry.py         # OpenTelemetry export
 │   ├── agents/              # Agent modules
 │   │   ├── knowledge_agent.py
-│   │   └── mcp_agent.py
+│   │   ├── mcp_agent.py
+│   │   ├── web_search_agent.py
+│   │   ├── reasoning_agent.py
+│   │   └── data_agent.py
+│   ├── teams/               # Multi-agent teams
+│   │   └── research_team.py
+│   ├── workflows/           # Multi-step workflows
+│   │   └── research_workflow.py
+│   ├── tools/               # Custom tools
+│   │   ├── search.py
+│   │   ├── awareness.py
+│   │   └── approved_ops.py
+│   ├── context/             # Agent context providers
+│   │   └── semantic_model.py
+│   ├── knowledge/           # Document loaders
+│   │   └── loaders.py
+│   ├── evals/               # Evaluation harness
 │   ├── db/                  # Database layer
 │   │   ├── session.py       # PostgresDb + Knowledge factories
 │   │   └── url.py           # DB URL builder
@@ -96,6 +125,12 @@ apollos-ai/
 │   │   └── store.ts         # Zustand state
 │   ├── Dockerfile
 │   └── .dockerignore
+├── docs/                    # Mintlify documentation site
+│   ├── docs.json            # Mintlify config
+│   ├── Dockerfile
+│   └── *.mdx               # Documentation pages
+├── data/docs/               # Knowledge base source docs (PDF, CSV)
+├── tests/                   # Integration tests
 ├── mise-tasks/              # Dev workflow tasks
 ├── scripts/                 # Container-only scripts
 │   └── entrypoint.sh
@@ -110,22 +145,25 @@ apollos-ai/
 
 ### Backend
 
-| Package             | Purpose                                            |
-| ------------------- | -------------------------------------------------- |
-| `agno`              | Agent framework (Agent, AgentOS, Knowledge, tools) |
-| `fastapi[standard]` | HTTP API with uvicorn                              |
-| `pgvector`          | Vector similarity search for PostgreSQL            |
-| `psycopg[binary]`   | PostgreSQL adapter                                 |
-| `sqlalchemy`        | ORM / database toolkit                             |
-| `mcp`               | Model Context Protocol client                      |
-| `litellm[proxy]`    | Multi-provider LLM routing                         |
+| Package | Purpose |
+|---------|---------|
+| `agno` | Agent framework (Agent, AgentOS, Team, Workflow, Knowledge, tools) |
+| `fastapi[standard]` | HTTP API with uvicorn |
+| `pgvector` | Vector similarity search for PostgreSQL |
+| `psycopg[binary]` | PostgreSQL adapter |
+| `sqlalchemy` | ORM / database toolkit |
+| `mcp` | Model Context Protocol client |
+| `litellm[proxy]` | Multi-provider LLM routing |
+| `duckduckgo-search` | Web search backend for WebSearchTools |
+| `pypdf` | PDF document loading for knowledge base |
+| `opentelemetry-exporter-otlp-proto-http` | OTel trace export (opt-in) |
 
 ### Frontend
 
-| Package       | Purpose                              |
-| ------------- | ------------------------------------ |
-| `next` (15)   | React framework (App Router)         |
-| `react` (18)  | UI library                           |
-| `tailwindcss` | Utility-first CSS                    |
-| `zustand`     | State management                     |
+| Package | Purpose |
+|---------|---------|
+| `next` (15) | React framework (App Router) |
+| `react` (18) | UI library |
+| `tailwindcss` | Utility-first CSS |
+| `zustand` | State management |
 | `@radix-ui/*` | Accessible UI primitives (shadcn/ui) |

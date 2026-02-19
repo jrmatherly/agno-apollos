@@ -1,0 +1,66 @@
+---
+title: "Telemetry"
+description: "OpenTelemetry trace export for agent observability."
+---
+
+Apollos AI generates traces via Agno's built-in `tracing=True` and can export them to any OpenTelemetry-compatible backend.
+
+## Configuration
+
+Telemetry export is opt-in. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable it:
+
+```bash
+# .env
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
+
+When the variable is empty or unset, no traces are exported. Agno still generates internal traces for debugging.
+
+## How it works
+
+```python
+# backend/telemetry.py
+def configure_telemetry() -> None:
+    endpoint = getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+    if not endpoint:
+        return
+
+    provider = TracerProvider()
+    exporter = OTLPSpanExporter(endpoint=f"{endpoint}/v1/traces")
+    provider.add_span_processor(BatchSpanProcessor(exporter))
+    trace.set_tracer_provider(provider)
+```
+
+`configure_telemetry()` is called at startup in `backend/main.py`. It no-ops when the endpoint is not configured.
+
+## Compatible backends
+
+Any OTLP HTTP-compatible collector works:
+
+| Backend | Endpoint example |
+|---------|-----------------|
+| [Jaeger](https://www.jaegertracing.io/) | `http://localhost:4318` |
+| [Grafana Tempo](https://grafana.com/oss/tempo/) | `http://localhost:4318` |
+| [SigNoz](https://signoz.io/) | `http://localhost:4318` |
+| [Honeycomb](https://www.honeycomb.io/) | `https://api.honeycomb.io` |
+
+## Docker configuration
+
+The OTLP endpoint is propagated to the backend container in both compose files:
+
+```yaml
+# docker-compose.yaml
+environment:
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+```
+
+An empty default means telemetry is disabled unless explicitly configured.
+
+## What gets traced
+
+With `tracing=True` on AgentOS, Agno generates spans for:
+
+- Agent invocations (model calls, tool use)
+- Knowledge base searches
+- Team coordination and member delegation
+- Workflow step execution

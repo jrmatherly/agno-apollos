@@ -1,0 +1,92 @@
+---
+title: "Data Analyst"
+description: "Read-only SQL analysis agent with the Dash pattern and query learning."
+---
+
+The Data Analyst queries PostgreSQL with read-only tools, following the [Dash pattern](https://docs.agno.com/examples/apps/dash) for safe SQL generation. It learns from successful queries to improve over time.
+
+```python
+from agno.agent import Agent
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode
+from agno.tools.postgres import PostgresTools
+
+from backend.context.semantic_model import SEMANTIC_MODEL_STR
+from backend.db import create_knowledge, get_postgres_db
+from backend.models import get_model
+
+data_learnings = create_knowledge("Data Learnings", "data_learnings")
+
+data_agent = Agent(
+    id="data-agent",
+    name="Data Analyst",
+    model=get_model(),
+    db=get_postgres_db(),
+    tools=[
+        PostgresTools(
+            host=DB_HOST, port=DB_PORT, user=DB_USER,
+            password=DB_PASS, db_name=DB_DATABASE,
+            include_tools=["show_tables", "describe_table", "summarize_table", "inspect_query"],
+        ),
+    ],
+    instructions=instructions,
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    learning=LearningMachine(
+        learned_knowledge=LearnedKnowledgeConfig(
+            mode=LearningMode.AGENTIC,
+            knowledge=data_learnings,
+        ),
+    ),
+    enable_agentic_memory=True,
+    markdown=True,
+    enable_session_summaries=True,
+)
+```
+
+## Key features
+
+| Feature | Configuration |
+|---------|---------------|
+| Read-only SQL | `PostgresTools` with restricted `include_tools` |
+| Query learning | `LearningMachine` saves successful query patterns |
+| Semantic model | Schema context injected via `SEMANTIC_MODEL_STR` |
+| Safety rules | Instructions enforce `LIMIT 50`, no `SELECT *`, no DDL/DML |
+| Session memory | `db=get_postgres_db()` persists conversations |
+| Guardrails | PII detection and prompt injection via `pre_hooks` |
+| Session summaries | `enable_session_summaries=True` for conversation persistence |
+
+## SQL tools
+
+`PostgresTools` is limited to four read-only operations:
+
+| Tool | Description |
+|------|-------------|
+| `show_tables` | List all tables in the database |
+| `describe_table` | Show column names, types, and constraints |
+| `summarize_table` | Row counts and basic statistics |
+| `inspect_query` | Execute a read-only SQL query |
+
+The agent cannot run `DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, `CREATE`, or `TRUNCATE` statements.
+
+## Semantic model
+
+The agent receives a structured schema description from `backend/context/semantic_model.py`. This tells the agent what tables exist, their key columns, common use cases, and data quality notes.
+
+To extend the semantic model, add table entries to the `SEMANTIC_MODEL` dict in `backend/context/semantic_model.py`.
+
+## Query learning
+
+The agent uses `LearningMachine` in `AGENTIC` mode: it decides when to save useful query patterns. Saved learnings are stored in pgvector and retrieved for future similar queries.
+
+What gets saved:
+- Column type quirks (dates stored as strings, etc.)
+- Query patterns that work well for common question types
+- Validated SQL queries that answered user questions correctly
+
+## Example queries
+
+```
+What tables are in the database?
+Show me the most recent agent sessions
+How many sessions were created this week?
+```

@@ -1,0 +1,89 @@
+---
+title: "Teams"
+description: "Multi-agent teams that coordinate members to solve complex tasks."
+---
+
+Teams combine multiple agents under a coordinator that delegates subtasks and synthesizes results.
+
+```python
+from agno.agent import Agent
+from agno.team import Team
+from agno.team.team import TeamMode
+from agno.tools.reasoning import ReasoningTools
+from agno.tools.websearch import WebSearchTools
+
+from backend.db import get_postgres_db
+from backend.models import get_model
+
+web_researcher = Agent(
+    name="Web Researcher",
+    role="Search the web for current information",
+    model=get_model(),
+    tools=[WebSearchTools(enable_search=True, enable_news=True)],
+    instructions=["Search the web for relevant information.", "Always cite sources with URLs."],
+    markdown=True,
+)
+
+analyst = Agent(
+    name="Analyst",
+    role="Analyze information and synthesize findings",
+    model=get_model(),
+    instructions=["Analyze the information provided by team members.", "Provide structured analysis."],
+    markdown=True,
+)
+
+research_team = Team(
+    name="Research Team",
+    id="research-team",
+    mode=TeamMode.coordinate,
+    model=get_model(),
+    db=get_postgres_db(),
+    members=[web_researcher, analyst],
+    tools=[ReasoningTools(add_instructions=True)],
+    instructions=["Delegate research to Web Researcher, analysis to Analyst."],
+    markdown=True,
+    enable_agentic_memory=True,
+)
+```
+
+## Research Team
+
+The built-in Research Team coordinates two specialized agents:
+
+| Member | Role | Tools |
+|--------|------|-------|
+| Web Researcher | Searches the web for current information | `WebSearchTools` (search + news) |
+| Analyst | Analyzes and synthesizes findings | None (reasoning via instructions) |
+
+The team leader uses `ReasoningTools` for complex multi-step delegation and `TeamMode.coordinate` to route subtasks to the appropriate member.
+
+## Key features
+
+| Feature | Configuration |
+|---------|---------------|
+| Coordination mode | `TeamMode.coordinate` routes tasks to members |
+| Shared memory | `share_member_interactions=True` for cross-member context |
+| History | `store_history_messages=True` persists team conversations |
+| Reasoning | `ReasoningTools(add_instructions=True)` for the coordinator |
+| Compression | `compress_tool_results=True` reduces token usage |
+| Session memory | `db=get_postgres_db()` persists across sessions |
+
+## Team modes
+
+Agno supports multiple team coordination modes:
+
+| Mode | Description |
+|------|-------------|
+| `TeamMode.coordinate` | Leader delegates subtasks to specific members |
+| `TeamMode.collaborate` | Members work together on the same task |
+| `TeamMode.route` | Leader routes the full task to one member |
+
+See the [Agno Teams docs](https://docs.agno.com/teams/introduction) for all coordination modes.
+
+## Example queries
+
+```
+Research the current state of quantum computing and summarize key breakthroughs
+Compare the top 3 JavaScript frameworks for enterprise applications
+What are the environmental impacts of lithium mining?
+```

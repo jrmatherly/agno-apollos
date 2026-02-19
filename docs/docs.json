@@ -24,13 +24,30 @@
           "agents/overview",
           "agents/knowledge-agent",
           "agents/mcp-agent",
+          "agents/web-search-agent",
+          "agents/reasoning-agent",
+          "agents/data-agent",
           "agents/creating-agents"
+        ]
+      },
+      {
+        "group": "Teams",
+        "pages": [
+          "teams/overview"
+        ]
+      },
+      {
+        "group": "Workflows",
+        "pages": [
+          "workflows/overview"
         ]
       },
       {
         "group": "Configuration",
         "pages": [
           "configuration/environment",
+          "configuration/security",
+          "configuration/telemetry",
           "configuration/docker"
         ]
       },

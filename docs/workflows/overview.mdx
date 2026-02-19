@@ -1,0 +1,82 @@
+---
+title: "Workflows"
+description: "Multi-step pipelines that chain agents together for automated processing."
+---
+
+Workflows chain agents into sequential steps. Each step's output feeds into the next, producing structured results from multi-stage processing.
+
+```python
+from agno.workflow import Workflow
+from agno.workflow.step import Step
+
+from backend.agents.reasoning_agent import reasoning_agent
+from backend.agents.web_search_agent import web_search_agent
+
+research_workflow = Workflow(
+    id="research-workflow",
+    name="Research Workflow",
+    description="Search the web for a topic, then analyze and synthesize findings.",
+    steps=[
+        Step(
+            name="Web Research",
+            description="Search the web for information on the given topic.",
+            agent=web_search_agent,
+        ),
+        Step(
+            name="Analysis & Synthesis",
+            description="Analyze the research findings and produce a structured report.",
+            agent=reasoning_agent,
+        ),
+    ],
+)
+```
+
+## Research Workflow
+
+The built-in Research Workflow runs two steps sequentially:
+
+| Step | Agent | Purpose |
+|------|-------|---------|
+| 1. Web Research | Web Search Agent | Gathers information from the web |
+| 2. Analysis & Synthesis | Reasoning Agent | Analyzes findings and produces a structured report |
+
+The web search agent collects sources with citations, then the reasoning agent synthesizes the findings into a coherent analysis.
+
+## Teams vs workflows
+
+| Aspect | Teams | Workflows |
+|--------|-------|-----------|
+| Execution | Dynamic delegation by a coordinator | Fixed sequential steps |
+| Control | Leader decides which member handles what | Steps always run in order |
+| Use case | Open-ended research, complex queries | Repeatable pipelines with known stages |
+
+Use teams when the task requires adaptive delegation. Use workflows when the processing stages are fixed and predictable.
+
+## Workflow registration
+
+Workflows are registered in `backend/main.py` alongside agents and teams:
+
+```python
+from backend.workflows.research_workflow import research_workflow
+
+agent_os = AgentOS(
+    # ...
+    workflows=[research_workflow],
+)
+```
+
+## Creating a workflow
+
+1. Create a file in `backend/workflows/`
+2. Define `Step` instances with an `agent` for each stage
+3. Combine steps into a `Workflow`
+4. Register in `backend/main.py`
+
+See the [Agno Workflows docs](https://docs.agno.com/workflows/introduction) for advanced features like conditional steps and parallel execution.
+
+## Example queries
+
+```
+Research the impact of AI on healthcare and produce a report
+Investigate recent breakthroughs in battery technology
+```

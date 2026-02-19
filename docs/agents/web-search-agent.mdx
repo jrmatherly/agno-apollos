@@ -1,0 +1,63 @@
+---
+title: "Web Search Agent"
+description: "Web research agent with DuckDuckGo search, news retrieval, and source citations."
+---
+
+The Web Search Agent searches the web using DuckDuckGo and synthesizes results with source citations.
+
+```python
+from agno.agent import Agent
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+from agno.tools.websearch import WebSearchTools
+
+from backend.db import get_postgres_db
+from backend.models import get_model
+
+web_search_agent = Agent(
+    id="web-search-agent",
+    name="Web Search",
+    model=get_model(),
+    db=get_postgres_db(),
+    tools=[WebSearchTools(enable_search=True, enable_news=True)],
+    instructions=instructions,
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    enable_agentic_memory=True,
+    add_datetime_to_context=True,
+    add_history_to_context=True,
+    read_chat_history=True,
+    num_history_runs=5,
+    markdown=True,
+    enable_session_summaries=True,
+)
+```
+
+## Key features
+
+| Feature | Configuration |
+|---------|---------------|
+| Web search | `WebSearchTools(enable_search=True)` via DuckDuckGo |
+| News search | `enable_news=True` for current news results |
+| Source citations | Instructions require URL citations for every claim |
+| Session memory | `db=get_postgres_db()` persists conversations |
+| Guardrails | PII detection and prompt injection via `pre_hooks` |
+| Datetime context | `add_datetime_to_context=True` for time-aware queries |
+| Session summaries | `enable_session_summaries=True` for conversation persistence |
+
+## Search tools
+
+`WebSearchTools` from `agno.tools.websearch` provides two capabilities:
+
+| Tool | Enabled by | Description |
+|------|-----------|-------------|
+| Web search | `enable_search=True` | General web search via DuckDuckGo |
+| News search | `enable_news=True` | Current news articles |
+
+The agent automatically selects the appropriate tool based on the query. Time-sensitive queries use news search; general knowledge queries use web search.
+
+## Example queries
+
+```
+What are the latest developments in AI?
+Find recent news about renewable energy
+What is the current population of Tokyo?
+```

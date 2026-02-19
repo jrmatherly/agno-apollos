@@ -41,6 +41,22 @@ All LLM and embedding requests route through a [LiteLLM Proxy](https://docs.lite
 `.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based. For local development without Docker, override `DB_HOST=localhost`.
 </Warning>
 
+## Security
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `JWT_SECRET_KEY` | (empty) | HMAC secret for JWT auth. Empty = auth disabled |
+
+When `JWT_SECRET_KEY` is set, the backend requires a valid JWT token on all API requests. See [security configuration](/configuration/security) for details.
+
+## Observability
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | (empty) | OTLP HTTP endpoint for trace export. Empty = disabled |
+
+When set, agent traces are exported to the specified OpenTelemetry collector. See [telemetry configuration](/configuration/telemetry) for details.
+
 ## Runtime
 
 | Variable | Default | Description |

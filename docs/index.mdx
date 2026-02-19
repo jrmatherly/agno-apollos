@@ -7,10 +7,22 @@ Apollos AI is a self-hosted, containerized platform for running multiple AI agen
 
 ## What's included
 
+### Agents
+
 | Agent | Pattern | Description |
 |-------|---------|-------------|
-| Knowledge Agent | Agentic RAG | Answers questions from a vector knowledge base using hybrid search |
+| Knowledge Agent | Agentic RAG | Hybrid search over a vector knowledge base with learning and user profiles |
 | MCP Agent | MCP Tool Use | Connects to external services via the Model Context Protocol |
+| Web Search Agent | Web Research | Searches the web via DuckDuckGo with source citations |
+| Reasoning Agent | Chain-of-Thought | Step-by-step reasoning with configurable depth |
+| Data Analyst | SQL Analysis | Read-only PostgreSQL queries following the Dash pattern |
+
+### Teams and workflows
+
+| Name | Type | Description |
+|------|------|-------------|
+| Research Team | Coordinate team | Multi-agent research combining web search and analysis |
+| Research Workflow | Pipeline | Automated web search to structured report |
 
 ## Stack
 
@@ -28,7 +40,7 @@ Apollos AI is a self-hosted, containerized platform for running multiple AI agen
     Set up Apollos AI and run your first agent in minutes.
   </Card>
   <Card title="Agents" icon="robot" href="/agents/overview">
-    Explore the built-in agents and create your own.
+    Five built-in agents, plus teams and workflows.
   </Card>
   <Card title="Configuration" icon="gear" href="/configuration/environment">
     Environment variables, Docker, and model settings.

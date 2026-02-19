@@ -7,20 +7,21 @@ The MCP Agent connects to external tools using the [Model Context Protocol](http
 
 ```python
 from agno.agent import Agent
-from agno.models.litellm import LiteLLMOpenAI
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
 from agno.tools.mcp import MCPTools
+
 from backend.db import get_postgres_db
+from backend.models import get_model
 
 mcp_agent = Agent(
     id="mcp-agent",
     name="MCP Agent",
-    model=LiteLLMOpenAI(
-        id=getenv("MODEL_ID", "gpt-5-mini"),
-        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
-    ),
+    model=get_model(),
     tools=[MCPTools(url="https://docs.agno.com/mcp")],
     db=get_postgres_db(),
-    add_history_to_messages=True,
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    enable_agentic_memory=True,
+    enable_session_summaries=True,
     markdown=True,
 )
 ```
@@ -31,7 +32,8 @@ mcp_agent = Agent(
 |---------|--------------|
 | MCP tool discovery | `MCPTools(url=...)` connects to any MCP server |
 | Session memory | `db=get_postgres_db()` persists conversations |
-| History context | `add_history_to_messages=True` includes previous messages |
+| Guardrails | PII detection and prompt injection via `pre_hooks` |
+| Session summaries | `enable_session_summaries=True` for conversation persistence |
 
 ## MCP endpoint
 

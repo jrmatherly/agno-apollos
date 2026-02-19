@@ -1,0 +1,90 @@
+---
+title: "Security"
+description: "JWT authentication, RBAC authorization, and approval-gated tools."
+---
+
+Apollos AI supports opt-in JWT authentication, role-based authorization, and human-in-the-loop approval workflows.
+
+## JWT authentication
+
+Authentication is disabled by default. Set `JWT_SECRET_KEY` to enable it:
+
+```bash
+# .env
+JWT_SECRET_KEY=your-secret-key-here
+```
+
+When `JWT_SECRET_KEY` is set, the backend requires a valid JWT token for all API requests. When empty, authentication is disabled and the API is open.
+
+```python
+# backend/main.py
+jwt_secret = getenv("JWT_SECRET_KEY", "")
+
+agent_os = AgentOS(
+    authorization=bool(jwt_secret),
+    authorization_config=AuthorizationConfig(
+        verification_keys=[jwt_secret] if jwt_secret else None,
+        algorithm="HS256",
+    )
+    if jwt_secret
+    else None,
+)
+```
+
+## Generating tokens
+
+Generate a test token with the auth mise task:
+
+```bash
+mise run auth:generate-token
+```
+
+This produces a signed JWT using the configured `JWT_SECRET_KEY`.
+
+## Frontend authentication
+
+When JWT is enabled, enter the token in the frontend sidebar under the auth token field. The token is sent as a Bearer token with every API request.
+
+## Approval workflows
+
+Certain tools require human approval before execution. These use Agno's `@approval` decorator:
+
+```python
+from agno.approval import approval
+from agno.tools import tool
+
+@tool
+@approval
+def add_knowledge_source(url: str, name: str) -> str:
+    """Add an external URL to the knowledge base."""
+    # Executes only after human approval
+    return f"Knowledge source '{name}' from {url} queued for loading"
+```
+
+The decorator order matters: `@tool` must come before `@approval`.
+
+## Approval types
+
+| Type | Decorator | Description |
+|------|-----------|-------------|
+| Standard | `@approval` | Requires explicit human approval |
+| Audit | `@approval(type="audit")` | Logs the action for audit trail |
+
+## Guardrails
+
+All agents include security guardrails via `pre_hooks`:
+
+```python
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+
+agent = Agent(
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+)
+```
+
+| Guardrail | Purpose |
+|-----------|---------|
+| `PIIDetectionGuardrail` | Detects personally identifiable information in messages |
+| `PromptInjectionGuardrail` | Blocks prompt injection attempts |
+
+These run before the agent processes each message. `mask_pii=False` flags PII without masking it (set to `True` to automatically redact).

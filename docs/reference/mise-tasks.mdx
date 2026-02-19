@@ -29,7 +29,7 @@ mise run <task>
 
 | Task | Description | Flags |
 |------|-------------|-------|
-| `mise run docker:up` | Start full stack | `--prod` for GHCR images |
+| `mise run docker:up` | Start full stack | `--prod` for GHCR images, `--docs` to include docs |
 | `mise run docker:down` | Stop all services | `--prod` for production compose |
 | `mise run docker:logs` | Tail logs | `--prod` for production compose |
 | `mise run docker:build` | Build images locally | `--platform amd64\|arm64` |
@@ -47,6 +47,39 @@ mise run <task>
 | `mise run frontend:format` | Check frontend formatting (Prettier) | |
 | `mise run frontend:typecheck` | Type-check frontend code (TypeScript) | |
 | `mise run frontend:validate` | Run all frontend checks | |
+
+## Docs tasks
+
+| Task | Description | Flags |
+|------|-------------|-------|
+| `mise run docs:dev` | Preview docs site (port 3333) | |
+| `mise run docs:validate` | Validate docs build + check broken links | |
+| `mise run docs:docker` | Start docs in Docker | `--prod` for GHCR image |
+
+## Testing tasks
+
+| Task | Description |
+|------|-------------|
+| `mise run test` | Run integration tests against a running backend |
+| `mise run evals:run` | Run LLM-based evaluation harness |
+
+<Note>
+Tests require a running backend instance. Start the stack with `mise run docker:up` before running tests.
+</Note>
+
+## Auth tasks
+
+| Task | Description |
+|------|-------------|
+| `mise run auth:generate-token` | Generate a signed JWT token for testing |
+
+Requires `JWT_SECRET_KEY` to be set in `.env`. See [security configuration](/configuration/security).
+
+## Scheduler tasks
+
+| Task | Description |
+|------|-------------|
+| `mise run schedules:setup` | Configure agent scheduled tasks |
 
 ## Other tasks
 

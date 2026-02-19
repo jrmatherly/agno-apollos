@@ -1,14 +1,31 @@
 ---
 title: "Agents overview"
-description: "The built-in AI agents and how the agent system works."
+description: "Five built-in agents with guardrails, learning, and session summaries."
 ---
 
-Apollos AI ships with two agents. Each agent is a standalone Python module that exports an `Agent` instance, registered in `backend/main.py`.
+Apollos AI ships with five agents, a multi-agent team, and a research workflow. Each agent is a standalone Python module that exports an `Agent` instance, registered in `backend/main.py`.
+
+## Agents
 
 | Agent | ID | Pattern | Source |
 |-------|----|---------|--------|
 | Knowledge Agent | `knowledge-agent` | Agentic RAG | `backend/agents/knowledge_agent.py` |
 | MCP Agent | `mcp-agent` | MCP Tool Use | `backend/agents/mcp_agent.py` |
+| Web Search Agent | `web-search-agent` | Web Research | `backend/agents/web_search_agent.py` |
+| Reasoning Agent | `reasoning-agent` | Chain-of-Thought | `backend/agents/reasoning_agent.py` |
+| Data Analyst | `data-agent` | SQL Analysis | `backend/agents/data_agent.py` |
+
+## Teams
+
+| Team | ID | Mode | Source |
+|------|----|------|--------|
+| Research Team | `research-team` | Coordinate | `backend/teams/research_team.py` |
+
+## Workflows
+
+| Workflow | ID | Steps | Source |
+|----------|----|-------|--------|
+| Research Workflow | `research-workflow` | Web Search → Analysis | `backend/workflows/research_workflow.py` |
 
 ## How agents work
 
@@ -16,43 +33,57 @@ Every agent uses the [Agno](https://docs.agno.com) framework. An agent consists 
 
 | Component | Purpose |
 |-----------|---------|
-| `model` | The LLM that powers the agent (routed through LiteLLM Proxy) |
+| `model` | The LLM (via shared `get_model()` factory, routed through LiteLLM Proxy) |
 | `instructions` | System prompt defining behavior |
 | `tools` | Functions the agent can call |
 | `knowledge` | Vector database for RAG retrieval |
 | `db` | PostgresDb for session memory and history |
+| `pre_hooks` | Guardrails (PII detection, prompt injection) |
+| `learning` | LearningMachine for agentic learning |
 
-All agents connect to the same PostgreSQL + pgvector database for persistence and use `LiteLLMOpenAI` as the model provider, which routes requests through your LiteLLM Proxy to any supported LLM.
+All agents use `get_model()` from `backend/models.py` for the model, `get_postgres_db()` for persistence, and include PII detection and prompt injection guardrails.
 
 ## Agent registration
 
-Agents are registered in `backend/main.py`:
+Agents, teams, and workflows are registered in `backend/main.py`:
 
 ```python
-from agno.agent_os import AgentOS
 from backend.agents.knowledge_agent import knowledge_agent
 from backend.agents.mcp_agent import mcp_agent
+from backend.agents.web_search_agent import web_search_agent
+from backend.agents.reasoning_agent import reasoning_agent
+from backend.agents.data_agent import data_agent
+from backend.teams.research_team import research_team
+from backend.workflows.research_workflow import research_workflow
 
 agent_os = AgentOS(
     name="Apollos AI",
-    agents=[knowledge_agent, mcp_agent],
+    agents=[knowledge_agent, mcp_agent, web_search_agent, data_agent, reasoning_agent],
+    teams=[research_team],
+    workflows=[research_workflow],
     # ...
 )
 ```
 
 Adding a new agent means creating a module and adding it to this list. See [creating agents](/agents/creating-agents).
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="Knowledge Agent" icon="book" href="/agents/knowledge-agent">
-    RAG agent with hybrid vector search over ingested documents.
+    RAG agent with hybrid search, learning, and user profiles.
   </Card>
   <Card title="MCP Agent" icon="plug" href="/agents/mcp-agent">
     Tool-use agent connecting to external services via MCP.
   </Card>
-  <Card title="Create your own" icon="plus" href="/agents/creating-agents">
-    Add a custom agent with tools and instructions.
+  <Card title="Web Search Agent" icon="magnifying-glass" href="/agents/web-search-agent">
+    Web research with DuckDuckGo and source citations.
   </Card>
-  <Card title="Agno agent docs" icon="arrow-up-right-from-square" href="https://docs.agno.com/agents/introduction">
-    Full Agno Agent reference and capabilities.
+  <Card title="Reasoning Agent" icon="brain" href="/agents/reasoning-agent">
+    Step-by-step chain-of-thought reasoning.
+  </Card>
+  <Card title="Data Analyst" icon="database" href="/agents/data-agent">
+    Read-only PostgreSQL queries with SQL learning.
+  </Card>
+  <Card title="Create your own" icon="plus" href="/agents/creating-agents">
+    Add a custom agent with tools, guardrails, and learning.
   </Card>
 </CardGroup>

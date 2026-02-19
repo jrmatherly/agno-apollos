@@ -1,32 +1,44 @@
 ---
 title: "Knowledge Agent"
-description: "Agentic RAG agent with hybrid search over a pgvector knowledge base."
+description: "Agentic RAG agent with hybrid search, learning system, and user profiles."
 ---
 
-The Knowledge Agent answers questions using hybrid search (vector + keyword) over documents stored in PostgreSQL with pgvector.
+The Knowledge Agent answers questions using hybrid search (vector + keyword) over documents stored in PostgreSQL with pgvector. It features intent routing, confidence signaling, a learning system, and per-user profiles.
 
 ```python
 from agno.agent import Agent
-from agno.models.litellm import LiteLLMOpenAI
-from agno.knowledge.url import UrlKnowledge
-from backend.db import get_postgres_db, create_knowledge
+from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+from agno.learn import (
+    LearnedKnowledgeConfig, LearningMachine, LearningMode,
+    UserMemoryConfig, UserProfileConfig,
+)
+
+from backend.db import create_knowledge, get_postgres_db
+from backend.models import get_model
+from backend.tools.search import search_content
+from backend.tools.awareness import list_knowledge_sources
+from backend.tools.approved_ops import add_knowledge_source
 
 knowledge_agent = Agent(
     id="knowledge-agent",
     name="Knowledge Agent",
-    model=LiteLLMOpenAI(
-        id=getenv("MODEL_ID", "gpt-5-mini"),
-        base_url=getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
-    ),
-    knowledge=create_knowledge(
-        sources=[
-            UrlKnowledge(urls=["https://docs.agno.com/introduction"]),
-            UrlKnowledge(urls=["https://docs.agno.com/agents/first-agent"]),
-        ]
-    ),
+    model=get_model(),
     db=get_postgres_db(),
+    knowledge=create_knowledge("Knowledge Agent", "knowledge_agent_docs"),
+    instructions=instructions,
+    tools=[search_content, list_knowledge_sources, add_knowledge_source],
     search_knowledge=True,
-    add_history_to_messages=True,
+    pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    learning=LearningMachine(
+        learned_knowledge=LearnedKnowledgeConfig(
+            mode=LearningMode.AGENTIC,
+            knowledge=knowledge_learnings,
+        ),
+        user_profile=UserProfileConfig(db=agent_db),
+        user_memory=UserMemoryConfig(db=agent_db),
+    ),
+    enable_agentic_memory=True,
+    enable_session_summaries=True,
     markdown=True,
 )
 ```
@@ -35,10 +47,15 @@ knowledge_agent = Agent(
 
 | Feature | Configuration |
 |---------|--------------|
-| Hybrid search | `search_knowledge=True` on agent, `search_type=SearchType.hybrid` on Knowledge |
+| Hybrid search | `search_knowledge=True`, hybrid search on Knowledge |
 | Session memory | `db=get_postgres_db()` persists conversations across sessions |
-| History context | `add_history_to_messages=True` includes previous messages |
-| Markdown output | `markdown=True` renders responses in markdown |
+| Guardrails | PII detection and prompt injection via `pre_hooks` |
+| Learning | `LearningMachine` saves useful patterns for future queries |
+| User profiles | `UserProfileConfig` and `UserMemoryConfig` for per-user context |
+| Custom tools | `search_content`, `list_knowledge_sources`, `add_knowledge_source` |
+| Intent routing | Routes queries by type (factual, exploratory, comparative) |
+| Confidence signaling | Indicates certainty level in responses |
+| Session summaries | `enable_session_summaries=True` for conversation persistence |
 
 ## Loading documents
 
@@ -48,28 +65,23 @@ The knowledge base must be populated before the agent can answer questions:
 mise run load-docs
 ```
 
-This runs `backend/agents/knowledge_agent.py` as a module, which loads the configured URL sources into pgvector.
+The agent loads URL-based documents from `docs.agno.com` plus any PDF and CSV files from `data/docs/`.
 
-You can also load documents manually from inside the container:
+To add custom documents, place PDF or CSV files in `data/docs/` and re-run `mise run load-docs`.
 
-```bash
-docker exec -it apollos-backend python -m backend.agents.knowledge_agent
-```
+## Document loaders
 
-## Knowledge sources
+The knowledge system supports multiple document formats via `backend/knowledge/loaders.py`:
 
-The default configuration loads from `docs.agno.com`. To add your own documents, modify the `sources` list in `knowledge_agent.py`:
+| Format | Loader | Source |
+|--------|--------|--------|
+| URL | Built-in `Knowledge.insert()` | Configured in `knowledge_agent.py` |
+| PDF | `PDFReader` from `agno.knowledge.reader.pdf_reader` | Files in `data/docs/*.pdf` |
+| CSV | `CSVReader` from `agno.knowledge.reader.csv_reader` | Files in `data/docs/*.csv` |
 
-```python
-knowledge=create_knowledge(
-    sources=[
-        UrlKnowledge(urls=["https://your-docs-site.com/page1"]),
-        UrlKnowledge(urls=["https://your-docs-site.com/page2"]),
-    ]
-)
-```
+## Approval-gated tools
 
-Agno supports 20+ knowledge source types beyond URLs. See the [Agno knowledge docs](https://docs.agno.com/knowledge/introduction) for file paths, S3, GCS, PDFs, and more.
+The `add_knowledge_source` tool uses the `@approval` decorator for human-in-the-loop confirmation before adding new sources. This requires JWT auth to be enabled. See [security configuration](/configuration/security).
 
 ## Example queries
 
