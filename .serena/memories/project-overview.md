@@ -52,6 +52,7 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run db` - database only
 - `mise run load-docs` - load knowledge base
 - `mise run ci` / `clean`
+- `mise run release <version>` - create GitHub release (triggers Docker builds)
 - `mise run frontend:setup` / `frontend:dev` / `frontend:build`
 - `mise run frontend:lint` / `frontend:format` / `frontend:typecheck` / `frontend:validate`
 
@@ -70,3 +71,8 @@ Run `mise tasks` for full list. Key tasks:
 - `RUNTIME_ENV` (dev enables auto-reload)
 - `IMAGE_TAG` (Docker image tag, default: latest)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
+
+## Security
+- CodeQL scanning on push/PR to main + weekly (Python, JS/TS, Actions)
+- CI workflows use pinned action SHAs for supply-chain security
+- Explicit `permissions` block on all workflows (least-privilege)

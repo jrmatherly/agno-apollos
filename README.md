@@ -177,6 +177,7 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run load-docs` | Load knowledge base documents |
 | `mise run ci` | Run full CI pipeline |
 | `mise run clean` | Clean build artifacts and caches |
+| `mise run release <version>` | Create a GitHub release (triggers Docker image builds) |
 | `mise run frontend:setup` | Install frontend dependencies (pnpm) |
 | `mise run frontend:dev` | Start frontend dev server (port 3000) |
 | `mise run frontend:build` | Build frontend for production |

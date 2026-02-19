@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+#MISE description="Create a GitHub release (triggers Docker image builds)"
+#MISE depends=["validate"]
+#USAGE flag "-f --force" help="Skip CI status check"
+#USAGE arg "<version>" help="Semver version (e.g. 1.0.0 or v1.0.0)"
+set -e
+
+VERSION="${usage_version}"
+FORCE="${usage_force:-false}"
+
+# Normalize version: ensure v prefix
+if [[ ! "$VERSION" =~ ^v ]]; then
+  VERSION="v${VERSION}"
+fi
+
+# Validate semver format
+if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: Invalid semver format. Expected: v1.2.3"
+  exit 1
+fi
+
+# Ensure we're on main branch
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" != "main" ]; then
+  echo "Error: Releases must be created from the main branch (currently on '${BRANCH}')"
+  exit 1
+fi
+
+# Ensure working tree is clean
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Error: Working tree is not clean. Commit or stash changes first."
+  exit 1
+fi
+
+# Ensure local main is up to date with remote
+git fetch origin main --quiet
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse origin/main)
+if [ "$LOCAL" != "$REMOTE" ]; then
+  echo "Error: Local main is not up to date with origin/main."
+  echo "  Local:  ${LOCAL}"
+  echo "  Remote: ${REMOTE}"
+  echo "Run 'git pull' first."
+  exit 1
+fi
+
+# Check GitHub Actions CI status for HEAD commit
+if [ "$FORCE" != "true" ]; then
+  echo "Checking CI status for commit ${LOCAL:0:7}..."
+  CI_STATUS=$(gh run list --commit "$LOCAL" --workflow=validate.yml --json conclusion --jq '.[0].conclusion' 2>/dev/null || echo "")
+
+  if [ -z "$CI_STATUS" ]; then
+    echo "Error: No CI run found for commit ${LOCAL:0:7}."
+    echo "  Push to main and wait for CI to pass, or use --force to skip this check."
+    exit 1
+  elif [ "$CI_STATUS" != "success" ]; then
+    echo "Error: CI status is '${CI_STATUS}' for commit ${LOCAL:0:7}."
+    echo "  Fix CI failures before releasing, or use --force to skip this check."
+    exit 1
+  fi
+
+  echo "CI passed."
+fi
+
+# Check that tag doesn't already exist
+if git rev-parse "$VERSION" >/dev/null 2>&1; then
+  echo "Error: Tag '${VERSION}' already exists."
+  exit 1
+fi
+
+# Create and push tag
+echo "Creating tag ${VERSION}..."
+git tag "$VERSION"
+git push origin "$VERSION"
+
+# Create GitHub release (triggers docker-images.yml)
+echo "Creating GitHub release ${VERSION}..."
+gh release create "$VERSION" \
+  --title "$VERSION" \
+  --generate-notes
+
+echo ""
+echo "Release ${VERSION} created. Docker image builds triggered."
+echo "  View release: $(gh release view "$VERSION" --json url --jq '.url')"
+echo "  View builds:  $(gh run list --workflow=docker-images.yml --limit=1 --json url --jq '.[0].url' 2>/dev/null || echo 'pending...')"

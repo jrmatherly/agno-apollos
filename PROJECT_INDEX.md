@@ -49,6 +49,7 @@ apollos-ai/
 │   ├── load-docs            # Load knowledge base documents
 │   ├── ci                   # Full CI pipeline (install + validate)
 │   ├── clean                # Clean build artifacts
+│   ├── release              # Create GitHub release (tag + publish, triggers Docker builds)
 │   ├── docker/              # Docker-specific tasks
 │   │   ├── up               # Start full stack (build + detach)
 │   │   ├── down             # Stop all services
@@ -65,10 +66,12 @@ apollos-ai/
 ├── scripts/                 # Container-only scripts
 │   └── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
 ├── .github/workflows/
+│   ├── codeql.yml           # Security: CodeQL scanning (Python, JS/TS, Actions) on push/PR + weekly
 │   ├── validate.yml         # CI: parallel backend + frontend validation on push/PR
 │   └── docker-images.yml    # CD: build + push backend + frontend Docker images on release
+├── .github/codeql/
+│   └── codeql-config.yml    # CodeQL paths-ignore configuration
 ├── mise.toml                # Mise config — tools (Python, uv, Node, pnpm), env vars, settings
-├── .python-version          # Pins Python 3.12 for uv and CI
 ├── .python-version          # Pins Python 3.12 for uv and CI
 ├── docker-compose.yaml      # apollos-db (:5432) + apollos-backend (:8000) + apollos-frontend (:3000)
 ├── pyproject.toml           # Project metadata, deps, [dependency-groups], ruff/mypy config
@@ -164,7 +167,7 @@ Uses **pnpm** for package management:
 | File | Purpose |
 |------|---------|
 | `mise.toml` | Mise config: tools (Python 3.12, uv, Node 24, pnpm), env vars, settings |
-| `mise-tasks/` | File-based mise tasks (21 dev workflow commands) |
+| `mise-tasks/` | File-based mise tasks (22 dev workflow commands) |
 | `pyproject.toml` | Backend metadata, dependencies, [dependency-groups], ruff/mypy config |
 | `uv.lock` | Backend lockfile (auto-managed, committed to git) |
 | `frontend/package.json` | Frontend metadata, dependencies, scripts |
@@ -180,6 +183,7 @@ Uses **pnpm** for package management:
 
 | Workflow | Trigger | Steps |
 |----------|---------|-------|
+| `codeql.yml` | Push to main, PR, weekly Mon 6am UTC | CodeQL security scanning: Python, JavaScript/TypeScript, Actions (security-extended suite) |
 | `validate.yml` | Push to main, PR | Parallel jobs: backend (ruff, mypy via mise) + frontend (eslint, prettier, tsc via mise) |
 | `docker-images.yml` | Release published | Parallel jobs: build + push apollos-backend and apollos-frontend images to DockerHub |
 

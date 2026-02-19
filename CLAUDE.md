@@ -27,6 +27,7 @@ Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 - `mise run load-docs` - load knowledge base documents
 - `mise run ci` - full CI pipeline
 - `mise run clean` - clean build artifacts
+- `mise run release <version>` - create GitHub release (validates, checks CI, triggers Docker builds)
 
 Tool versions managed by mise (see `mise.toml`): Python 3.12, uv latest, Node 24, pnpm latest.
 
@@ -67,6 +68,9 @@ Frontend tasks:
 - Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
 - Docker compose has 3 services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000)
 - CI workflows run backend and frontend validation as parallel jobs
+- CI workflows use pinned action SHAs (not tags) for supply-chain security
+- CodeQL security scanning runs on push/PR to main + weekly schedule (security-extended suite)
+- Release flow: `mise run release <version>` → validates → checks CI → tags → GitHub release → Docker image builds
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
 - VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
 - When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md
