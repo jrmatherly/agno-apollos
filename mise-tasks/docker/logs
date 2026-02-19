@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 #MISE description="Tail logs from all services"
 #USAGE flag "-f --follow" help="Follow log output" default="true"
+#USAGE flag "--prod" help="Use production compose file"
 #USAGE arg "[service]" help="Service name (apollos-backend, apollos-db)"
 
+COMPOSE_CMD="docker compose"
+if [ "${usage_prod:-false}" = "true" ]; then
+  COMPOSE_CMD="docker compose -f docker-compose.prod.yaml"
+fi
+
 if [ -n "${usage_service:-}" ]; then
-  docker compose logs -f "${usage_service}"
+  $COMPOSE_CMD logs -f "${usage_service}"
 else
-  docker compose logs -f
+  $COMPOSE_CMD logs -f
 fi

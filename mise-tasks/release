@@ -126,13 +126,17 @@ sed -i '' "s/^version = \"${CURRENT}\"/version = \"${VERSION}\"/" pyproject.toml
 # frontend/package.json (update the top-level "version" field)
 sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${VERSION}\"/" frontend/package.json
 
+# Regenerate uv.lock so CI's --locked check passes
+uv lock
+
 echo "  Updated pyproject.toml"
 echo "  Updated frontend/package.json"
+echo "  Updated uv.lock"
 
 # ---------------------------------------------------------------------------
 # Commit, push, tag, release
 # ---------------------------------------------------------------------------
-git add pyproject.toml frontend/package.json
+git add pyproject.toml frontend/package.json uv.lock
 git commit -m "chore: bump version to ${VERSION}"
 git push origin main
 

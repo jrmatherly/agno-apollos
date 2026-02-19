@@ -169,10 +169,10 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run typecheck` | Type-check code (mypy) |
 | `mise run validate` | Run all checks (format-check, lint, typecheck) |
 | `mise run dev` | Start stack in watch mode (hot-reload) |
-| `mise run docker:up` | Start the full stack (build + detach) |
-| `mise run docker:down` | Stop all services |
-| `mise run docker:logs` | Tail logs from all services |
-| `mise run docker:build` | Build multi-arch Docker image |
+| `mise run docker:up` | Start full stack (`--prod` for GHCR images) |
+| `mise run docker:down` | Stop all services (`--prod` for production) |
+| `mise run docker:logs` | Tail logs (`--prod` for production) |
+| `mise run docker:build` | Build images locally (`--platform amd64\|arm64`) |
 | `mise run db` | Start only the database service |
 | `mise run load-docs` | Load knowledge base documents |
 | `mise run ci` | Run full CI pipeline |
@@ -226,6 +226,7 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `DB_DATABASE` | No | `ai` | Database name |
 | `RUNTIME_ENV` | No | `prd` | Set to `dev` for auto-reload |
 | `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
+| `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by `docker-compose.prod.yaml`) |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | - | Pre-fill auth token in the frontend UI |
 
 ## Learn More

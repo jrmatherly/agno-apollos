@@ -17,6 +17,7 @@ on:
       - "mise-tasks/**"
       - "scripts/**"
       - "docker-compose.yaml"
+      - "docker-compose.prod.yaml"
   pull_request:
     types:
       - opened
@@ -37,6 +38,7 @@ on:
       - "mise-tasks/**"
       - "scripts/**"
       - "docker-compose.yaml"
+      - "docker-compose.prod.yaml"
   schedule:
     - cron: "0 6 * * 1" # Monday 6am UTC
 

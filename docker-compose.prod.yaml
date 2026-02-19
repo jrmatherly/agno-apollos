@@ -1,0 +1,71 @@
+services:
+  ###############################################################
+  # Apollos AI - Database
+  ###############################################################
+  apollos-db:
+    image: agnohq/pgvector:18
+    container_name: apollos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-ai}
+      POSTGRES_PASSWORD: ${DB_PASS:-ai}
+      POSTGRES_DB: ${DB_DATABASE:-ai}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+    networks:
+      - apollos
+
+  ###############################################################
+  # Apollos AI - Backend (pre-built GHCR image)
+  ###############################################################
+  apollos-backend:
+    image: ghcr.io/${GHCR_OWNER:-jrmatherly}/apollos-backend:${IMAGE_TAG:-latest}
+    container_name: apollos-backend
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - RUNTIME_ENV=prod
+      - PYTHONPATH=/app
+      # Database
+      - DB_HOST=apollos-db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-ai}
+      - DB_PASS=${DB_PASS:-ai}
+      - DB_DATABASE=${DB_DATABASE:-ai}
+      - WAIT_FOR_DB=True
+      # LiteLLM
+      - LITELLM_API_KEY=${LITELLM_API_KEY}
+      - LITELLM_BASE_URL=${LITELLM_BASE_URL:-http://localhost:4000/v1}
+      - MODEL_ID=${MODEL_ID:-gpt-5-mini}
+      - EMBEDDING_MODEL_ID=${EMBEDDING_MODEL_ID:-text-embedding-3-small}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-1536}
+    depends_on:
+      - apollos-db
+    networks:
+      - apollos
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  ###############################################################
+  # Apollos AI - Frontend (pre-built GHCR image)
+  ###############################################################
+  apollos-frontend:
+    image: ghcr.io/${GHCR_OWNER:-jrmatherly}/apollos-frontend:${IMAGE_TAG:-latest}
+    container_name: apollos-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - apollos-backend
+    networks:
+      - apollos
+
+networks:
+  apollos:
+
+volumes:
+  pgdata:

@@ -51,10 +51,10 @@ apollos-ai/
 │   ├── clean                # Clean build artifacts
 │   ├── release              # Create GitHub release (tag + publish, triggers Docker builds)
 │   ├── docker/              # Docker-specific tasks
-│   │   ├── up               # Start full stack (build + detach)
-│   │   ├── down             # Stop all services
-│   │   ├── logs             # Tail logs
-│   │   └── build            # Multi-arch image build (amd64 + arm64)
+│   │   ├── up               # Start full stack (--prod for GHCR images)
+│   │   ├── down             # Stop all services (--prod for production)
+│   │   ├── logs             # Tail logs (--prod for production)
+│   │   └── build            # Build images locally (--platform amd64|arm64)
 │   └── frontend/            # Frontend-specific tasks
 │       ├── setup            # Install frontend deps (pnpm install)
 │       ├── dev              # Start frontend dev server (port 3000)
@@ -73,7 +73,8 @@ apollos-ai/
 │   └── codeql-config.yml    # CodeQL paths-ignore configuration
 ├── mise.toml                # Mise config — tools (Python, uv, Node, pnpm), env vars, settings
 ├── .python-version          # Pins Python 3.12 for uv and CI
-├── docker-compose.yaml      # apollos-db (:5432) + apollos-backend (:8000) + apollos-frontend (:3000)
+├── docker-compose.yaml      # Dev: local builds, hot-reload, debug mode
+├── docker-compose.prod.yaml # Prod: GHCR images, no reload, no debug
 ├── pyproject.toml           # Project metadata, deps, [dependency-groups], ruff/mypy config
 ├── uv.lock                  # Cross-platform lockfile (auto-managed by uv)
 ├── example.env              # Template for .env (LiteLLM, model, DB, runtime, frontend config)
@@ -173,7 +174,8 @@ Uses **pnpm** for package management:
 | `frontend/package.json` | Frontend metadata, dependencies, scripts |
 | `frontend/pnpm-lock.yaml` | Frontend lockfile (committed to git) |
 | `.python-version` | Pins Python 3.12 for uv, pyenv, and CI |
-| `docker-compose.yaml` | 3 services + watch mode: apollos-db, apollos-backend, apollos-frontend |
+| `docker-compose.yaml` | Dev: 3 services + watch mode (local builds, hot-reload, debug) |
+| `docker-compose.prod.yaml` | Prod: 3 services (GHCR images, no reload, no debug) |
 | `backend/config.yaml` | Agent quick-prompts for the Agno web UI |
 | `example.env` | Template: LiteLLM, model, DB, runtime, Docker, frontend config |
 | `backend/Dockerfile` | Backend: two-layer cached build, `uv sync --locked` |
@@ -238,6 +240,7 @@ Uses **pnpm** for package management:
 | `DB_DRIVER` | No | `postgresql+psycopg` | SQLAlchemy DB driver |
 | `RUNTIME_ENV` | No | `dev` | Set to `dev` for auto-reload |
 | `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
+| `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by docker-compose.prod.yaml) |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | — | Pre-fill auth token in the frontend UI |
 | `WAIT_FOR_DB` | No | — | Container waits for DB readiness |
 | `PRINT_ENV_ON_LOAD` | No | — | Print env vars on container start |
@@ -277,5 +280,5 @@ open http://localhost:8000/docs
 - **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`.
 - **LLM Provider**: LiteLLM Proxy (all LLM and embedding traffic routes through self-hosted proxy).
 - **Frontend**: Next.js 15 with standalone output. Connects to backend via browser-side fetch (not server-side). API URL is configured in the UI, not env vars.
-- **Deployment**: Docker Compose with 3 services and watch mode for dev. Multi-arch images for production.
+- **Deployment**: Two compose files: `docker-compose.yaml` (dev, local builds) and `docker-compose.prod.yaml` (prod, GHCR images). Multi-arch images for production.
 - **Tooling**: `mise` (task runner + tool manager), `uv` (backend package management), `pnpm` (frontend package management), `ruff` for formatting/linting, `mypy` for type-checking.

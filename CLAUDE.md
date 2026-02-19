@@ -19,10 +19,10 @@ Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 - `mise run typecheck` - type check (mypy)
 - `mise run validate` - all checks (format-check + lint + typecheck)
 - `mise run dev` - docker compose watch (hot-reload)
-- `mise run docker:up` - start full stack
-- `mise run docker:down` - stop stack
-- `mise run docker:logs` - tail logs
-- `mise run docker:build` - multi-arch image build
+- `mise run docker:up` - start full stack (add `--prod` to pull GHCR images instead of building)
+- `mise run docker:down` - stop stack (add `--prod` for production compose file)
+- `mise run docker:logs` - tail logs (add `--prod` for production compose file)
+- `mise run docker:build` - build both backend + frontend images locally (add `--platform amd64` or `arm64`)
 - `mise run db` - start database only
 - `mise run load-docs` - load knowledge base documents
 - `mise run ci` - full CI pipeline
@@ -45,6 +45,7 @@ Frontend tasks:
 - Subdirectories create namespaced tasks: `mise-tasks/docker/up` → `mise run docker:up`
 - `scripts/` is container-only (just `entrypoint.sh`). Dev tasks go in `mise-tasks/`.
 - `mise.local.toml` is gitignored — use for local developer overrides
+- Interactive tasks (prompts/input) must use `read < /dev/tty` and `echo > /dev/tty` — mise does not forward stdin/stderr
 
 ## Development Workflow
 
@@ -63,15 +64,17 @@ Frontend tasks:
 - ruff line-length: 120
 - Env var defaults live in `mise.toml` [env] section and `backend/db/session.py`
 - Dependencies: `uv add <package>` (auto-updates uv.lock), never edit uv.lock manually
+- `uv.lock` records the project version — any version bump in pyproject.toml requires `uv lock` to keep the lockfile in sync
 - Frontend uses pnpm (not npm/yarn). Use `--ci` flag on setup/frontend:setup tasks for locked/frozen mode in CI.
 - After changing frontend/package.json, run `mise run frontend:setup` to regenerate pnpm-lock.yaml.
 - Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
+- Two compose files: `docker-compose.yaml` (dev, builds locally) and `docker-compose.prod.yaml` (prod, pulls GHCR images)
 - Docker compose has 3 services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000)
 - CI workflows run backend and frontend validation as parallel jobs using mise tasks
 - CI workflows use pinned action SHAs (not tags) for supply-chain security
 - CodeQL security scanning runs on push/PR to main + weekly schedule (security-extended suite)
 - Docker images publish to GHCR (`ghcr.io/<owner>/apollos-backend`, `ghcr.io/<owner>/apollos-frontend`)
-- Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions → tags → GitHub release → Docker image builds
+- Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions (pyproject.toml, package.json, uv.lock) → tags → GitHub release → Docker image builds
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
 - VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
 - When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md

@@ -1,24 +1,57 @@
 #!/usr/bin/env bash
-#MISE description="Build multi-arch Docker image (amd64 + arm64)"
-#USAGE flag "-p --push" help="Push image after building"
+#MISE description="Build Docker images locally"
+#USAGE flag "-p --push" help="Push images to registry"
+#USAGE option "--platform <arch>" help="Target platform: amd64 or arm64 (default: native)"
 #USAGE arg "[tag]" help="Image tag" default="latest"
 set -e
 
-IMAGE_NAME="${IMAGE_NAME:-apollos-backend}"
 IMAGE_TAG="${usage_tag:-latest}"
+PUSH="${usage_push:-false}"
 
-echo "Building ${IMAGE_NAME}:${IMAGE_TAG} (linux/amd64, linux/arm64)..."
-
-PUSH_FLAG=""
-if [ "${usage_push:-false}" = "true" ]; then
-  PUSH_FLAG="--push"
+# Determine platform
+if [ -n "${usage_platform:-}" ]; then
+  case "${usage_platform}" in
+    amd64|arm64) PLATFORM="linux/${usage_platform}" ;;
+    *)
+      echo "Error: Invalid platform '${usage_platform}'. Use 'amd64' or 'arm64'."
+      exit 1
+      ;;
+  esac
+else
+  # Default to native architecture
+  ARCH=$(uname -m)
+  case "$ARCH" in
+    x86_64)       PLATFORM="linux/amd64" ;;
+    arm64|aarch64) PLATFORM="linux/arm64" ;;
+    *)            PLATFORM="linux/amd64" ;;
+  esac
 fi
 
+if [ "$PUSH" = "true" ]; then
+  OUTPUT="--push"
+else
+  OUTPUT="--load"
+fi
+
+echo "Building images (${PLATFORM}, tag: ${IMAGE_TAG})..."
+echo ""
+
+echo "Building apollos-backend..."
 docker buildx build \
-  --platform=linux/amd64,linux/arm64 \
-  -t "${IMAGE_NAME}:${IMAGE_TAG}" \
+  --platform="${PLATFORM}" \
+  -t "apollos-backend:${IMAGE_TAG}" \
   -f backend/Dockerfile \
-  ${PUSH_FLAG} \
+  ${OUTPUT} \
   .
 
-echo "Done."
+echo ""
+echo "Building apollos-frontend..."
+docker buildx build \
+  --platform="${PLATFORM}" \
+  -t "apollos-frontend:${IMAGE_TAG}" \
+  -f frontend/Dockerfile \
+  ${OUTPUT} \
+  ./frontend
+
+echo ""
+echo "Done. Built apollos-backend:${IMAGE_TAG} and apollos-frontend:${IMAGE_TAG} (${PLATFORM})"

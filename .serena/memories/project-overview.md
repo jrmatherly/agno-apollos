@@ -8,7 +8,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - **API**: FastAPI via `backend/main.py` → `agent_os.get_app()`
 - **Frontend**: Next.js 15 (App Router), React 18, TypeScript, pnpm, Tailwind CSS, shadcn/ui
 - **Database**: PostgreSQL + pgvector (hybrid vector search)
-- **Containerization**: Docker Compose (3 services: apollos-db, apollos-backend, apollos-frontend)
+- **Containerization**: Docker Compose — two files: `docker-compose.yaml` (dev) and `docker-compose.prod.yaml` (prod, GHCR images)
 - **Model**: LiteLLM Proxy via `agno.models.litellm.LiteLLMOpenAI`
 
 ## Key Files
@@ -21,7 +21,8 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `frontend/src/store.ts` - Zustand state (endpoint default: localhost:8000)
 - `frontend/src/api/` - Browser-side API client (fetch, Bearer token auth)
 - `frontend/Dockerfile` - Multi-stage standalone build (node:24-alpine)
-- `docker-compose.yaml` - Docker Compose (apollos-db, apollos-backend, apollos-frontend)
+- `docker-compose.yaml` - Dev compose (local builds, hot-reload, debug)
+- `docker-compose.prod.yaml` - Prod compose (GHCR images, no reload, no debug)
 - `backend/Dockerfile` - Backend, based on agnohq/python:3.12, uses uv
 - `backend/Dockerfile.dockerignore` - Backend build context exclusions (BuildKit convention)
 
@@ -48,7 +49,8 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run setup` - install all deps (`--ci` for locked/frozen mode)
 - `mise run format` / `lint` / `typecheck` / `validate` - backend code quality
 - `mise run dev` - docker compose watch
-- `mise run docker:up` / `docker:down` / `docker:logs` / `docker:build`
+- `mise run docker:up` / `docker:down` / `docker:logs` (all support `--prod` flag)
+- `mise run docker:build` - build images locally (`--platform amd64|arm64`)
 - `mise run db` - database only
 - `mise run load-docs` - load knowledge base
 - `mise run ci` / `clean`
@@ -70,6 +72,7 @@ Run `mise tasks` for full list. Key tasks:
 - `DB_HOST/PORT/USER/PASS/DATABASE` (defaults: localhost:5432, ai/ai/ai)
 - `RUNTIME_ENV` (dev enables auto-reload)
 - `IMAGE_TAG` (Docker image tag, default: latest)
+- `GHCR_OWNER` (GHCR image owner for prod compose, default: jrmatherly)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
 
 ## Security & CI/CD

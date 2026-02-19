@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 #MISE description="Start the full stack (build + detach)"
+#USAGE flag "--prod" help="Use production compose file (pre-built GHCR images)"
 set -e
 
-docker compose up -d --build
-echo ""
-echo "Apollos AI running at http://localhost:8000"
+if [ "${usage_prod:-false}" = "true" ]; then
+  docker compose -f docker-compose.prod.yaml up -d
+  echo ""
+  echo "Apollos AI (prod) running at http://localhost:8000"
+else
+  docker compose up -d --build
+  echo ""
+  echo "Apollos AI running at http://localhost:8000"
+fi

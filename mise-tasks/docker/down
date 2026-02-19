@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 #MISE description="Stop all services"
+#USAGE flag "--prod" help="Use production compose file"
 set -e
 
-docker compose down
+if [ "${usage_prod:-false}" = "true" ]; then
+  docker compose -f docker-compose.prod.yaml down
+else
+  docker compose down
+fi

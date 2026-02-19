@@ -58,10 +58,10 @@ experimental = true
 # clean              Clean build artifacts and caches
 # release            Create a GitHub release (interactive version prompt)
 #
-# docker:up          Start full stack (build + detach)
-# docker:down        Stop all services
-# docker:logs        Tail logs from all services
-# docker:build       Build multi-arch Docker image (amd64 + arm64)
+# docker:up [--prod]  Start full stack (--prod pulls GHCR images instead of building)
+# docker:down [--prod] Stop all services (--prod targets production compose file)
+# docker:logs [--prod] Tail logs from all services
+# docker:build [--platform amd64|arm64] Build Docker images (default: native arch)
 #
 # frontend:dev       Start frontend dev server (Next.js)
 # frontend:build     Build frontend for production
