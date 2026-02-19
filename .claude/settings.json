@@ -28,6 +28,21 @@
             "type": "command",
             "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == */uv.lock || \"$file\" == */pnpm-lock.yaml ]]; then echo 'BLOCK: Do not edit lockfiles directly. Use mise run setup (backend) or mise run frontend:setup (frontend).' >&2; exit 2; fi",
             "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == */.env || \"$file\" == */.env.* ]]; then echo 'BLOCK: Do not edit .env files — they contain secrets. Edit example.env instead.' >&2; exit 2; fi",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '\\bgit commit\\b'; then cd \"$CLAUDE_PROJECT_DIR\" && mise run validate 2>&1 | tail -20; exit_code=$?; if [ $exit_code -ne 0 ]; then echo 'BLOCK: Validation failed. Fix issues before committing.' >&2; exit 2; fi; fi",
+            "timeout": 120000
           }
         ]
       }
