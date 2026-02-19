@@ -13,6 +13,9 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
+  # Write OCI annotations to both per-platform manifests AND the multi-arch
+  # index so GHCR displays description/metadata on the package page.
+  DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
 
 jobs:
   build-docs-image:
