@@ -13,7 +13,7 @@ paths-ignore:
   - .claude
   - .serena
   - .vscode
-  - .github
+  - .github/codeql
 
   # Documentation and non-code files
   - docs
