@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#MISE description="Run agent evaluation suite"
-
+#MISE description="Run agent evaluation suite (-c category, -v verbose, -g llm-grader, -r compare-results, --direct)"
 set -euo pipefail
 uv run python -m backend.evals.run_evals "$@"
