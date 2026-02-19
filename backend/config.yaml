@@ -8,3 +8,7 @@ chat:
       - "What is Apollos AI?"
       - "What tools do you have access to?"
       - "What are Learning Machines?"
+    data-agent:
+      - "Who won the most F1 races in 2019?"
+      - "Compare Ferrari vs Mercedes points 2015-2020"
+      - "Show me the database tables"
