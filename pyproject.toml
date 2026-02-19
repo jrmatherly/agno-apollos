@@ -18,6 +18,7 @@ dependencies = [
   "opentelemetry-sdk",
   "openinference-instrumentation-agno",
   "litellm[proxy]>=1.81.13",
+  "duckduckgo-search>=8.1.1",
 ]
 
 [dependency-groups]
