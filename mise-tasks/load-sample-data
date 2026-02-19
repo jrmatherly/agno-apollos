@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Load F1 sample data into PostgreSQL for dev/demo/evals"
+#MISE depends=["docker:up"]
+set -euo pipefail
+
+echo "Loading F1 sample data..."
+docker exec -it apollos-backend python -m backend.scripts.load_sample_data

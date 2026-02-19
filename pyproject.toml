@@ -23,11 +23,14 @@ dependencies = [
   "aiofiles>=25.1.0",
   "opentelemetry-exporter-otlp-proto-http>=1.39.1",
   "fastmcp>=2.14,<3",
+  "pandas>=3.0.1",
+  "httpx>=0.28.1",
 ]
 
 [dependency-groups]
 dev = [
     "mypy",
+    "pandas-stubs>=3.0.0.260204",
     "pytest>=9.0.2",
     "requests>=2.32.5",
     "ruff",
