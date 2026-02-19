@@ -75,6 +75,7 @@ Thumbs.db
 tmp/
 .local_docs/
 .scratchpad/
+.worktrees/
 .claude/settings.local.json
 
 # Optional: local PyPI creds (uncomment if you ever create it)
