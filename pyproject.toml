@@ -19,6 +19,8 @@ dependencies = [
   "openinference-instrumentation-agno",
   "litellm[proxy]>=1.81.13",
   "duckduckgo-search>=8.1.1",
+  "pypdf>=6.7.1",
+  "aiofiles>=25.1.0",
 ]
 
 [dependency-groups]

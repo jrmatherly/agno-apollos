@@ -12,8 +12,10 @@ from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
 from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode
 
+from backend.context.intent_routing import INTENT_ROUTING
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
+from backend.tools.awareness import list_knowledge_sources
 from backend.tools.search import search_content
 
 # ---------------------------------------------------------------------------
@@ -26,7 +28,7 @@ knowledge_learnings = create_knowledge("Knowledge Learnings", "knowledge_learnin
 # ---------------------------------------------------------------------------
 # Agent Instructions
 # ---------------------------------------------------------------------------
-instructions = """\
+instructions = f"""\
 You are a knowledge assistant. You answer questions by searching your knowledge base.
 
 ## How You Work
@@ -42,6 +44,15 @@ You are a knowledge assistant. You answer questions by searching your knowledge 
 - Quote relevant passages when they add value
 - Provide code examples when asked
 - Don't make up information - only use what's in the knowledge base
+
+## Confidence Signaling
+
+- When you find strong matches, answer directly with citations
+- When matches are partial, say "Based on limited information in the knowledge base..."
+- When no matches are found, say "I found no information on this topic" and suggest alternatives
+- Never present uncertain information as definitive
+
+{INTENT_ROUTING}
 
 ## Learning Guidelines
 
@@ -62,7 +73,7 @@ knowledge_agent = Agent(
     db=agent_db,
     knowledge=knowledge,
     instructions=instructions,
-    tools=[search_content],
+    tools=[search_content, list_knowledge_sources],
     search_knowledge=True,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     learning=LearningMachine(
@@ -81,7 +92,12 @@ knowledge_agent = Agent(
 
 
 def load_default_documents() -> None:
-    """Load default documents into the knowledge base."""
+    """Load default documents into the knowledge base.
+
+    Loads URL-based documents and any PDF/CSV files from data/docs/.
+    """
+    from backend.knowledge.loaders import load_csv_documents, load_pdf_documents
+
     knowledge.insert(
         name="Agno Introduction",
         url="https://docs.agno.com/introduction.md",
@@ -92,6 +108,9 @@ def load_default_documents() -> None:
         url="https://docs.agno.com/first-agent.md",
         skip_if_exists=True,
     )
+
+    load_pdf_documents(knowledge)
+    load_csv_documents(knowledge)
 
 
 if __name__ == "__main__":
