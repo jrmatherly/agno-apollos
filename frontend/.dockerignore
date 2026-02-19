@@ -5,6 +5,9 @@ node_modules/
 # Secrets
 .env
 .env.*
+*.pem
+*.key
+*.cert
 
 # Git
 .git/
@@ -22,6 +25,17 @@ LICENSE
 *.tsbuildinfo
 coverage/
 
-# sidecar
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
+
+# Docker (no need to copy Dockerfile into image)
+Dockerfile
+.dockerignore
+
+# Sidecar
 .todos/
 .sidecar/

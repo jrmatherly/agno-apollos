@@ -1,4 +1,13 @@
 # =========================
+# Root .dockerignore — safety net for non-BuildKit builds
+# =========================
+# The backend uses per-Dockerfile dockerignore (backend/Dockerfile.dockerignore)
+# which requires BuildKit. This file is the fallback if BuildKit is not enabled.
+#
+# Frontend and docs builds use their own context directories, so this file
+# does not affect them.
+
+# =========================
 # Python
 # =========================
 __pycache__/
@@ -20,6 +29,7 @@ dist/
 htmlcov/
 .tox/
 .nox/
+tests/
 
 # Type checking / linting
 .mypy_cache/
@@ -38,17 +48,11 @@ venv/
 env/
 ENV/
 .env
+.env.*
 .envrc
-mise.local.toml
-mise.*.local.toml
-.mcp.json
-
-# =========================
-# Node / Frontend
-# =========================
-node_modules/
-.next/
-.pnpm-store/
+*.pem
+*.key
+*.cert
 
 # =========================
 # Jupyter / notebooks
@@ -59,9 +63,7 @@ node_modules/
 # IDEs / editors
 # =========================
 .idea/
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+.vscode/
 
 # =========================
 # OS cruft
@@ -70,15 +72,37 @@ node_modules/
 Thumbs.db
 
 # =========================
+# Git
+# =========================
+.git/
+.gitignore
+
+# =========================
 # Project-specific
 # =========================
 tmp/
+data/
 .local_docs/
 .scratchpad/
 .worktrees/
-.claude/settings.local.json
-.sidecar/
-
-# Optional: local PyPI creds (uncomment if you ever create it)
-# .pypirc
+.claude/
+.serena/
 .todos/
+.sidecar/
+.mcp.json
+.mcp.json.example
+
+# =========================
+# Not needed in backend image
+# =========================
+frontend/
+docs/
+mise-tasks/
+.github/
+*.md
+LICENSE
+example.env
+mise.toml
+mise.local.toml
+.python-version
+docker-compose*.yaml

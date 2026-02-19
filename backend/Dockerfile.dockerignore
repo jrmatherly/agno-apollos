@@ -20,6 +20,7 @@ dist/
 htmlcov/
 .tox/
 .nox/
+tests/
 
 # Type checking / linting
 .mypy_cache/
@@ -40,6 +41,9 @@ ENV/
 .env
 .env.*
 .envrc
+*.pem
+*.key
+*.cert
 
 # =========================
 # Jupyter / notebooks
@@ -59,17 +63,26 @@ ENV/
 Thumbs.db
 
 # =========================
+# Git
+# =========================
+.git/
+.gitignore
+
+# =========================
 # Project-specific
 # =========================
 tmp/
+data/
 .local_docs/
 .scratchpad/
+.worktrees/
 .claude/
 .serena/
 docs/
-.git/
 .todos/
 .sidecar/
+.mcp.json
+.mcp.json.example
 
 # =========================
 # Not needed in backend image
@@ -83,6 +96,4 @@ example.env
 mise.toml
 mise.local.toml
 .python-version
-CLAUDE.md
-PROJECT_INDEX.md
-README.md
+docker-compose*.yaml
