@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Load knowledge files (tables, queries, business rules) into vector DB"
+#MISE depends=["docker:up"]
+set -euo pipefail
+
+echo "Loading knowledge into vector DB..."
+docker exec -it apollos-backend python -m backend.scripts.load_knowledge "$@"
