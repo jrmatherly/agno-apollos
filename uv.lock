@@ -206,6 +206,7 @@ dependencies = [
     { name = "pgvector" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pypdf" },
+    { name = "rich" },
     { name = "sqlalchemy" },
 ]
 
@@ -237,6 +238,7 @@ requires-dist = [
     { name = "pgvector" },
     { name = "psycopg", extras = ["binary"] },
     { name = "pypdf", specifier = ">=6.7.1" },
+    { name = "rich", specifier = ">=14.3.2" },
     { name = "sqlalchemy" },
 ]
 

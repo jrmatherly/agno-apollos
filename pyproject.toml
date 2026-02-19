@@ -25,6 +25,7 @@ dependencies = [
   "fastmcp>=2.14,<3",
   "pandas>=3.0.1",
   "httpx>=0.28.1",
+  "rich>=14.3.2",
 ]
 
 [dependency-groups]
