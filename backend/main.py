@@ -12,6 +12,7 @@ from os import getenv
 from pathlib import Path
 
 from agno.os import AgentOS
+from agno.os.config import AuthorizationConfig
 
 from backend.agents.data_agent import data_agent
 from backend.agents.knowledge_agent import knowledge_agent
@@ -24,6 +25,8 @@ from backend.teams.research_team import research_team
 # ---------------------------------------------------------------------------
 # Create Apollos AI
 # ---------------------------------------------------------------------------
+jwt_secret = getenv("JWT_SECRET_KEY", "")
+
 agent_os = AgentOS(
     name="Apollos AI",
     tracing=True,
@@ -32,6 +35,13 @@ agent_os = AgentOS(
     agents=[knowledge_agent, mcp_agent, web_search_agent, data_agent, reasoning_agent],
     teams=[research_team],
     config=str(Path(__file__).parent / "config.yaml"),
+    authorization=bool(jwt_secret),
+    authorization_config=AuthorizationConfig(
+        verification_keys=[jwt_secret] if jwt_secret else None,
+        algorithm="HS256",
+    )
+    if jwt_secret
+    else None,
 )
 
 app = agent_os.get_app()

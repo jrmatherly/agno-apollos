@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#MISE description="Generate a test JWT token for development"
+
+set -euo pipefail
+
+JWT_SECRET="${JWT_SECRET_KEY:-dev-secret-key}"
+
+uv run python -c "
+import jwt, time
+
+payload = {
+    'sub': 'dev-user',
+    'name': 'Developer',
+    'roles': ['admin'],
+    'scopes': [
+        'agent:knowledge-agent:read', 'agent:knowledge-agent:run',
+        'agent:web-search-agent:read', 'agent:web-search-agent:run',
+        'agent:mcp-agent:read', 'agent:mcp-agent:run',
+        'agent:data-agent:read', 'agent:data-agent:run',
+        'agent:reasoning-agent:read', 'agent:reasoning-agent:run',
+        'team:research-team:read', 'team:research-team:run',
+    ],
+    'exp': int(time.time()) + 86400,
+}
+token = jwt.encode(payload, '$JWT_SECRET', algorithm='HS256')
+print(token)
+"

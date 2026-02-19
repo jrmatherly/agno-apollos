@@ -40,6 +40,9 @@ DB_DRIVER = "postgresql+psycopg"
 RUNTIME_ENV = "dev"
 AGNO_DEBUG = "True"
 
+# Authentication (set JWT_SECRET_KEY to enable RBAC; empty = auth disabled)
+JWT_SECRET_KEY = ""
+
 [[env]]
 _.file = ".env"
 
