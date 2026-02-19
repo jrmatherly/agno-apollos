@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@60d8f0d1f1f8c8d07ef53bd027032705d414ec28 # v3
+        uses: github/codeql-action/init@58d4c8134bcf8ae089f888d056501755e0da2b44 # v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -61,6 +61,6 @@ jobs:
           queries: security-extended
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@60d8f0d1f1f8c8d07ef53bd027032705d414ec28 # v3
+        uses: github/codeql-action/analyze@58d4c8134bcf8ae089f888d056501755e0da2b44 # v4
         with:
           category: "/language:${{ matrix.language }}"
