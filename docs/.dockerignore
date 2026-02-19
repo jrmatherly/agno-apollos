@@ -1,0 +1,21 @@
+node_modules/
+.mintlify/
+
+# Internal style guide (not a published page)
+CLAUDE.md
+
+# Draft content
+drafts/
+*.draft.mdx
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+Dockerfile
+.dockerignore

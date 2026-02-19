@@ -7,8 +7,8 @@ description: "How the backend, frontend, database, and LLM proxy connect."
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   Docker Compose                     │
-│                                                      │
+│                   Docker Compose                    │
+│                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
 │  │  apollos-    │  │  apollos-    │  │  apollos-  │ │
 │  │  frontend    │  │  backend     │  │  db        │ │
@@ -16,8 +16,8 @@ description: "How the backend, frontend, database, and LLM proxy connect."
 │  │  Next.js 15  │  │  FastAPI     │  │  PG 18 +   │ │
 │  │              │  │  AgentOS     │  │  pgvector  │ │
 │  └──────────────┘  └──────┬───────┘  └────────────┘ │
-│                           │                          │
-└───────────────────────────┼──────────────────────────┘
+│                           │                         │
+└───────────────────────────┼─────────────────────────┘
                             │
                    ┌────────▼────────┐
                    │  LiteLLM Proxy  │
@@ -36,22 +36,22 @@ description: "How the backend, frontend, database, and LLM proxy connect."
 
 FastAPI application using Agno's `AgentOS` as the runtime. Registers agents, handles API requests, manages sessions, and routes LLM traffic through LiteLLM Proxy.
 
-| File | Purpose |
-|------|---------|
-| `backend/main.py` | Entry point. Creates AgentOS, registers agents, exports FastAPI app |
-| `backend/config.yaml` | Quick-prompt configuration for the UI |
-| `backend/agents/` | Agent modules (each exports an `Agent` instance) |
-| `backend/db/` | Database layer (connection factory, URL builder, knowledge factory) |
+| File                  | Purpose                                                             |
+| --------------------- | ------------------------------------------------------------------- |
+| `backend/main.py`     | Entry point. Creates AgentOS, registers agents, exports FastAPI app |
+| `backend/config.yaml` | Quick-prompt configuration for the UI                               |
+| `backend/agents/`     | Agent modules (each exports an `Agent` instance)                    |
+| `backend/db/`         | Database layer (connection factory, URL builder, knowledge factory) |
 
 ### Frontend (`apollos-frontend`)
 
 Next.js 15 (App Router) with standalone output. Connects to the backend via browser-side fetch (not server-side rendering). State managed by Zustand.
 
-| File | Purpose |
-|------|---------|
-| `frontend/src/store.ts` | Zustand state: endpoint URL, auth token, agent selection |
-| `frontend/src/api/` | Browser-side API client for AgentOS |
-| `frontend/src/components/` | React components (shadcn/ui based) |
+| File                       | Purpose                                                  |
+| -------------------------- | -------------------------------------------------------- |
+| `frontend/src/store.ts`    | Zustand state: endpoint URL, auth token, agent selection |
+| `frontend/src/api/`        | Browser-side API client for AgentOS                      |
+| `frontend/src/components/` | React components (shadcn/ui based)                       |
 
 ### Database (`apollos-db`)
 
@@ -110,22 +110,22 @@ apollos-ai/
 
 ### Backend
 
-| Package | Purpose |
-|---------|---------|
-| `agno` | Agent framework (Agent, AgentOS, Knowledge, tools) |
-| `fastapi[standard]` | HTTP API with uvicorn |
-| `pgvector` | Vector similarity search for PostgreSQL |
-| `psycopg[binary]` | PostgreSQL adapter |
-| `sqlalchemy` | ORM / database toolkit |
-| `mcp` | Model Context Protocol client |
-| `litellm[proxy]` | Multi-provider LLM routing |
+| Package             | Purpose                                            |
+| ------------------- | -------------------------------------------------- |
+| `agno`              | Agent framework (Agent, AgentOS, Knowledge, tools) |
+| `fastapi[standard]` | HTTP API with uvicorn                              |
+| `pgvector`          | Vector similarity search for PostgreSQL            |
+| `psycopg[binary]`   | PostgreSQL adapter                                 |
+| `sqlalchemy`        | ORM / database toolkit                             |
+| `mcp`               | Model Context Protocol client                      |
+| `litellm[proxy]`    | Multi-provider LLM routing                         |
 
 ### Frontend
 
-| Package | Purpose |
-|---------|---------|
-| `next` (15) | React framework (App Router) |
-| `react` (18) | UI library |
-| `tailwindcss` | Utility-first CSS |
-| `zustand` | State management |
+| Package       | Purpose                              |
+| ------------- | ------------------------------------ |
+| `next` (15)   | React framework (App Router)         |
+| `react` (18)  | UI library                           |
+| `tailwindcss` | Utility-first CSS                    |
+| `zustand`     | State management                     |
 | `@radix-ui/*` | Accessible UI primitives (shadcn/ui) |

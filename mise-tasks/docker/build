@@ -54,4 +54,13 @@ docker buildx build \
   ./frontend
 
 echo ""
-echo "Done. Built apollos-backend:${IMAGE_TAG} and apollos-frontend:${IMAGE_TAG} (${PLATFORM})"
+echo "Building apollos-docs..."
+docker buildx build \
+  --platform="${PLATFORM}" \
+  -t "apollos-docs:${IMAGE_TAG}" \
+  -f docs/Dockerfile \
+  ${OUTPUT} \
+  ./docs
+
+echo ""
+echo "Done. Built apollos-backend:${IMAGE_TAG}, apollos-frontend:${IMAGE_TAG}, and apollos-docs:${IMAGE_TAG} (${PLATFORM})"

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#MISE description="Start docs site in Docker (port 3333)"
+#USAGE flag "--prod" help="Use production compose file (pre-built GHCR image)"
+set -e
+
+if [ "${usage_prod:-false}" = "true" ]; then
+  docker compose -f docker-compose.prod.yaml --profile docs up -d apollos-docs
+else
+  docker compose --profile docs up -d --build apollos-docs
+fi
+
+echo ""
+echo "Apollos AI docs running at http://localhost:3333"

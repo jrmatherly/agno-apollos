@@ -67,6 +67,18 @@ services:
     networks:
       - apollos
 
+  ###############################################################
+  # Apollos AI - Documentation (pre-built GHCR image)
+  ###############################################################
+  apollos-docs:
+    image: ghcr.io/${GHCR_OWNER:-jrmatherly}/apollos-docs:${IMAGE_TAG:-latest}
+    container_name: apollos-docs
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+    profiles:
+      - docs
+
 networks:
   apollos:
 

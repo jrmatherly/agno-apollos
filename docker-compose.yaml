@@ -104,6 +104,25 @@ services:
         - action: rebuild
           path: ./frontend/pnpm-lock.yaml
 
+  ###############################################################
+  # Apollos AI - Documentation
+  ###############################################################
+  apollos-docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile
+    image: apollos-docs:${IMAGE_TAG:-latest}
+    container_name: apollos-docs
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+    profiles:
+      - docs
+    develop:
+      watch:
+        - action: rebuild
+          path: ./docs
+
 networks:
   apollos:
 
