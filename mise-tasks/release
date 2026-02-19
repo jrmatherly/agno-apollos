@@ -29,7 +29,8 @@ echo "  2) minor  → ${NEXT_MINOR}"
 echo "  3) major  → ${NEXT_MAJOR}"
 echo "  4) custom"
 echo ""
-read -rp "Select [1]: " CHOICE < /dev/tty
+echo -n "Select [1]: " > /dev/tty
+read -r CHOICE < /dev/tty
 CHOICE="${CHOICE:-1}"
 
 case "$CHOICE" in
@@ -37,7 +38,8 @@ case "$CHOICE" in
   2) VERSION="$NEXT_MINOR" ;;
   3) VERSION="$NEXT_MAJOR" ;;
   4)
-    read -rp "Enter version (e.g. 2.1.0): " VERSION < /dev/tty
+    echo -n "Enter version (e.g. 2.1.0): " > /dev/tty
+    read -r VERSION < /dev/tty
     # Strip v prefix if user entered one
     VERSION="${VERSION#v}"
     ;;
@@ -88,17 +90,18 @@ if [ "$LOCAL" != "$REMOTE" ]; then
   exit 1
 fi
 
-# Check GitHub Actions CI status for HEAD commit
+# Check GitHub Actions CI status (latest run on main, not specific commit —
+# paths-ignore in validate.yml may skip commits that only touch non-code files)
 if [ "$FORCE" != "true" ]; then
-  echo "Checking CI status for commit ${LOCAL:0:7}..."
-  CI_STATUS=$(gh run list --commit "$LOCAL" --workflow=validate.yml --json conclusion --jq '.[0].conclusion' 2>/dev/null || echo "")
+  echo "Checking CI status on main..."
+  CI_STATUS=$(gh run list --workflow=validate.yml --branch=main --limit=1 --json conclusion --jq '.[0].conclusion // empty' 2>/dev/null || echo "")
 
   if [ -z "$CI_STATUS" ]; then
-    echo "Error: No CI run found for commit ${LOCAL:0:7}."
-    echo "  Push to main and wait for CI to pass, or use --force to skip this check."
+    echo "Error: No CI runs found for validate.yml on main."
+    echo "  Push code changes and wait for CI to pass, or use --force to skip this check."
     exit 1
   elif [ "$CI_STATUS" != "success" ]; then
-    echo "Error: CI status is '${CI_STATUS}' for commit ${LOCAL:0:7}."
+    echo "Error: Latest CI run on main has status '${CI_STATUS}'."
     echo "  Fix CI failures before releasing, or use --force to skip this check."
     exit 1
   fi
