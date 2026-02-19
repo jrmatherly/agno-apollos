@@ -97,3 +97,10 @@ mise.toml
 mise.local.toml
 .python-version
 docker-compose*.yaml
+
+# =========================
+# Dockerfiles (no need to copy into image)
+# =========================
+**/Dockerfile
+**/Dockerfile.*
+**/.dockerignore

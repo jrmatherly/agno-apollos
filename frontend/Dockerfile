@@ -33,6 +33,15 @@ RUN pnpm build
 # ---------------------------------------------------------------------------
 FROM base AS runner
 
+# ---------------------------------------------------------------------------
+# OCI Image Labels
+# ---------------------------------------------------------------------------
+LABEL org.opencontainers.image.title="Apollos AI Frontend" \
+      org.opencontainers.image.description="Apollos AI web interface — Next.js + React" \
+      org.opencontainers.image.vendor="Apollos AI" \
+      org.opencontainers.image.source="https://github.com/jrmatherly/agno-apollos" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
 WORKDIR /app
 
 ENV NODE_ENV=production

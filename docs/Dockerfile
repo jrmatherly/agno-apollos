@@ -1,6 +1,15 @@
 FROM node:24-alpine
 
 # ---------------------------------------------------------------------------
+# OCI Image Labels
+# ---------------------------------------------------------------------------
+LABEL org.opencontainers.image.title="Apollos AI Documentation" \
+      org.opencontainers.image.description="Apollos AI documentation site — Mintlify" \
+      org.opencontainers.image.vendor="Apollos AI" \
+      org.opencontainers.image.source="https://github.com/jrmatherly/agno-apollos" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+# ---------------------------------------------------------------------------
 # Install Mintlify CLI and serve documentation
 # ---------------------------------------------------------------------------
 # Uses mint dev as the serving mechanism. The Mintlify CLI is built on
