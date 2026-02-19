@@ -33,6 +33,8 @@ def create_introspect_schema_tool(db_url: str):
             include_sample_data: Include sample rows for the table.
             sample_limit: Number of sample rows (default 5).
         """
+        sample_limit = max(1, min(sample_limit, 100))
+
         try:
             insp = inspect(engine)
 

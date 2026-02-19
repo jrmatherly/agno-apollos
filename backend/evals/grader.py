@@ -73,7 +73,7 @@ def grade_response(question: str, expected: str, response: str) -> GradeResult:
             passed=bool(data.get("pass", False)),
             reasoning=str(data.get("reasoning", "No reasoning")),
         )
-    except (json.JSONDecodeError, Exception) as e:
+    except Exception as e:
         logger.error("Grading failed: %s", e)
         return GradeResult(score=0.0, passed=False, reasoning=f"Grading error: {e}")
 

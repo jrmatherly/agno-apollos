@@ -28,7 +28,7 @@ from rich.table import Table
 from rich.text import Text
 from sqlalchemy import create_engine, text
 
-from backend.evals.grader import GradeResult, grade_response
+from backend.evals.grader import GradeResult, compare_results, grade_response
 from backend.evals.test_cases import ALL_CASES, CATEGORIES, TestCase
 
 console = Console()
@@ -126,16 +126,20 @@ def evaluate_response(
     if compare_sql and test_case.golden_sql:
         try:
             golden_result = execute_golden_sql(test_case.golden_sql)
-            golden_values = [str(v) for row in golden_result for v in row.values()]
-            result_pass = all(
-                any(exp.lower() in gv.lower() for gv in golden_values)
-                for exp in test_case.expected_strings
-                if exp.isalpha()
-            )
+            if test_case.expected_result is not None:
+                golden_values = [str(v) for row in golden_result for v in row.values()]
+                result_pass = any(test_case.expected_result.lower() in gv.lower() for gv in golden_values)
+                result["result_explanation"] = (
+                    f"Golden SQL contains expected '{test_case.expected_result}'"
+                    if result_pass
+                    else f"Golden SQL missing expected '{test_case.expected_result}'"
+                )
+            else:
+                expected_dicts = [{k: str(v) for k, v in row.items()} for row in golden_result]
+                response_dicts = [{s: s for s in test_case.expected_strings}]
+                result_pass, explanation = compare_results(expected_dicts, response_dicts)
+                result["result_explanation"] = explanation
             result["result_match"] = result_pass
-            result["result_explanation"] = (
-                "Golden SQL validates expected values" if result_pass else "Golden SQL result doesn't match expected"
-            )
         except Exception as e:
             result["result_match"] = None
             result["result_explanation"] = f"Error executing golden SQL: {e}"

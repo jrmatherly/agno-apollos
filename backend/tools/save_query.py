@@ -46,7 +46,7 @@ def create_save_validated_query_tool(knowledge: Knowledge):
         if not query or not query.strip():
             return "Error: Query required."
 
-        sql = query.strip().lower()
+        sql = " ".join(query.strip().lower().split())
         if not sql.startswith("select") and not sql.startswith("with"):
             return "Error: Only SELECT queries can be saved."
 
