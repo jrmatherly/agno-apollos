@@ -59,6 +59,7 @@ web_search_agent = Agent(
     read_chat_history=True,
     num_history_runs=5,
     markdown=True,
+    enable_session_summaries=True,
 )
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ Run:
 
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
-from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode
+from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode, UserMemoryConfig, UserProfileConfig
 
 from backend.context.intent_routing import INTENT_ROUTING
 from backend.db import create_knowledge, get_postgres_db
@@ -82,6 +82,12 @@ knowledge_agent = Agent(
             mode=LearningMode.AGENTIC,
             knowledge=knowledge_learnings,
         ),
+        user_profile=UserProfileConfig(
+            db=agent_db,
+        ),
+        user_memory=UserMemoryConfig(
+            db=agent_db,
+        ),
     ),
     enable_agentic_memory=True,
     add_datetime_to_context=True,
@@ -89,6 +95,7 @@ knowledge_agent = Agent(
     read_chat_history=True,
     num_history_runs=5,
     markdown=True,
+    enable_session_summaries=True,
 )
 
 

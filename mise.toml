@@ -43,6 +43,9 @@ AGNO_DEBUG = "True"
 # Authentication (set JWT_SECRET_KEY to enable RBAC; empty = auth disabled)
 JWT_SECRET_KEY = ""
 
+# Observability (set to export OTel traces; empty = traces not exported)
+OTEL_EXPORTER_OTLP_ENDPOINT = ""
+
 [[env]]
 _.file = ".env"
 
