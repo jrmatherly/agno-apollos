@@ -53,6 +53,41 @@ SEMANTIC_MODEL = {
             "use_cases": ["Approval workflow auditing", "Governance compliance"],
             "quality_notes": "status: pending, approved, rejected. resolved_at is NULL until acted on.",
         },
+        {
+            "name": "drivers_championship",
+            "description": "F1 drivers championship standings 1950-2020",
+            "key_columns": ["year", "position", "name", "team", "points"],
+            "use_cases": ["Championship winners", "Driver standings by year", "Points comparison"],
+            "quality_notes": "position is TEXT — use position = '1' (string). May contain 'DSQ', 'DNS', 'NC'.",
+        },
+        {
+            "name": "constructors_championship",
+            "description": "F1 constructors championship standings 1958-2020",
+            "key_columns": ["year", "position", "team", "points"],
+            "use_cases": ["Team championship winners", "Constructor standings by year"],
+            "quality_notes": "position is INTEGER — use position = 1 (no quotes). Started 1958, no data before.",
+        },
+        {
+            "name": "race_wins",
+            "description": "F1 race winners 1950-2020",
+            "key_columns": ["name", "team", "venue", "date"],
+            "use_cases": ["Race win counts", "Wins by venue", "Wins by year"],
+            "quality_notes": "date is TEXT 'DD Mon YYYY' — use TO_DATE(date, 'DD Mon YYYY') for year extraction.",
+        },
+        {
+            "name": "race_results",
+            "description": "F1 race results with full finishing order 1950-2020",
+            "key_columns": ["year", "venue", "name", "team", "position", "points"],
+            "use_cases": ["Podium finishes", "DNF tracking", "Full race results"],
+            "quality_notes": "position is TEXT with non-numeric values ('Ret', 'DSQ', 'DNS'). Filter with regex before casting.",
+        },
+        {
+            "name": "fastest_laps",
+            "description": "F1 fastest laps recorded 1950-2020",
+            "key_columns": ["year", "venue", "name", "driver_tag", "team"],
+            "use_cases": ["Fastest lap records", "Fastest laps by venue"],
+            "quality_notes": "Uses driver_tag column (not name_tag like race_wins).",
+        },
     ],
 }
 

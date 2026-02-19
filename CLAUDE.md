@@ -20,13 +20,17 @@ Backend packages:
 - `backend/agents/` — Agent definitions (knowledge, mcp, web_search, reasoning, data)
 - `backend/teams/` — Multi-agent team definitions (research_team)
 - `backend/workflows/` — Workflow definitions (research_workflow)
-- `backend/tools/` — Custom tools (search, awareness, approved_ops)
-- `backend/context/` — Context modules (semantic_model, intent_routing)
+- `backend/tools/` — Custom tools (search, awareness, approved_ops, introspect, save_query)
+- `backend/context/` — Context modules (semantic_model, intent_routing, business_rules)
 - `backend/knowledge/` — Document loaders (PDF/CSV from `data/docs/`)
 - `backend/evals/` — LLM-based eval harness (grader, test cases, runner)
 - `backend/telemetry.py` — OpenTelemetry trace export (opt-in)
+- `backend/scripts/` — Data loading scripts (load_sample_data, load_knowledge)
 - `tests/` — Integration tests (pytest + requests)
 - `data/docs/` — Document storage for knowledge agent loaders
+- `data/tables/` — F1 table metadata JSON files for knowledge base
+- `data/queries/` — Common SQL query patterns
+- `data/business/` — Business rules and metrics definitions
 
 ## Commands (mise)
 
@@ -61,9 +65,13 @@ Docs tasks:
 - `mise run docs:validate` - validate docs build and check for broken links
 - `mise run docs:docker` - start docs in Docker (add `--prod` for GHCR image)
 
+Data loading tasks:
+- `mise run load-sample-data` - load F1 sample data into PostgreSQL for dev/demo/evals
+- `mise run load-knowledge` - load knowledge files (tables, queries, business rules) into vector DB (add `--recreate` to drop and reload)
+
 Testing and evaluation tasks:
 - `mise run test` - run integration tests (pytest, requires running backend)
-- `mise run evals:run` - run LLM-based evaluation suite
+- `mise run evals:run` - run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `-r` golden SQL comparison, `--direct` mode)
 
 Auth and scheduling tasks:
 - `mise run auth:generate-token` - generate dev JWT tokens for RBAC testing
@@ -94,6 +102,7 @@ Auth and scheduling tasks:
 - New agents go in `backend/agents/`, new teams in `backend/teams/`, new workflows in `backend/workflows/`. Register all in `backend/main.py`.
 - All agents must have guardrails: `pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()]` — includes inline/ephemeral agents in workflows
 - Agents with learning use `LearningMachine(learned_knowledge=LearnedKnowledgeConfig(mode=LearningMode.AGENTIC, knowledge=...))` from `agno.learn`
+- Data agent uses dual knowledge system: static `data_knowledge` (curated) + dynamic `data_learnings` (discovered via LearningMachine)
 - JWT auth is opt-in: empty `JWT_SECRET_KEY` env var = auth disabled. Set a value to enable RBAC.
 - Telemetry is opt-in: empty `OTEL_EXPORTER_OTLP_ENDPOINT` env var = traces not exported.
 - When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`

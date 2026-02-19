@@ -19,10 +19,11 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `backend/agents/` - Agent definitions (knowledge, mcp, web_search, reasoning, data)
 - `backend/teams/research_team.py` - Multi-agent research team (coordinate mode)
 - `backend/workflows/research_workflow.py` - Quality-gated research pipeline (Loop + Condition)
-- `backend/tools/` - Custom tools (search, awareness, approved_ops with @approval)
-- `backend/context/` - Context modules (6-table semantic_model, intent_routing)
+- `backend/tools/` - Custom tools (search, awareness, approved_ops with @approval, introspect schema, save validated query)
+- `backend/context/` - Context modules (11-table semantic_model, intent_routing, business_rules)
 - `backend/knowledge/loaders.py` - PDF/CSV document loaders from `data/docs/`
-- `backend/evals/` - LLM-based eval harness (grader, test cases, runner)
+- `backend/evals/` - LLM-based eval harness (Rich CLI, TestCase/GradeResult dataclasses, string matching + LLM grading + golden SQL comparison)
+- `backend/scripts/` - Data loading scripts (load_sample_data, load_knowledge)
 - `backend/db/session.py` - PostgresDb and Knowledge factory functions
 - `backend/db/url.py` - Database URL builder from env vars
 - `tests/` - Integration tests (health, agents, teams, schedules)
@@ -36,7 +37,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 2. **MCP Agent** (`mcp-agent`): Connects to external tools via MCP protocol
 3. **Web Search Agent** (`web-search-agent`): Web research via DuckDuckGo with source citations
 4. **Reasoning Agent** (`reasoning-agent`): Chain-of-thought reasoning (2-6 steps)
-5. **Data Analyst** (`data-agent`): Read-only PostgreSQL queries (Dash pattern), learning from successful queries
+5. **Data Analyst** (`data-agent`): Read-only PostgreSQL queries (Dash pattern) with dual knowledge system (curated `data_knowledge` + dynamic `data_learnings`), runtime schema introspection, validated query saving, F1 dataset support, and insight-focused instructions
 
 ## Teams
 1. **Research Team** (`research-team`): Coordinate-mode multi-agent research (web_researcher + analyst), safety parameters (max_iterations=5, num_history_runs=5, add_datetime_to_context)
@@ -45,8 +46,8 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 1. **Research Workflow** (`research-workflow`): Quality-gated research pipeline (Search → Loop refinement → Conditional analysis)
 
 ## Dependencies (pyproject.toml)
-agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, litellm, ddgs, fastmcp, pypdf, aiofiles
-Dev: mypy, ruff, pytest, requests
+agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, litellm, ddgs, fastmcp, pypdf, aiofiles, pandas, httpx, rich
+Dev: mypy, ruff, pytest, requests, pandas-stubs
 
 ## Frontend Dependencies (package.json)
 next, react, react-dom, tailwindcss, zustand, framer-motion, @radix-ui/*, react-markdown, nuqs
@@ -72,7 +73,9 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run ci` / `clean`
 - `mise run release` - create GitHub release (interactive version prompt)
 - `mise run test` - integration tests (pytest, requires running backend)
-- `mise run evals:run` - LLM-based evaluation suite
+- `mise run evals:run` - LLM-based evaluation suite (`-v` verbose, `-g` LLM grading, `-r` golden SQL, `--direct` no API)
+- `mise run load-sample-data` - load F1 sample data into PostgreSQL
+- `mise run load-knowledge` - populate vector DB with curated knowledge (`--recreate` to rebuild)
 - `mise run auth:generate-token` - generate dev JWT tokens
 - `mise run schedules:setup` - initialize scheduler tables
 - `mise run frontend:setup` / `frontend:dev` / `frontend:build`

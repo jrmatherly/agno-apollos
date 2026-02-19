@@ -1,9 +1,9 @@
 ---
 title: "Data Analyst"
-description: "Read-only SQL analysis agent with the Dash pattern and query learning."
+description: "Self-learning SQL analysis agent with dual knowledge, schema introspection, and insight-focused responses."
 ---
 
-The Data Analyst queries PostgreSQL with read-only tools, following the [Dash pattern](https://docs.agno.com/examples/apps/dash) for safe SQL generation. It learns from successful queries to improve over time.
+The Data Analyst queries PostgreSQL with read-only tools, following the [Dash pattern](https://docs.agno.com/examples/apps/dash) for safe SQL generation. It provides **insights, not just data** using six layers of context: semantic model, business rules, curated knowledge, dynamic learnings, runtime schema introspection, and chat history.
 
 ```python
 from agno.agent import Agent
@@ -11,10 +11,15 @@ from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
 from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode
 from agno.tools.postgres import PostgresTools
 
+from backend.context.business_rules import BUSINESS_CONTEXT
 from backend.context.semantic_model import SEMANTIC_MODEL_STR
-from backend.db import create_knowledge, get_postgres_db
+from backend.db import create_knowledge, db_url, get_postgres_db
 from backend.models import get_model
+from backend.tools.introspect import create_introspect_schema_tool
+from backend.tools.save_query import create_save_validated_query_tool
 
+# Dual knowledge system
+data_knowledge = create_knowledge("Data Knowledge", "data_knowledge")
 data_learnings = create_knowledge("Data Learnings", "data_learnings")
 
 data_agent = Agent(
@@ -22,14 +27,18 @@ data_agent = Agent(
     name="Data Analyst",
     model=get_model(),
     db=get_postgres_db(),
+    instructions=INSTRUCTIONS,
+    knowledge=data_knowledge,
+    search_knowledge=True,
     tools=[
         PostgresTools(
             host=DB_HOST, port=DB_PORT, user=DB_USER,
             password=DB_PASS, db_name=DB_DATABASE,
             include_tools=["show_tables", "describe_table", "summarize_table", "inspect_query"],
         ),
+        save_validated_query,
+        introspect_schema,
     ],
-    instructions=instructions,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     learning=LearningMachine(
         learned_knowledge=LearnedKnowledgeConfig(
@@ -43,50 +52,77 @@ data_agent = Agent(
 )
 ```
 
-## Key features
+## Dual knowledge system
 
-| Feature | Configuration |
-|---------|---------------|
-| Read-only SQL | `PostgresTools` with restricted `include_tools` |
-| Query learning | `LearningMachine` saves successful query patterns |
-| Semantic model | Schema context injected via `SEMANTIC_MODEL_STR` |
-| Safety rules | Instructions enforce `LIMIT 50`, no `SELECT *`, no DDL/DML |
-| Session memory | `db=get_postgres_db()` persists conversations |
-| Guardrails | PII detection and prompt injection via `pre_hooks` |
-| Session summaries | `enable_session_summaries=True` for conversation persistence |
+The agent maintains two separate knowledge stores in pgvector.
 
-## SQL tools
+| Store | Purpose | Population |
+|-------|---------|------------|
+| `data_knowledge` (static) | Table schemas, validated queries, business rules | `mise run load-knowledge` loads from `data/tables/`, `data/queries/`, `data/business/` |
+| `data_learnings` (dynamic) | Error patterns, type gotchas, user corrections | `LearningMachine` saves automatically in `AGENTIC` mode |
 
-`PostgresTools` is limited to four read-only operations:
+The agent searches `data_knowledge` automatically before each response (`search_knowledge=True`) and uses the learning system to save discovered patterns.
 
-| Tool | Description |
-|------|-------------|
-| `show_tables` | List all tables in the database |
-| `describe_table` | Show column names, types, and constraints |
-| `summarize_table` | Row counts and basic statistics |
-| `inspect_query` | Execute a read-only SQL query |
+## Tools
 
-The agent cannot run `DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, `CREATE`, or `TRUNCATE` statements.
+| Tool | Source | Description |
+|------|--------|-------------|
+| `show_tables` | `PostgresTools` | List all tables in the database |
+| `describe_table` | `PostgresTools` | Show column names, types, and constraints |
+| `summarize_table` | `PostgresTools` | Row counts and basic statistics |
+| `inspect_query` | `PostgresTools` | Execute a read-only SQL query |
+| `introspect_schema` | `backend/tools/introspect.py` | Live schema inspection via SQLAlchemy (columns, types, PKs, sample data) |
+| `save_validated_query` | `backend/tools/save_query.py` | Save successful queries to the knowledge base for reuse |
 
-## Semantic model
+The agent cannot run `DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, `CREATE`, or `TRUNCATE` statements. The `save_validated_query` tool validates queries before saving, rejecting anything with dangerous keywords.
 
-The agent receives a structured schema description from `backend/context/semantic_model.py`. This tells the agent what tables exist, their key columns, common use cases, and data quality notes.
+## Context layers
 
-To extend the semantic model, add table entries to the `SEMANTIC_MODEL` dict in `backend/context/semantic_model.py`.
+Six layers of context are injected into the agent instructions.
 
-## Query learning
+| Layer | Source | Description |
+|-------|--------|-------------|
+| Semantic model | `backend/context/semantic_model.py` | 11 tables with key columns, use cases, and data quality notes |
+| Business rules | `backend/context/business_rules.py` | Metrics, rules, and common gotchas from `data/business/*.json` |
+| Curated knowledge | `data_knowledge` (pgvector) | Validated queries, table metadata from `data/tables/` and `data/queries/` |
+| Dynamic learnings | `data_learnings` (pgvector) | Patterns discovered at runtime (type errors, date formats, corrections) |
+| Schema introspection | `introspect_schema` tool | Live column types, row counts, sample data |
+| Chat history | Agent memory | Last 5 conversation turns for follow-up queries |
 
-The agent uses `LearningMachine` in `AGENTIC` mode: it decides when to save useful query patterns. Saved learnings are stored in pgvector and retrieved for future similar queries.
+## F1 sample dataset
 
-What gets saved:
-- Column type quirks (dates stored as strings, etc.)
-- Query patterns that work well for common question types
-- Validated SQL queries that answered user questions correctly
+The agent ships with a Formula 1 dataset (1950-2020) for demonstration.
+
+| Table | Description | Rows |
+|-------|-------------|------|
+| `drivers_championship` | Driver standings by year | ~1,000 |
+| `constructors_championship` | Team standings by year | ~700 |
+| `race_wins` | Individual race victories | ~1,000 |
+| `race_results` | Full race results per event | ~25,000 |
+| `fastest_laps` | Fastest lap records per race | ~1,000 |
+
+Load the dataset and knowledge:
+
+```sh
+mise run load-sample-data
+mise run load-knowledge
+```
 
 ## Example queries
 
 ```
+How many races has Lewis Hamilton won?
+Which team has the most constructor championships?
+Show me the fastest lap records at Monza
+Compare Ferrari and Mercedes points over the last decade
 What tables are in the database?
-Show me the most recent agent sessions
-How many sessions were created this week?
 ```
+
+## Insight-focused responses
+
+The agent provides contextual interpretation, not raw data.
+
+| Raw data | Insight |
+|----------|---------|
+| "Hamilton: 11 wins" | "Hamilton won 11 of 21 races (52%), 7 more than Bottas" |
+| "Count: 42" | "42 sessions in the last 24h, up 15% from yesterday's 36" |

@@ -31,19 +31,26 @@ apollos-ai/
 │   │   ├── __init__.py
 │   │   ├── search.py            # Content search tool
 │   │   ├── awareness.py         # Knowledge source listing tool
-│   │   └── approved_ops.py      # Approval-gated tools (@tool + @approval)
+│   │   ├── approved_ops.py      # Approval-gated tools (@tool + @approval)
+│   │   ├── introspect.py        # Runtime schema introspection (SQLAlchemy inspect)
+│   │   └── save_query.py        # Save validated SQL queries to knowledge base
 │   ├── context/             # Context modules for agents
 │   │   ├── __init__.py
-│   │   ├── semantic_model.py    # 6-table semantic model (Dash pattern) for data agent
+│   │   ├── semantic_model.py    # 11-table semantic model (Agno + F1) for data agent
+│   │   ├── business_rules.py    # Business rules, metrics, gotchas from JSON
 │   │   └── intent_routing.py    # Intent routing guide for knowledge agent
 │   ├── knowledge/           # Document loaders
 │   │   ├── __init__.py
 │   │   └── loaders.py           # PDF/CSV loaders from data/docs/
 │   ├── evals/               # LLM-based evaluation harness
 │   │   ├── __init__.py
-│   │   ├── grader.py            # LLM response grader
-│   │   ├── test_cases.py        # Evaluation test cases
-│   │   └── run_evals.py         # Eval runner
+│   │   ├── grader.py            # LLM grader (GradeResult) + golden SQL result comparison
+│   │   ├── test_cases.py        # TestCase dataclass with golden SQL, 15 F1 + agent cases
+│   │   └── run_evals.py         # Rich CLI runner (string match, LLM grade, SQL compare, API/direct)
+│   ├── scripts/             # Data loading scripts
+│   │   ├── __init__.py
+│   │   ├── load_sample_data.py  # Download and load F1 data (1950-2020) into PostgreSQL
+│   │   └── load_knowledge.py    # Load table/query/business knowledge into vector DB
 │   └── db/                  # Database layer
 │       ├── __init__.py      # Re-exports: get_postgres_db, create_knowledge, db_url
 │       ├── session.py       # PostgresDb factory + Knowledge factory (pgvector hybrid)
@@ -93,8 +100,10 @@ apollos-ai/
 │   ├── test                 # Run integration tests (pytest)
 │   ├── auth/                # Auth tasks
 │   │   └── generate-token   # Generate dev JWT tokens for RBAC testing
+│   ├── load-sample-data     # Load F1 sample data into PostgreSQL
+│   ├── load-knowledge       # Load knowledge files into vector DB
 │   ├── evals/               # Evaluation tasks
-│   │   └── run              # Run LLM-based evaluation suite
+│   │   └── run              # Run eval suite (Rich CLI, LLM grading, golden SQL)
 │   ├── schedules/           # Scheduler tasks
 │   │   └── setup            # Initialize scheduler tables
 │   ├── docker/              # Docker-specific tasks
@@ -149,8 +158,11 @@ apollos-ai/
 │   ├── images/              # Documentation images
 │   └── CLAUDE.md            # Docs style guide (excluded from build via .mintignore)
 ├── data/                    # Data storage
-│   └── docs/                # Document files for knowledge agent (PDF, CSV)
-│       └── .gitkeep
+│   ├── docs/                # Document files for knowledge agent (PDF, CSV)
+│   │   └── .gitkeep
+│   ├── tables/              # F1 table metadata JSON (5 files: drivers, constructors, etc.)
+│   ├── queries/             # Common SQL query patterns (common_queries.sql)
+│   └── business/            # Business rules and metrics (agno_tables.json)
 ├── tests/                   # Integration tests
 │   ├── conftest.py          # Test fixtures (backend health wait)
 │   ├── test_health.py       # Health and agent list tests
@@ -232,15 +244,15 @@ Uses **pnpm** for package management:
 - **Features**: Agentic memory, guardrails, session summaries, `reasoning=True`
 
 ### backend/agents/data_agent.py
-- **Exports**: `data_agent` (Agent instance)
-- **Purpose**: Data analyst with read-only PostgreSQL access (Dash pattern)
-- **Features**: Agentic memory, guardrails, session summaries, learning system, semantic model context
-- **Tools**: PostgresTools (show_tables, describe_table, summarize_table, inspect_query only)
+- **Exports**: `data_agent` (Agent instance), `data_knowledge` (Knowledge), `data_learnings` (Knowledge)
+- **Purpose**: Self-learning data analyst with dual knowledge system (Dash pattern)
+- **Features**: Agentic memory, guardrails, session summaries, dual knowledge (curated + learnings), business rules context, insight-focused instructions
+- **Tools**: PostgresTools (show_tables, describe_table, summarize_table, inspect_query), `introspect_schema`, `save_validated_query`
 
 ### backend/context/semantic_model.py
 - **Exports**: `SEMANTIC_MODEL` (dict), `SEMANTIC_MODEL_STR` (formatted markdown)
-- **Purpose**: 6-table database schema context injected into data agent instructions (Dash pattern)
-- **Tables**: `agno_agent_sessions`, `agno_agent_runs`, `agno_memories`, `agno_team_sessions`, `agno_workflow_sessions`, `agno_approvals`
+- **Purpose**: 11-table database schema context injected into data agent instructions (Dash pattern)
+- **Tables**: 6 Agno tables (`agno_agent_sessions`, `agno_agent_runs`, `agno_memories`, `agno_team_sessions`, `agno_workflow_sessions`, `agno_approvals`) + 5 F1 tables (`drivers_championship`, `constructors_championship`, `race_wins`, `race_results`, `fastest_laps`)
 
 ### backend/teams/research_team.py
 - **Exports**: `research_team` (Team instance)
@@ -329,8 +341,10 @@ Uses **pnpm** for package management:
 | `fastmcp` | MCP server for AgentOS |
 | `pypdf` | PDF document reader for knowledge loaders |
 | `aiofiles` | Async file I/O for document loading |
+| `pandas` | DataFrame loading for F1 sample data scripts |
+| `rich` | Rich CLI output for eval runner |
 
-**Dev deps** (`[dependency-groups]`): `mypy`, `ruff`, `pytest`, `requests`
+**Dev deps** (`[dependency-groups]`): `mypy`, `pandas-stubs`, `ruff`, `pytest`, `requests`
 
 ### Frontend
 

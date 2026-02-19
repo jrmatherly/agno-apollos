@@ -12,7 +12,7 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 | MCP Agent | MCP Tool Use | Connects to external services via MCP. |
 | Web Search Agent | Web Research | Searches the web using DuckDuckGo with source citations. |
 | Reasoning Agent | Chain-of-Thought | Step-by-step reasoning with configurable depth. |
-| Data Analyst | SQL Analysis | Read-only PostgreSQL queries following the Dash pattern. |
+| Data Analyst | SQL Analysis | Read-only PostgreSQL queries with dual knowledge system, runtime schema introspection, and query learning. |
 
 ### Teams
 
@@ -116,12 +116,22 @@ Walk me through the pros and cons of microservices vs monoliths.
 
 ### Data Analyst Agent
 
-Queries PostgreSQL with read-only tools and learns from successful queries.
+Queries PostgreSQL with read-only tools, dual knowledge system (curated metadata + dynamic learnings), runtime schema introspection, and validated query saving. Includes F1 dataset (1950-2020) with 5 tables.
+
+**Load F1 sample data and knowledge:**
+
+```sh
+mise run load-sample-data
+mise run load-knowledge
+```
 
 **Try it:**
 
 ```
 What tables are available in the database?
+How many races has Lewis Hamilton won?
+Which team has the most constructor championships?
+Show me the fastest lap records at Monza
 ```
 
 ## Common Tasks
@@ -237,7 +247,9 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run docs:validate` | Validate docs build and check broken links |
 | `mise run docs:docker` | Start docs in Docker (`--prod` for GHCR image) |
 | `mise run test` | Run integration tests (requires running backend) |
-| `mise run evals:run` | Run LLM-based evaluation suite |
+| `mise run evals:run` | Run eval suite (`-v` verbose, `-g` LLM grading, `-r` golden SQL, `--direct`) |
+| `mise run load-sample-data` | Load F1 sample data into PostgreSQL |
+| `mise run load-knowledge` | Populate vector DB with curated knowledge (`--recreate` to rebuild) |
 | `mise run auth:generate-token` | Generate dev JWT tokens for RBAC testing |
 | `mise run schedules:setup` | Initialize scheduler tables |
 
