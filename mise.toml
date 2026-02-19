@@ -56,7 +56,7 @@ experimental = true
 # load-docs          Load knowledge base documents into vector DB
 # ci                 Full CI pipeline (install + validate)
 # clean              Clean build artifacts and caches
-# release <version>  Create a GitHub release (triggers Docker image builds)
+# release            Create a GitHub release (interactive version prompt)
 #
 # docker:up          Start full stack (build + detach)
 # docker:down        Stop all services

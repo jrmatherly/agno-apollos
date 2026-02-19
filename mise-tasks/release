@@ -2,22 +2,66 @@
 #MISE description="Create a GitHub release (triggers Docker image builds)"
 #MISE depends=["validate"]
 #USAGE flag "-f --force" help="Skip CI status check"
-#USAGE arg "<version>" help="Semver version (e.g. 1.0.0 or v1.0.0)"
 set -e
 
-VERSION="${usage_version}"
-FORCE="${usage_force:-false}"
-
-# Normalize version: ensure v prefix
-if [[ ! "$VERSION" =~ ^v ]]; then
-  VERSION="v${VERSION}"
-fi
-
-# Validate semver format
-if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Error: Invalid semver format. Expected: v1.2.3"
+# ---------------------------------------------------------------------------
+# Read current version from pyproject.toml
+# ---------------------------------------------------------------------------
+CURRENT=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+if [ -z "$CURRENT" ]; then
+  echo "Error: Could not read version from pyproject.toml"
   exit 1
 fi
+
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+NEXT_PATCH="${MAJOR}.${MINOR}.$((PATCH + 1))"
+NEXT_MINOR="${MAJOR}.$((MINOR + 1)).0"
+NEXT_MAJOR="$((MAJOR + 1)).0.0"
+
+# ---------------------------------------------------------------------------
+# Prompt for version
+# ---------------------------------------------------------------------------
+echo ""
+echo "Current version: ${CURRENT}"
+echo ""
+echo "  1) patch  → ${NEXT_PATCH} (default)"
+echo "  2) minor  → ${NEXT_MINOR}"
+echo "  3) major  → ${NEXT_MAJOR}"
+echo "  4) custom"
+echo ""
+read -rp "Select [1]: " CHOICE
+CHOICE="${CHOICE:-1}"
+
+case "$CHOICE" in
+  1) VERSION="$NEXT_PATCH" ;;
+  2) VERSION="$NEXT_MINOR" ;;
+  3) VERSION="$NEXT_MAJOR" ;;
+  4)
+    read -rp "Enter version (e.g. 2.1.0): " VERSION
+    # Strip v prefix if user entered one
+    VERSION="${VERSION#v}"
+    ;;
+  *)
+    echo "Error: Invalid choice."
+    exit 1
+    ;;
+esac
+
+# Validate semver format
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: Invalid semver format. Expected: 1.2.3"
+  exit 1
+fi
+
+TAG="v${VERSION}"
+echo ""
+echo "Releasing: ${TAG}"
+echo ""
+
+# ---------------------------------------------------------------------------
+# Pre-flight checks
+# ---------------------------------------------------------------------------
+FORCE="${usage_force:-false}"
 
 # Ensure we're on main branch
 BRANCH=$(git branch --show-current)
@@ -63,23 +107,42 @@ if [ "$FORCE" != "true" ]; then
 fi
 
 # Check that tag doesn't already exist
-if git rev-parse "$VERSION" >/dev/null 2>&1; then
-  echo "Error: Tag '${VERSION}' already exists."
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+  echo "Error: Tag '${TAG}' already exists."
   exit 1
 fi
 
-# Create and push tag
-echo "Creating tag ${VERSION}..."
-git tag "$VERSION"
-git push origin "$VERSION"
+# ---------------------------------------------------------------------------
+# Bump version in source files
+# ---------------------------------------------------------------------------
+echo "Bumping version: ${CURRENT} → ${VERSION}"
 
-# Create GitHub release (triggers docker-images.yml)
-echo "Creating GitHub release ${VERSION}..."
-gh release create "$VERSION" \
-  --title "$VERSION" \
+# pyproject.toml
+sed -i '' "s/^version = \"${CURRENT}\"/version = \"${VERSION}\"/" pyproject.toml
+
+# frontend/package.json (update the top-level "version" field)
+sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${VERSION}\"/" frontend/package.json
+
+echo "  Updated pyproject.toml"
+echo "  Updated frontend/package.json"
+
+# ---------------------------------------------------------------------------
+# Commit, push, tag, release
+# ---------------------------------------------------------------------------
+git add pyproject.toml frontend/package.json
+git commit -m "chore: bump version to ${VERSION}"
+git push origin main
+
+echo "Creating tag ${TAG}..."
+git tag "$TAG"
+git push origin "$TAG"
+
+echo "Creating GitHub release ${TAG}..."
+gh release create "$TAG" \
+  --title "$TAG" \
   --generate-notes
 
 echo ""
-echo "Release ${VERSION} created. Docker image builds triggered."
-echo "  View release: $(gh release view "$VERSION" --json url --jq '.url')"
+echo "Release ${TAG} created. Docker image builds triggered."
+echo "  View release: $(gh release view "$TAG" --json url --jq '.url')"
 echo "  View builds:  $(gh run list --workflow=docker-images.yml --limit=1 --json url --jq '.[0].url' 2>/dev/null || echo 'pending...')"
