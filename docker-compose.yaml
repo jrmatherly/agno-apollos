@@ -31,12 +31,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - RUNTIME_ENV=dev
-      - AGNO_DEBUG=True
+      - RUNTIME_ENV=${RUNTIME_ENV:-dev}
+      - AGNO_DEBUG=${AGNO_DEBUG:-True}
       - PYTHONPATH=/app
       # Database
-      - DB_HOST=apollos-db
-      - DB_PORT=5432
+      - DB_HOST=${DB_HOST:-apollos-db}
+      - DB_PORT=${DB_PORT:-5432}
       - DB_USER=${DB_USER:-ai}
       - DB_PASS=${DB_PASS:-ai}
       - DB_DATABASE=${DB_DATABASE:-ai}
@@ -85,6 +85,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       - apollos-backend
     networks:
