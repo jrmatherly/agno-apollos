@@ -13,8 +13,8 @@ Frontend Dockerfile uses multi-stage build with `output: 'standalone'` in next.c
 
 Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 
-- `mise run setup` - install all deps (backend: uv sync --dev, frontend: pnpm install)
-- `mise run format` - format code (ruff format + import sort)
+- `mise run setup` - install all deps (add `--ci` for locked/frozen lockfiles)
+- `mise run format` - format code (add `--check` for CI check-only mode)
 - `mise run lint` - lint (ruff check)
 - `mise run typecheck` - type check (mypy)
 - `mise run validate` - all checks (format-check + lint + typecheck)
@@ -27,12 +27,12 @@ Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 - `mise run load-docs` - load knowledge base documents
 - `mise run ci` - full CI pipeline
 - `mise run clean` - clean build artifacts
-- `mise run release <version>` - create GitHub release (validates, checks CI, triggers Docker builds)
+- `mise run release` - create GitHub release (interactive version prompt, validates, checks CI, triggers Docker builds)
 
 Tool versions managed by mise (see `mise.toml`): Python 3.12, uv latest, Node 24, pnpm latest.
 
 Frontend tasks:
-- `mise run frontend:setup` - install frontend deps (pnpm install)
+- `mise run frontend:setup` - install frontend deps (add `--ci` for frozen lockfile)
 - `mise run frontend:dev` - start frontend dev server (port 3000)
 - `mise run frontend:build` - production build
 - `mise run frontend:lint` / `frontend:format` / `frontend:typecheck` / `frontend:validate`
@@ -63,14 +63,15 @@ Frontend tasks:
 - ruff line-length: 120
 - Env var defaults live in `mise.toml` [env] section and `backend/db/session.py`
 - Dependencies: `uv add <package>` (auto-updates uv.lock), never edit uv.lock manually
-- Frontend uses pnpm (not npm/yarn). Local setup uses `pnpm install`; CI uses `--frozen-lockfile`.
+- Frontend uses pnpm (not npm/yarn). Use `--ci` flag on setup/frontend:setup tasks for locked/frozen mode in CI.
 - After changing frontend/package.json, run `mise run frontend:setup` to regenerate pnpm-lock.yaml.
 - Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
 - Docker compose has 3 services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000)
-- CI workflows run backend and frontend validation as parallel jobs
+- CI workflows run backend and frontend validation as parallel jobs using mise tasks
 - CI workflows use pinned action SHAs (not tags) for supply-chain security
 - CodeQL security scanning runs on push/PR to main + weekly schedule (security-extended suite)
-- Release flow: `mise run release <version>` → validates → checks CI → tags → GitHub release → Docker image builds
+- Docker images publish to GHCR (`ghcr.io/<owner>/apollos-backend`, `ghcr.io/<owner>/apollos-frontend`)
+- Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions → tags → GitHub release → Docker image builds
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
 - VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
 - When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md

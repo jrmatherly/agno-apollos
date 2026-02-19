@@ -9,8 +9,14 @@ on:
       - "docs/**"
       - "LICENSE"
       - ".gitignore"
-      - ".dockerignore"
       - "example.env"
+      - ".vscode/**"
+      - ".claude/**"
+      - ".serena/**"
+      - ".mcp.json.example"
+      - "mise-tasks/**"
+      - "scripts/**"
+      - "docker-compose.yaml"
   pull_request:
     types:
       - opened
@@ -23,8 +29,14 @@ on:
       - "docs/**"
       - "LICENSE"
       - ".gitignore"
-      - ".dockerignore"
       - "example.env"
+      - ".vscode/**"
+      - ".claude/**"
+      - ".serena/**"
+      - ".mcp.json.example"
+      - "mise-tasks/**"
+      - "scripts/**"
+      - "docker-compose.yaml"
 
 permissions:
   contents: read
@@ -43,16 +55,16 @@ jobs:
           experimental: true
 
       - name: Install dependencies
-        run: uv sync --locked --dev
+        run: mise run setup --ci
 
       - name: Format check
-        run: uv run ruff format --check .
+        run: mise run format --check
 
       - name: Lint
-        run: uv run ruff check .
+        run: mise run lint
 
       - name: Type-check
-        run: uv run mypy .
+        run: mise run typecheck
 
   frontend:
     name: Frontend
@@ -67,17 +79,7 @@ jobs:
           experimental: true
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        working-directory: frontend
+        run: mise run frontend:setup --ci
 
-      - name: Lint
-        run: pnpm lint
-        working-directory: frontend
-
-      - name: Format check
-        run: pnpm format
-        working-directory: frontend
-
-      - name: Type-check
-        run: pnpm typecheck
-        working-directory: frontend
+      - name: Validate
+        run: mise run frontend:validate

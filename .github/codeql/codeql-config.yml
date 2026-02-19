@@ -1,9 +1,21 @@
 paths-ignore:
+  # Dependencies and build output
   - frontend/node_modules
   - frontend/.next
   - .venv
-  - .local_docs
-  - .scratchpad
   - "**/__pycache__"
   - "**/dist"
   - "**/build"
+
+  # Project tooling and config (no application code)
+  - mise-tasks
+  - scripts
+  - .claude
+  - .serena
+  - .vscode
+  - .github
+
+  # Documentation and non-code files
+  - docs
+  - .local_docs
+  - .scratchpad

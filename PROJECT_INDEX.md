@@ -184,8 +184,8 @@ Uses **pnpm** for package management:
 | Workflow | Trigger | Steps |
 |----------|---------|-------|
 | `codeql.yml` | Push to main, PR, weekly Mon 6am UTC | CodeQL security scanning: Python, JavaScript/TypeScript, Actions (security-extended suite) |
-| `validate.yml` | Push to main, PR | Parallel jobs: backend (ruff, mypy via mise) + frontend (eslint, prettier, tsc via mise) |
-| `docker-images.yml` | Release published | Parallel jobs: build + push apollos-backend and apollos-frontend images to DockerHub |
+| `validate.yml` | Push to main, PR | Parallel jobs: backend (format, lint, typecheck via mise) + frontend (validate via mise) |
+| `docker-images.yml` | Release published | Parallel jobs: build + push apollos-backend and apollos-frontend images to GHCR |
 
 ## Key Dependencies
 

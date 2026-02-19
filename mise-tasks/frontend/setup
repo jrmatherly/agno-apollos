@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 #MISE description="Install frontend dependencies"
+#USAGE flag "--ci" help="Use frozen lockfile (for CI)"
 set -e
 
 cd "${MISE_PROJECT_ROOT}/frontend"
-pnpm install
+if [ "${usage_ci:-false}" = "true" ]; then
+  pnpm install --frozen-lockfile
+else
+  pnpm install
+fi

@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 #MISE description="Format code (ruff format + import sorting)"
 #MISE alias="fmt"
+#USAGE flag "--check" help="Check formatting without applying changes (for CI)"
 set -e
 
-echo "Formatting..."
-uv run ruff format .
-uv run ruff check --select I --fix .
+CHECK="${usage_check:-false}"
+
+if [ "$CHECK" = "true" ]; then
+  echo "Checking formatting..."
+  uv run ruff format --check .
+  uv run ruff check --select I .
+else
+  echo "Formatting..."
+  uv run ruff format .
+  uv run ruff check --select I --fix .
+fi
 echo "Done."

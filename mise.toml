@@ -46,8 +46,8 @@ experimental = true
 # ---------------------------------------------------------------------------
 # Available Tasks (mise run <task>)
 # ---------------------------------------------------------------------------
-# setup              Install all dependencies (backend + frontend)
-# format             Format Python code (ruff format + import sorting)
+# setup [--ci]       Install all dependencies (--ci for locked/frozen mode)
+# format [--check]   Format Python code (--check for CI check-only mode)
 # lint               Lint Python code (ruff check)
 # typecheck          Type-check Python code (mypy)
 # validate           Run all checks (backend + frontend)
@@ -65,7 +65,7 @@ experimental = true
 #
 # frontend:dev       Start frontend dev server (Next.js)
 # frontend:build     Build frontend for production
-# frontend:setup     Install frontend dependencies (pnpm)
+# frontend:setup [--ci] Install frontend dependencies (--ci for frozen lockfile)
 # frontend:lint      Lint frontend code (ESLint)
 # frontend:format    Check frontend formatting (Prettier)
 # frontend:typecheck Type-check frontend code (TypeScript)

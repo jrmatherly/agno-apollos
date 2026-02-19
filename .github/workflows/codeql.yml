@@ -9,8 +9,14 @@ on:
       - "docs/**"
       - "LICENSE"
       - ".gitignore"
-      - ".dockerignore"
       - "example.env"
+      - ".vscode/**"
+      - ".claude/**"
+      - ".serena/**"
+      - ".mcp.json.example"
+      - "mise-tasks/**"
+      - "scripts/**"
+      - "docker-compose.yaml"
   pull_request:
     types:
       - opened
@@ -23,8 +29,14 @@ on:
       - "docs/**"
       - "LICENSE"
       - ".gitignore"
-      - ".dockerignore"
       - "example.env"
+      - ".vscode/**"
+      - ".claude/**"
+      - ".serena/**"
+      - ".mcp.json.example"
+      - "mise-tasks/**"
+      - "scripts/**"
+      - "docker-compose.yaml"
   schedule:
     - cron: "0 6 * * 1" # Monday 6am UTC
 

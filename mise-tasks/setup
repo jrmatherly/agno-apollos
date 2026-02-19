@@ -1,15 +1,26 @@
 #!/usr/bin/env bash
 #MISE description="Install all dependencies (backend + frontend)"
 #MISE alias="install"
+#USAGE flag "--ci" help="Use locked/frozen lockfiles (for CI)"
 set -e
 
+CI="${usage_ci:-false}"
+
 echo "Installing backend dependencies..."
-uv sync --dev
+if [ "$CI" = "true" ]; then
+  uv sync --locked --dev
+else
+  uv sync --dev
+fi
 
 echo ""
 echo "Installing frontend dependencies..."
 cd "${MISE_PROJECT_ROOT}/frontend"
-pnpm install --frozen-lockfile
+if [ "$CI" = "true" ]; then
+  pnpm install --frozen-lockfile
+else
+  pnpm install
+fi
 
 echo ""
 echo "Done."

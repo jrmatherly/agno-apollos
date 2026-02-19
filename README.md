@@ -163,8 +163,8 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 
 | Task | Description |
 |------|-------------|
-| `mise run setup` | Install all dependencies (creates .venv) |
-| `mise run format` | Format code (ruff format + import sorting) |
+| `mise run setup` | Install all dependencies (`--ci` for locked mode) |
+| `mise run format` | Format code (`--check` for CI check-only mode) |
 | `mise run lint` | Lint code (ruff check) |
 | `mise run typecheck` | Type-check code (mypy) |
 | `mise run validate` | Run all checks (format-check, lint, typecheck) |
@@ -177,8 +177,8 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run load-docs` | Load knowledge base documents |
 | `mise run ci` | Run full CI pipeline |
 | `mise run clean` | Clean build artifacts and caches |
-| `mise run release <version>` | Create a GitHub release (triggers Docker image builds) |
-| `mise run frontend:setup` | Install frontend dependencies (pnpm) |
+| `mise run release` | Create a GitHub release (interactive version prompt) |
+| `mise run frontend:setup` | Install frontend dependencies (`--ci` for frozen lockfile) |
 | `mise run frontend:dev` | Start frontend dev server (port 3000) |
 | `mise run frontend:build` | Build frontend for production |
 | `mise run frontend:lint` | Lint frontend code (ESLint) |
