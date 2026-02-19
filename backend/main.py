@@ -17,6 +17,7 @@ from backend.agents.knowledge_agent import knowledge_agent
 from backend.agents.mcp_agent import mcp_agent
 from backend.agents.web_search_agent import web_search_agent
 from backend.db import get_postgres_db
+from backend.teams.research_team import research_team
 
 # ---------------------------------------------------------------------------
 # Create Apollos AI
@@ -27,6 +28,7 @@ agent_os = AgentOS(
     scheduler=True,
     db=get_postgres_db(),
     agents=[knowledge_agent, mcp_agent, web_search_agent],
+    teams=[research_team],
     config=str(Path(__file__).parent / "config.yaml"),
 )
 

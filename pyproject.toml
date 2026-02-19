@@ -22,7 +22,12 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["mypy", "ruff"]
+dev = [
+    "mypy",
+    "pytest>=9.0.2",
+    "requests>=2.32.5",
+    "ruff",
+]
 
 [build-system]
 requires = ["setuptools"]
@@ -43,8 +48,8 @@ check_untyped_defs = true
 no_implicit_optional = true
 warn_unused_configs = true
 plugins = ["pydantic.mypy"]
-exclude = [".venv*"]
+exclude = [".venv*", "tests/"]
 
 [[tool.mypy.overrides]]
-module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*"]
+module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*", "requests.*"]
 ignore_missing_imports = true

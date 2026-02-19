@@ -14,6 +14,7 @@ from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode
 
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
+from backend.tools.search import search_content
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -61,6 +62,7 @@ knowledge_agent = Agent(
     db=agent_db,
     knowledge=knowledge,
     instructions=instructions,
+    tools=[search_content],
     search_knowledge=True,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     learning=LearningMachine(
