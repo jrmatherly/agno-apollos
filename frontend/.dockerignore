@@ -21,3 +21,7 @@ LICENSE
 # Build artifacts
 *.tsbuildinfo
 coverage/
+
+# sidecar
+.todos/
+.sidecar/

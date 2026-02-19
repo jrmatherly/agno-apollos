@@ -64,9 +64,12 @@ Thumbs.db
 tmp/
 .local_docs/
 .scratchpad/
+.claude/
 .serena/
 docs/
 .git/
+.todos/
+.sidecar/
 
 # =========================
 # Not needed in backend image
@@ -80,3 +83,6 @@ example.env
 mise.toml
 mise.local.toml
 .python-version
+CLAUDE.md
+PROJECT_INDEX.md
+README.md

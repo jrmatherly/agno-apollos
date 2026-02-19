@@ -19,3 +19,7 @@ drafts/
 # Docker
 Dockerfile
 .dockerignore
+
+# sidecar
+.todos/
+.sidecar/
