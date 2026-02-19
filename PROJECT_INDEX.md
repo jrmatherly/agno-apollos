@@ -301,8 +301,9 @@ Uses **pnpm** for package management:
 | `opentelemetry-api/sdk` | Distributed tracing |
 | `opentelemetry-exporter-otlp-proto-http` | OTLP HTTP trace exporter |
 | `openinference-instrumentation-agno` | Agno-specific OTel instrumentation |
-| `litellm[proxy]` | Multi-provider LLM proxy / routing |
-| `duckduckgo-search` | Web search backend for web_search_agent |
+| `litellm` | Multi-provider LLM routing (external proxy, no [proxy] extra) |
+| `ddgs` | Web search backend for web_search_agent |
+| `fastmcp` | MCP server for AgentOS |
 | `pypdf` | PDF document reader for knowledge loaders |
 | `aiofiles` | Async file I/O for document loading |
 

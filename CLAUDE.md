@@ -121,6 +121,7 @@ Always verify Agno API signatures with `python3 -c "import inspect; from agno.X 
 
 Known gotchas:
 - `@tool` must be outer decorator, `@approval` inner (otherwise mypy error on Function type)
+- `@approval(type="audit")` requires explicit HITL flag on `@tool()` (e.g., `@tool(requires_confirmation=True)`). Plain `@approval` auto-sets this.
 - Team: use `id=` (not `team_id=`), `mode=TeamMode.coordinate` (not string). Import `from agno.team.team import TeamMode`.
 - `member_timeout` and `max_interactions_to_share` do not exist on Team in current version
 - Workflow Step: takes `agent=` or `executor=` (no `instructions` or `timeout_seconds` params)

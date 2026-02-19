@@ -67,8 +67,20 @@ The decorator order matters: `@tool` must come before `@approval`.
 
 | Type | Decorator | Description |
 |------|-----------|-------------|
-| Standard | `@approval` | Requires explicit human approval |
+| Standard | `@approval` | Requires explicit human approval (auto-sets `requires_confirmation`) |
 | Audit | `@approval(type="audit")` | Logs the action for audit trail |
+
+For the audit type, you must explicitly set a HITL flag on `@tool()`:
+
+```python
+@tool(requires_confirmation=True)
+@approval(type="audit")
+def export_session_data(session_id: str, format: str = "json") -> str:
+    """Export session data with audit logging."""
+    return f"Session {session_id} exported as {format}"
+```
+
+The standard `@approval` type auto-sets `requires_confirmation=True` if no flag is provided. The audit type requires an explicit choice.
 
 ## Guardrails
 

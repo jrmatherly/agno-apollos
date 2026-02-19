@@ -45,7 +45,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 1. **Research Workflow** (`research-workflow`): Web search → reasoning analysis pipeline
 
 ## Dependencies (pyproject.toml)
-agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, litellm[proxy], duckduckgo-search, pypdf, aiofiles
+agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, litellm, ddgs, fastmcp, pypdf, aiofiles
 Dev: mypy, ruff, pytest, requests
 
 ## Frontend Dependencies (package.json)

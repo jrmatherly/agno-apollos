@@ -15,6 +15,7 @@ from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode, Us
 from backend.context.intent_routing import INTENT_ROUTING
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
+from backend.tools import approved_ops, awareness, search
 from backend.tools.approved_ops import add_knowledge_source
 from backend.tools.awareness import list_knowledge_sources
 from backend.tools.search import search_content
@@ -25,6 +26,11 @@ from backend.tools.search import search_content
 agent_db = get_postgres_db()
 knowledge = create_knowledge("Knowledge Agent", "knowledge_agent_docs")
 knowledge_learnings = create_knowledge("Knowledge Learnings", "knowledge_learnings")
+
+# Wire tools to the knowledge base instance
+search.set_knowledge(knowledge)
+awareness.set_knowledge(knowledge)
+approved_ops.set_knowledge(knowledge)
 
 # ---------------------------------------------------------------------------
 # Agent Instructions

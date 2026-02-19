@@ -17,11 +17,12 @@ dependencies = [
   "opentelemetry-api",
   "opentelemetry-sdk",
   "openinference-instrumentation-agno",
-  "litellm[proxy]>=1.81.13",
-  "duckduckgo-search>=8.1.1",
+  "litellm>=1.81.13",
+  "ddgs>=9.0.0",
   "pypdf>=6.7.1",
   "aiofiles>=25.1.0",
   "opentelemetry-exporter-otlp-proto-http>=1.39.1",
+  "fastmcp>=2.14,<3",
 ]
 
 [dependency-groups]
@@ -54,5 +55,5 @@ plugins = ["pydantic.mypy"]
 exclude = [".venv*", "tests/"]
 
 [[tool.mypy.overrides]]
-module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*", "requests.*"]
+module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*", "requests.*", "ddgs.*", "fastmcp.*"]
 ignore_missing_imports = true
