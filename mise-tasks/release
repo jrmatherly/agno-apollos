@@ -29,7 +29,7 @@ echo "  2) minor  → ${NEXT_MINOR}"
 echo "  3) major  → ${NEXT_MAJOR}"
 echo "  4) custom"
 echo ""
-read -rp "Select [1]: " CHOICE
+read -rp "Select [1]: " CHOICE < /dev/tty
 CHOICE="${CHOICE:-1}"
 
 case "$CHOICE" in
@@ -37,7 +37,7 @@ case "$CHOICE" in
   2) VERSION="$NEXT_MINOR" ;;
   3) VERSION="$NEXT_MAJOR" ;;
   4)
-    read -rp "Enter version (e.g. 2.1.0): " VERSION
+    read -rp "Enter version (e.g. 2.1.0): " VERSION < /dev/tty
     # Strip v prefix if user entered one
     VERSION="${VERSION#v}"
     ;;
