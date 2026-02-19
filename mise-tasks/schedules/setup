@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#MISE description="Create default scheduler schedules"
+
+set -euo pipefail
+
+BACKEND_URL="${BACKEND_URL:-http://localhost:8000}"
+
+echo "Creating default schedules on $BACKEND_URL..." > /dev/tty
+
+# Daily knowledge refresh (6 AM ET)
+curl -sf -X POST "$BACKEND_URL/schedules" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "daily-knowledge-refresh",
+    "cron_expr": "0 6 * * *",
+    "endpoint": "/agents/knowledge-agent/runs",
+    "payload": {"message": "Check for new documents and summarize any updates to the knowledge base."},
+    "timezone": "America/New_York"
+  }' && echo "  Created: daily-knowledge-refresh" > /dev/tty || echo "  Failed: daily-knowledge-refresh" > /dev/tty
+
+# Weekly learning review (Monday 9 AM ET)
+curl -sf -X POST "$BACKEND_URL/schedules" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "weekly-learning-review",
+    "cron_expr": "0 9 * * 1",
+    "endpoint": "/agents/knowledge-agent/runs",
+    "payload": {"message": "Review your saved learnings. Remove any that are outdated or redundant."},
+    "timezone": "America/New_York"
+  }' && echo "  Created: weekly-learning-review" > /dev/tty || echo "  Failed: weekly-learning-review" > /dev/tty
+
+echo "Done. View schedules: curl $BACKEND_URL/schedules" > /dev/tty

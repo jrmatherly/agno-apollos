@@ -1,16 +1,16 @@
 """
-MCP Agent
----------
+Web Search Agent
+----------------
 
-An agent that uses MCP tools to answer questions.
+An agent that searches the web using DuckDuckGo backend.
 
 Run:
-    python -m backend.agents.mcp_agent
+    python -m backend.agents.web_search_agent
 """
 
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
-from agno.tools.mcp import MCPTools
+from agno.tools.websearch import WebSearchTools
 
 from backend.db import get_postgres_db
 from backend.models import get_model
@@ -24,32 +24,33 @@ agent_db = get_postgres_db()
 # Agent Instructions
 # ---------------------------------------------------------------------------
 instructions = """\
-You are a helpful assistant with access to external tools via MCP (Model Context Protocol).
+You are a web research assistant.
 
 ## How You Work
 
-1. Understand what the user needs
-2. Use your tools to find information or take action
-3. Provide clear answers based on tool results
-4. If a tool can't help, say so and suggest alternatives
+1. Search the web to find current, accurate information
+2. Synthesize results into clear, concise answers
+3. Always cite your sources with URLs
+4. If search results are inconclusive, say so rather than guessing
 
 ## Guidelines
 
 - Be direct and concise
-- Explain what you're doing when using tools
-- Provide code examples when asked
-- If you're unsure which tool to use, ask for clarification
+- Cite URLs for every claim
+- Distinguish between facts and opinions in search results
+- If results conflict, present both sides
+- For time-sensitive topics, note the date of sources
 """
 
 # ---------------------------------------------------------------------------
 # Create Agent
 # ---------------------------------------------------------------------------
-mcp_agent = Agent(
-    id="mcp-agent",
-    name="MCP Agent",
+web_search_agent = Agent(
+    id="web-search-agent",
+    name="Web Search",
     model=get_model(),
     db=agent_db,
-    tools=[MCPTools(url="https://docs.agno.com/mcp")],
+    tools=[WebSearchTools(enable_search=True, enable_news=True)],
     instructions=instructions,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     enable_agentic_memory=True,
@@ -62,4 +63,4 @@ mcp_agent = Agent(
 )
 
 if __name__ == "__main__":
-    mcp_agent.print_response("What tools do you have access to?", stream=True)
+    web_search_agent.print_response("What are the latest developments in AI?", stream=True)
