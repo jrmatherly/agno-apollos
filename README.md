@@ -227,6 +227,7 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `RUNTIME_ENV` | No | `prd` | Set to `dev` for auto-reload |
 | `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
 | `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by `docker-compose.prod.yaml`) |
+| `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | - | Pre-fill auth token in the frontend UI |
 
 ## Learn More

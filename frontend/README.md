@@ -31,7 +31,7 @@ Open [http://localhost:3000](http://localhost:3000) to access the UI.
 
 ## Connecting to the Backend
 
-The frontend connects to the backend API via browser-side fetch. The default endpoint is `http://localhost:8000`.
+The frontend connects to the backend API via browser-side fetch. The default endpoint is `http://localhost:8000`, configurable via the `NEXT_PUBLIC_DEFAULT_ENDPOINT` environment variable.
 
 To change the endpoint:
 

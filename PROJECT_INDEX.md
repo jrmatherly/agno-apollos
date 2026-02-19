@@ -241,6 +241,7 @@ Uses **pnpm** for package management:
 | `RUNTIME_ENV` | No | `dev` | Set to `dev` for auto-reload |
 | `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
 | `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by docker-compose.prod.yaml) |
+| `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | — | Pre-fill auth token in the frontend UI |
 | `WAIT_FOR_DB` | No | — | Container waits for DB readiness |
 | `PRINT_ENV_ON_LOAD` | No | — | Print env vars on container start |
@@ -279,6 +280,6 @@ open http://localhost:8000/docs
 - **Storage**: pgvector (PostgreSQL 18 with vector extension) for both agent state and RAG embeddings.
 - **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`.
 - **LLM Provider**: LiteLLM Proxy (all LLM and embedding traffic routes through self-hosted proxy).
-- **Frontend**: Next.js 15 with standalone output. Connects to backend via browser-side fetch (not server-side). API URL is configured in the UI, not env vars.
+- **Frontend**: Next.js 15 with standalone output. Connects to backend via browser-side fetch (not server-side). Default endpoint configurable via `NEXT_PUBLIC_DEFAULT_ENDPOINT` env var (defaults to `http://localhost:8000`).
 - **Deployment**: Two compose files: `docker-compose.yaml` (dev, local builds) and `docker-compose.prod.yaml` (prod, GHCR images). Multi-arch images for production.
 - **Tooling**: `mise` (task runner + tool manager), `uv` (backend package management), `pnpm` (frontend package management), `ruff` for formatting/linting, `mypy` for type-checking.
