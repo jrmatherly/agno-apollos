@@ -28,17 +28,18 @@ Run `git diff --stat` (or `git diff --stat HEAD~N` for recent commits) to get th
 
 Verify each file against the changes identified in Step 1. Read the actual file content, do not rely on memory.
 
-| File | What to Check |
-|------|---------------|
-| `CLAUDE.md` | Backend packages list, commands section (task descriptions), conventions section (env vars, patterns), Agno API notes |
-| `README.md` | Agents table, Development Tasks table (task flags), env vars table, CLI section |
-| `PROJECT_INDEX.md` | Project structure tree, core modules section, env vars table, architecture notes |
-| `.serena/memories/project-overview.md` | Agents list, tools list, context list, evals description, mise tasks list, env vars |
-| `docs/agents/*.mdx` | Per-agent pages: code example, features table, tools list, example queries |
-| `docs/reference/architecture.mdx` | Backend directory table, project structure tree, evals description |
-| `docs/reference/code-map.mdx` | Agent wiring diagram, agent wiring table, context module table, eval harness diagram/table, tool patterns |
-| `docs/configuration/environment.mdx` | All env var sections, new variable categories |
-| `frontend/README.md` | Only if frontend changes were made |
+| File                                   | What to Check                                                                                                         |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `CLAUDE.md`                            | Backend packages list, commands section (task descriptions), conventions section (env vars, patterns), Agno API notes |
+| `README.md`                            | Agents table, Development Tasks table (task flags), env vars table, CLI section                                       |
+| `PROJECT_INDEX.md`                     | Project structure tree, core modules section, env vars table, architecture notes                                      |
+| `.serena/memories/project-overview.md` | Agents list, tools list, context list, evals description, mise tasks list, env vars                                   |
+| `docs/agents/*.mdx`                    | Per-agent pages: code example, features table, tools list, example queries                                            |
+| `docs/reference/architecture.mdx`      | Backend directory table, project structure tree, evals description                                                    |
+| `docs/reference/code-map.mdx`          | Agent wiring diagram, agent wiring table, context module table, eval harness diagram/table, tool patterns             |
+| `docs/configuration/environment.mdx`   | All env var sections, new variable categories                                                                         |
+| `frontend/README.md`                   | Only if frontend changes were made                                                                                    |
+| `backend/README.md`                    | Only if backend changes were made                                                                                     |
 
 ### 3. Report Gaps
 
