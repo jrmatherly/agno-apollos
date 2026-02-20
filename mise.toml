@@ -75,7 +75,7 @@ experimental = true
 # clean              Clean build artifacts and caches
 # release            Create a GitHub release (interactive version prompt)
 # test               Run integration tests (requires running backend)
-# evals:run          Run agent eval suite (-c -v -g -r --direct)
+# evals:run          Run agent eval suite (-c -v -g -s --direct)
 # auth:generate-token Generate a test JWT token for development
 # schedules:setup    Create default scheduler schedules
 # agent:cli          Run an agent via CLI (-- <module> [-q question])

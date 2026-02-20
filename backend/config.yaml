@@ -2,8 +2,9 @@ chat:
   quick_prompts:
     knowledge-agent:
       - "What is Apollos AI?"
-      - "How do I create my first agent?"
       - "What documents are in your knowledge base?"
+      - "List the files in the documents directory"
+      - "How do I create my first agent?"
     mcp-agent:
       - "What is Apollos AI?"
       - "What tools do you have access to?"

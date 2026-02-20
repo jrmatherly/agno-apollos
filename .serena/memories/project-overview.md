@@ -20,10 +20,10 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `backend/agents/` - Agent definitions (knowledge, mcp, web_search, reasoning, data)
 - `backend/teams/research_team.py` - Multi-agent research team (coordinate mode)
 - `backend/workflows/research_workflow.py` - Quality-gated research pipeline (Loop + Condition)
-- `backend/tools/` - Custom tools (search, awareness, approved_ops with @approval, introspect schema, save validated query)
-- `backend/context/` - Context modules (11-table semantic_model, intent_routing, business_rules)
+- `backend/tools/` - Custom tools (search, awareness, approved_ops with @approval, introspect schema, save validated query, save_discovery for FAQ-building)
+- `backend/context/` - Context modules (11-table semantic_model, intent_routing, business_rules, source_registry)
 - `backend/knowledge/loaders.py` - PDF/CSV document loaders from `data/docs/`
-- `backend/evals/` - LLM-based eval harness (Rich CLI, TestCase/GradeResult dataclasses, string matching + LLM grading + golden SQL comparison)
+- `backend/evals/` - LLM-based eval harness (Rich CLI, TestCase/GradeResult dataclasses, string matching + LLM grading + golden SQL comparison + source citation checking)
 - `backend/scripts/` - Data loading scripts (load_sample_data, load_knowledge)
 - `backend/db/session.py` - PostgresDb and Knowledge factory functions
 - `backend/db/url.py` - Database URL builder from env vars
@@ -34,7 +34,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
 
 ## Agents
-1. **Knowledge Agent** (`knowledge-agent`): RAG with pgvector hybrid search, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), intent routing, custom tools
+1. **Knowledge Agent** (`knowledge-agent`): RAG with pgvector hybrid search, file browsing (FileTools), FAQ-building (save_intent_discovery), structured source registry, confidence signaling with citations, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), intent routing, common search patterns
 2. **MCP Agent** (`mcp-agent`): Connects to external tools via MCP protocol, full LearningMachine, learns tool usage patterns
 3. **Web Search Agent** (`web-search-agent`): Web research via DuckDuckGo, full LearningMachine, learns search patterns and source reliability
 4. **Reasoning Agent** (`reasoning-agent`): Chain-of-thought reasoning (2-6 steps), full LearningMachine, learns effective reasoning approaches
@@ -74,7 +74,7 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run ci` / `clean`
 - `mise run release` - create GitHub release (interactive version prompt)
 - `mise run test` - integration tests (pytest, requires running backend)
-- `mise run evals:run` - LLM-based evaluation suite (`-c` category, `-v` verbose, `-g` LLM grading, `--direct` no API; golden SQL runs automatically)
+- `mise run evals:run` - LLM-based evaluation suite (`-c` category, `-v` verbose, `-g` LLM grading, `-s` source checking, `--direct` no API; golden SQL runs automatically)
 - `mise run agent:cli` - run agent via CLI (`-- <module> [-q question]`)
 - `mise run load-sample-data` - load F1 sample data into PostgreSQL
 - `mise run load-knowledge` - populate vector DB with curated knowledge (`--recreate` to rebuild)

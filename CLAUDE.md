@@ -20,10 +20,10 @@ Backend packages:
 - `backend/agents/` — Agent definitions (knowledge, mcp, web_search, reasoning, data)
 - `backend/teams/` — Multi-agent team definitions (research_team)
 - `backend/workflows/` — Workflow definitions (research_workflow)
-- `backend/tools/` — Custom tools (search, awareness, approved_ops, introspect, save_query)
-- `backend/context/` — Context modules (semantic_model, intent_routing, business_rules)
-- `backend/knowledge/` — Document loaders (PDF/CSV from `data/docs/`)
-- `backend/evals/` — LLM-based eval harness (grader, test cases, runner)
+- `backend/tools/` — Custom tools (search, awareness, approved_ops, introspect, save_query, save_discovery)
+- `backend/context/` — Context modules (semantic_model, intent_routing, business_rules, source_registry)
+- `backend/knowledge/` — Document loaders (PDF/CSV from `data/docs/`), source metadata (`sources/`), search patterns (`patterns/`)
+- `backend/evals/` — LLM-based eval harness (grader, test cases, runner, source citation checking)
 - `backend/telemetry.py` — OpenTelemetry trace export (opt-in)
 - `backend/scripts/` — Data loading scripts (load_sample_data, load_knowledge)
 - `tests/` — Integration tests (pytest + requests)
@@ -71,7 +71,7 @@ Data loading tasks:
 
 Testing and evaluation tasks:
 - `mise run test` - run integration tests (pytest, requires running backend)
-- `mise run evals:run` - run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `--direct` mode; golden SQL comparison runs automatically)
+- `mise run evals:run` - run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `-s` source checking, `--direct` mode; golden SQL comparison runs automatically)
 - `mise run agent:cli` - run agent via CLI (`-- <module> [-q question]`)
 
 Test conventions:
@@ -112,6 +112,7 @@ Auth and scheduling tasks:
 - Data agent uses dual knowledge system: static `data_knowledge` (curated) + dynamic `data_learnings` (discovered via LearningMachine)
 - JWT auth is opt-in: empty `JWT_SECRET_KEY` env var = auth disabled. Set a value to enable RBAC.
 - Telemetry is opt-in: empty `OTEL_EXPORTER_OTLP_ENDPOINT` env var = traces not exported.
+- `DOCUMENTS_DIR` env var controls the knowledge agent file browsing directory (default: `data/docs`).
 - When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
 - Keep `agnohq/python:3.12` and `agnohq/pgvector:18` base images. Frontend and docs use `node:24-alpine`.
 - ruff line-length: 120

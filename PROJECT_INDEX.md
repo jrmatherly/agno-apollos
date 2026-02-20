@@ -34,20 +34,26 @@ apollos-ai/
 │   │   ├── awareness.py         # Knowledge source listing tool
 │   │   ├── approved_ops.py      # Approval-gated tools (@tool + @approval)
 │   │   ├── introspect.py        # Runtime schema introspection (SQLAlchemy inspect)
-│   │   └── save_query.py        # Save validated SQL queries to knowledge base
+│   │   ├── save_query.py        # Save validated SQL queries to knowledge base
+│   │   └── save_discovery.py    # Save intent-to-location mappings for FAQ-building
 │   ├── context/             # Context modules for agents
 │   │   ├── __init__.py
 │   │   ├── semantic_model.py    # 11-table semantic model (Agno + F1) for data agent
 │   │   ├── business_rules.py    # Business rules, metrics, gotchas from JSON
-│   │   └── intent_routing.py    # Intent routing guide for knowledge agent
-│   ├── knowledge/           # Document loaders
+│   │   ├── intent_routing.py    # Intent routing guide for knowledge agent
+│   │   └── source_registry.py   # Structured source metadata for knowledge agent
+│   ├── knowledge/           # Document loaders and knowledge assets
 │   │   ├── __init__.py
-│   │   └── loaders.py           # PDF/CSV loaders from data/docs/
+│   │   ├── loaders.py           # PDF/CSV loaders from data/docs/
+│   │   ├── sources/             # Structured source metadata JSON
+│   │   │   └── knowledge_sources.json  # Knowledge base capabilities and search tips
+│   │   └── patterns/            # Common search strategy patterns
+│   │       └── common_patterns.md      # How-to guide for searching the knowledge base
 │   ├── evals/               # LLM-based evaluation harness
 │   │   ├── __init__.py
-│   │   ├── grader.py            # LLM grader (GradeResult) + golden SQL result comparison
-│   │   ├── test_cases.py        # TestCase dataclass with golden SQL, 15 F1 + agent cases
-│   │   └── run_evals.py         # Rich CLI runner (string match, LLM grade, SQL compare, API/direct)
+│   │   ├── grader.py            # LLM grader (GradeResult) + golden SQL comparison + source citation checking
+│   │   ├── test_cases.py        # TestCase dataclass with golden SQL/path, 15 F1 + 10 knowledge + 1 web cases
+│   │   └── run_evals.py         # Rich CLI runner (string match, LLM grade, SQL compare, source check, API/direct)
 │   ├── scripts/             # Data loading scripts
 │   │   ├── __init__.py
 │   │   ├── load_sample_data.py  # Download and load F1 data (1950-2020) into PostgreSQL
@@ -227,13 +233,13 @@ Uses **pnpm** for package management:
 ### backend/cli.py
 - **Exports**: `run_agent_cli()` function
 - **Purpose**: Shared Rich CLI module for running agents directly from the command line
-- **Features**: Single-question mode (`-q`), interactive prompt loop, session persistence (`-s`), streaming toggle
+- **Features**: Single-question mode (`-q`), interactive prompt loop, session persistence (`-s`), user linking (`-u`), markdown rendering (`-m`), reasoning display (`--show-reasoning`), configurable exit commands, streaming toggle
 
 ### backend/agents/knowledge_agent.py
 - **Exports**: `knowledge_agent` (Agent instance), `knowledge_learnings` (Knowledge), `load_default_documents()` function
 - **Purpose**: RAG agent using pgvector hybrid search over ingested documents
-- **Features**: Agentic memory, intent routing, confidence signaling, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, custom tools (search_content, list_knowledge_sources, add_knowledge_source)
-- **Knowledge source**: Loads from `docs.agno.com` + PDF/CSV files from `data/docs/`
+- **Features**: Agentic memory, intent routing, confidence signaling with citation patterns, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, structured source registry, custom tools (FileTools, search_content, list_knowledge_sources, add_knowledge_source, save_intent_discovery)
+- **Knowledge source**: Loads from `docs.agno.com` + PDF/CSV files from `data/docs/` + common search patterns from `backend/knowledge/patterns/`
 
 ### backend/agents/mcp_agent.py
 - **Exports**: `mcp_agent` (Agent instance), `mcp_learnings` (Knowledge)
@@ -391,6 +397,7 @@ Uses **pnpm** for package management:
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | — | Pre-fill auth token in the frontend UI |
 | `JWT_SECRET_KEY` | No | — | Enable JWT RBAC auth (empty = auth disabled) |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OTel trace export endpoint (empty = traces not exported) |
+| `DOCUMENTS_DIR` | No | `./data/docs` | Knowledge agent file browsing directory |
 | `WAIT_FOR_DB` | No | — | Container waits for DB readiness |
 | `PRINT_ENV_ON_LOAD` | No | — | Print env vars on container start |
 
