@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Run memory optimization across all agent users"
+
+set -euo pipefail
+
+echo "Running memory optimization maintenance..." > /dev/tty
+uv run python3 -m backend.maintenance
+echo "Done." > /dev/tty
