@@ -26,6 +26,7 @@ dependencies = [
   "pandas>=3.0.1",
   "httpx>=0.28.1",
   "rich>=14.3.2",
+  "a2a-sdk[all]>=0.3.23",
 ]
 
 [dependency-groups]
@@ -59,5 +60,5 @@ plugins = ["pydantic.mypy"]
 exclude = [".venv*", "tests/"]
 
 [[tool.mypy.overrides]]
-module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*", "requests.*", "ddgs.*", "fastmcp.*"]
+module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*", "requests.*", "ddgs.*", "fastmcp.*", "a2a.*", "starlette.*"]
 ignore_missing_imports = true
