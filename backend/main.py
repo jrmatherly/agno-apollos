@@ -20,6 +20,7 @@ from backend.agents.mcp_agent import mcp_agent
 from backend.agents.reasoning_agent import reasoning_agent
 from backend.agents.web_search_agent import web_search_agent
 from backend.db import get_postgres_db
+from backend.registry import create_registry
 from backend.teams.research_team import research_team
 from backend.telemetry import configure_telemetry
 from backend.workflows.research_workflow import research_workflow
@@ -28,6 +29,11 @@ from backend.workflows.research_workflow import research_workflow
 # Telemetry (no-ops if OTEL_EXPORTER_OTLP_ENDPOINT is not set)
 # ---------------------------------------------------------------------------
 configure_telemetry()
+
+# ---------------------------------------------------------------------------
+# Component Registry (enables Agent-as-Config save/load/version)
+# ---------------------------------------------------------------------------
+registry = create_registry()
 
 # ---------------------------------------------------------------------------
 # Create Apollos AI
@@ -44,6 +50,7 @@ agent_os = AgentOS(
     workflows=[research_workflow],
     config=str(Path(__file__).parent / "config.yaml"),
     enable_mcp_server=True,
+    registry=registry,
     authorization=bool(jwt_secret),
     authorization_config=AuthorizationConfig(
         verification_keys=[jwt_secret] if jwt_secret else None,
