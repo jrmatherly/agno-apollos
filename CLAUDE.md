@@ -71,7 +71,7 @@ Data loading tasks:
 
 Testing and evaluation tasks:
 - `mise run test` - run integration tests (pytest, requires running backend)
-- `mise run evals:run` - run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `-r` golden SQL comparison, `--direct` mode)
+- `mise run evals:run` - run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `--direct` mode; golden SQL comparison runs automatically)
 
 Test conventions:
 - Tests use fixtures from `tests/conftest.py`: `backend_url` (waits for healthy backend), `session` (requests with retries), `url_for` (builds API URLs, rejects `/v1/` prefix)
@@ -100,6 +100,7 @@ Auth and scheduling tasks:
 ## Conventions
 
 - **API routes have NO `/v1/` prefix.** AgentOS registers at `/agents/...`, `/teams/...`, `/workflows/...`, `/schedules/...`. Agno's upstream docs use `/v1/` paths — do NOT copy that pattern. In tests, use the `url_for` helper from conftest.py.
+- **Agent/team run endpoints use form data, not JSON.** AgentOS `POST /agents/{id}/runs` uses `Form(...)` params. Send `data={"message": ..., "stream": "false"}` (not `json=`). Boolean form fields must be strings (`"false"`, not `False`).
 - Model provider: `LiteLLMOpenAI` from `agno.models.litellm` (proxy class, uses `base_url`). Use `backend/models.py:get_model()` — never inline model creation.
 - All model/embedding config via env vars (MODEL_ID, EMBEDDING_MODEL_ID, LITELLM_BASE_URL, etc.)
 - `agno.*` imports are the Agno framework library. Never rename or replace these.

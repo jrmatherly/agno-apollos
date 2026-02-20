@@ -18,6 +18,6 @@ def test_research_team_responds(url_for, session):
     """Research team accepts a run request."""
     r = session.post(
         url_for("/teams/research-team/runs"),
-        json={"message": "What are the benefits of multi-agent systems?", "stream": False},
+        data={"message": "What are the benefits of multi-agent systems?", "stream": "false"},
     )
     assert r.status_code == 200

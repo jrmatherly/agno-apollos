@@ -24,6 +24,7 @@ LICENSE
 # Build artifacts
 *.tsbuildinfo
 coverage/
+apollos-code-map.html
 
 # OS cruft
 .DS_Store

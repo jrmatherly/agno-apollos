@@ -82,3 +82,4 @@ tmp/
 # Optional: local PyPI creds (uncomment if you ever create it)
 # .pypirc
 .todos/
+apollos-code-map.html

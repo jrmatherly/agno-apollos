@@ -3,16 +3,20 @@ Eval Runner
 -----------
 
 Runs evaluation suite against live agents with Rich CLI output.
-Supports string matching, LLM grading, and golden SQL comparison.
+Supports string matching, golden SQL comparison, and LLM grading.
+
+Golden SQL comparison runs automatically for test cases that define golden_sql.
+It checks the agent's response against ground truth DB values with lenient
+matching (number words, partial names). String matching is the fallback for
+test cases without golden SQL.
 
 Usage:
     python -m backend.evals.run_evals                    # All tests via API
     python -m backend.evals.run_evals -c basic           # Category filter
     python -m backend.evals.run_evals -v                 # Verbose (show responses)
     python -m backend.evals.run_evals -g                 # LLM grading
-    python -m backend.evals.run_evals -r                 # Golden SQL comparison
     python -m backend.evals.run_evals --direct           # Direct agent invocation
-    python -m backend.evals.run_evals -g -r -v           # All modes combined
+    python -m backend.evals.run_evals -g -v              # LLM grading + verbose
 """
 
 import argparse
@@ -28,7 +32,7 @@ from rich.table import Table
 from rich.text import Text
 from sqlalchemy import create_engine, text
 
-from backend.evals.grader import GradeResult, compare_results, grade_response
+from backend.evals.grader import GradeResult, grade_response
 from backend.evals.test_cases import ALL_CASES, CATEGORIES, TestCase
 
 console = Console()
@@ -60,7 +64,7 @@ def run_agent_api(agent_id: str, question: str) -> str:
 
     r = requests.post(
         f"{BACKEND_URL}/agents/{agent_id}/runs",
-        json={"message": question, "stream": False},
+        data={"message": question, "stream": "false"},
         timeout=120,
     )
     r.raise_for_status()
@@ -107,38 +111,97 @@ def check_strings(response: str, expected: list[str]) -> list[str]:
     return [v for v in expected if v.lower() not in response_lower]
 
 
+# Number words for lenient numeric matching (0-20)
+_NUMBER_WORDS: dict[str, str] = {
+    str(i): w
+    for i, w in enumerate(
+        "zero one two three four five six seven eight nine ten "
+        "eleven twelve thirteen fourteen fifteen sixteen seventeen "
+        "eighteen nineteen twenty".split()
+    )
+}
+
+
+def _value_in_response(value: str, response_lower: str) -> bool:
+    """Check if a golden SQL value appears in the agent response.
+
+    Lenient matching handles common LLM output variations:
+    - Numbers 0-20 match their word form ("11" matches "eleven")
+    - Multi-word values match if any significant word appears ("Michael Schumacher" matches "Schumacher")
+    """
+    val = str(value).strip().lower()
+    if not val:
+        return True
+
+    # Direct substring match
+    if val in response_lower:
+        return True
+
+    # Numeric: also check word form (0-20)
+    if val in _NUMBER_WORDS and _NUMBER_WORDS[val] in response_lower:
+        return True
+
+    # Multi-word (e.g. full names): check if any word >2 chars appears
+    words = val.split()
+    if len(words) > 1 and any(w in response_lower for w in words if len(w) > 2):
+        return True
+
+    return False
+
+
 def evaluate_response(
     test_case: TestCase,
     response: str,
     llm_grader: bool = False,
-    compare_sql: bool = False,
 ) -> dict:
-    """Evaluate an agent response using configured methods."""
+    """Evaluate an agent response using configured methods.
+
+    Evaluation priority: LLM grading > golden SQL > string matching.
+    Golden SQL runs automatically when the test case defines it.
+    """
     result: dict = {}
 
-    # String matching
+    # String matching (always runs as baseline)
     missing = check_strings(response, test_case.expected_strings)
     result["missing"] = missing if missing else None
     string_pass = len(missing) == 0
 
-    # Golden SQL comparison
+    # Golden SQL comparison (auto-runs when golden_sql is defined)
+    # Checks agent response against ground truth DB values
     result_pass: bool | None = None
-    if compare_sql and test_case.golden_sql:
+    if test_case.golden_sql:
         try:
             golden_result = execute_golden_sql(test_case.golden_sql)
+            response_lower = response.lower()
+
             if test_case.expected_result is not None:
+                # Focused: validate expected_result exists in DB AND in response
                 golden_values = [str(v) for row in golden_result for v in row.values()]
-                result_pass = any(test_case.expected_result.lower() in gv.lower() for gv in golden_values)
+                sql_valid = any(test_case.expected_result.lower() in gv.lower() for gv in golden_values)
+                if not sql_valid:
+                    result_pass = False
+                    result["result_explanation"] = f"Golden SQL missing expected '{test_case.expected_result}'"
+                else:
+                    in_response = _value_in_response(test_case.expected_result, response_lower)
+                    result_pass = in_response
+                    result["result_explanation"] = (
+                        f"'{test_case.expected_result}'"
+                        + (" — found" if in_response else " — missing")
+                        + " in response"
+                    )
+            elif golden_result:
+                # Value check: verify golden SQL values appear in agent response
+                first_row = golden_result[0]
+                missing_cols = []
+                for col, val in first_row.items():
+                    if not _value_in_response(str(val), response_lower):
+                        missing_cols.append(f"{col}={val}")
+                result_pass = len(missing_cols) == 0
                 result["result_explanation"] = (
-                    f"Golden SQL contains expected '{test_case.expected_result}'"
+                    "All golden SQL values found in response"
                     if result_pass
-                    else f"Golden SQL missing expected '{test_case.expected_result}'"
+                    else f"Response missing: {', '.join(missing_cols)}"
                 )
-            else:
-                expected_dicts = [{k: str(v) for k, v in row.items()} for row in golden_result]
-                response_dicts = [{s: s for s in test_case.expected_strings}]
-                result_pass, explanation = compare_results(expected_dicts, response_dicts)
-                result["result_explanation"] = explanation
             result["result_match"] = result_pass
         except Exception as e:
             result["result_match"] = None
@@ -160,10 +223,10 @@ def evaluate_response(
             result["llm_grade"] = None
             result["llm_reasoning"] = f"Error: {e}"
 
-    # Final status (priority: LLM > result comparison > string matching)
+    # Final status (priority: LLM > golden SQL > string matching)
     if llm_grader and llm_pass is not None:
         result["status"] = "PASS" if llm_pass else "FAIL"
-    elif compare_sql and result_pass is not None:
+    elif result_pass is not None:
         result["status"] = "PASS" if result_pass else "FAIL"
     else:
         result["status"] = "PASS" if string_pass else "FAIL"
@@ -194,6 +257,8 @@ def display_results(results: list[EvalResult], verbose: bool, llm_grader: bool) 
             status = Text("FAIL", style="red")
             if llm_grader and r.get("llm_reasoning"):
                 notes = (r.get("llm_reasoning") or "")[:32]
+            elif r.get("result_explanation"):
+                notes = (r.get("result_explanation") or "")[:32]
             elif r.get("missing"):
                 notes = f"Missing: {', '.join((r.get('missing') or [])[:2])}"
             else:
@@ -278,7 +343,6 @@ def run_evals(
     category: str | None = None,
     verbose: bool = False,
     llm_grader: bool = False,
-    compare_results_flag: bool = False,
     direct: bool = False,
     agent_id: str | None = None,
 ) -> None:
@@ -298,10 +362,10 @@ def run_evals(
     mode_info = []
     if llm_grader:
         mode_info.append("LLM grading")
-    if compare_results_flag:
-        mode_info.append("Result comparison")
-    if not mode_info:
-        mode_info.append("String matching")
+    golden_count = sum(1 for tc in tests if tc.golden_sql)
+    if golden_count:
+        mode_info.append(f"Golden SQL ({golden_count} tests)")
+    mode_info.append("String matching")
     mode_info.append("direct" if direct else "API")
 
     console.print(Panel(f"[bold]Running {len(tests)} tests[/bold]\nMode: {', '.join(mode_info)}", style="blue"))
@@ -330,7 +394,6 @@ def run_evals(
                     test_case=tc,
                     response=response,
                     llm_grader=llm_grader,
-                    compare_sql=compare_results_flag,
                 )
 
                 results.append(
@@ -380,7 +443,6 @@ if __name__ == "__main__":
     parser.add_argument("--agent", "-a", help="Filter by agent ID")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show full responses on failure")
     parser.add_argument("--llm-grader", "-g", action="store_true", help="Use LLM to grade responses")
-    parser.add_argument("--compare-results", "-r", action="store_true", help="Compare against golden SQL")
     parser.add_argument("--direct", action="store_true", help="Run agents directly (no API server needed)")
     args = parser.parse_args()
 
@@ -388,7 +450,6 @@ if __name__ == "__main__":
         category=args.category,
         verbose=args.verbose,
         llm_grader=args.llm_grader,
-        compare_results_flag=args.compare_results,
         direct=args.direct,
         agent_id=args.agent,
     )

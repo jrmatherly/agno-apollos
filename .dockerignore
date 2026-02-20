@@ -91,6 +91,7 @@ data/
 .sidecar/
 .mcp.json
 .mcp.json.example
+apollos-code-map.html
 
 # =========================
 # Not needed in backend image

@@ -58,8 +58,7 @@ def url_for(backend_url):
         clean = path.lstrip("/")
         if clean.startswith("v1/"):
             raise ValueError(
-                f"Route must NOT include a /v1/ prefix (got '/{clean}'). "
-                "AgentOS registers routes at the root."
+                f"Route must NOT include a /v1/ prefix (got '/{clean}'). AgentOS registers routes at the root."
             )
         return f"{backend_url}/{clean}"
 

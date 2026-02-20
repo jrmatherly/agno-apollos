@@ -21,6 +21,7 @@ htmlcov/
 .tox/
 .nox/
 tests/
+apollos-code-map.html
 
 # Type checking / linting
 .mypy_cache/

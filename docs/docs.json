@@ -55,6 +55,7 @@
         "group": "Reference",
         "pages": [
           "reference/architecture",
+          "reference/code-map",
           "reference/mise-tasks"
         ]
       },
