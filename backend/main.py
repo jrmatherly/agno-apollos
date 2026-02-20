@@ -13,6 +13,8 @@ from pathlib import Path
 
 from agno.os import AgentOS
 from fastapi import FastAPI
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from backend.a2a.server import create_a2a_apps
 from backend.agents.data_agent import data_agent
@@ -23,6 +25,8 @@ from backend.agents.web_search_agent import web_search_agent
 from backend.auth import EntraJWTMiddleware, auth_lifespan, auth_router
 from backend.auth.config import auth_config
 from backend.auth.jwks_cache import jwks_cache
+from backend.auth.routes import limiter
+from backend.auth.security_headers import SecurityHeadersMiddleware
 from backend.db import get_postgres_db
 from backend.registry import create_registry
 from backend.teams.research_team import research_team
@@ -48,6 +52,10 @@ registry = create_registry()
 # When auth_config.enabled is False (Azure env vars not set), middleware
 # passes all requests through unauthenticated — safe local dev mode.
 base_app = FastAPI()
+base_app.state.limiter = limiter
+base_app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+# Middleware order matters (LIFO): SecurityHeaders registered first → runs after JWT on response
+base_app.add_middleware(SecurityHeadersMiddleware)
 base_app.add_middleware(EntraJWTMiddleware, config=auth_config, jwks_cache=jwks_cache)
 base_app.include_router(auth_router)  # /auth/health, /auth/me, /auth/sync, etc.
 

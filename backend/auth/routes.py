@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
 
 from backend.auth.config import auth_config
@@ -9,6 +11,7 @@ from backend.auth.scope_mapper import roles_to_scopes
 from backend.auth.sync_service import sync_service  # Module-level singleton
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 @auth_router.get("/health")
@@ -18,7 +21,8 @@ async def auth_health():  # type: ignore[return]
 
 
 @auth_router.get("/me")
-async def get_me(payload: dict = Depends(get_current_user)):  # type: ignore[type-arg, return]
+@limiter.limit("60/minute")
+async def get_me(request: Request, payload: dict = Depends(get_current_user)):  # type: ignore[type-arg, return]
     """Current user profile, roles, and computed scopes."""
     roles: list[str] = payload.get("roles", [])
     return {
@@ -31,6 +35,7 @@ async def get_me(payload: dict = Depends(get_current_user)):  # type: ignore[typ
 
 
 @auth_router.post("/sync")
+@limiter.limit("5/minute")
 async def sync_user(request: Request, payload: dict = Depends(get_current_user)):  # type: ignore[type-arg, return]
     """Trigger on-demand group sync using user's token."""
     await sync_service.sync_user_on_login(request.state.token, payload)
