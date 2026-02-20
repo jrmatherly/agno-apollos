@@ -8,6 +8,7 @@ Run:
     python -m backend.main
 """
 
+import warnings
 from os import getenv
 from pathlib import Path
 
@@ -32,6 +33,15 @@ from backend.registry import create_registry
 from backend.teams.research_team import research_team
 from backend.telemetry import configure_telemetry
 from backend.workflows.research_workflow import research_workflow
+
+# Agno 2.5.x uses the deprecated `streamablehttp_client` alias from MCP SDK 1.26+.
+# Suppress until Agno updates to `streamable_http_client`.
+warnings.filterwarnings(
+    "ignore",
+    message=r".*streamable_http_client.*",
+    category=DeprecationWarning,
+    module=r"mcp\..*",
+)
 
 # ---------------------------------------------------------------------------
 # Telemetry (no-ops if OTEL_EXPORTER_OTLP_ENDPOINT is not set)

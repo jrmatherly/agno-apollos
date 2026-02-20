@@ -37,8 +37,8 @@ if [[ "$WAIT_FOR_DB" = true || "$WAIT_FOR_DB" = True ]]; then
     echo ""
 fi
 
-# Seed data/docs with sample documents if directory is empty
-if [ -d /app/data/docs-seed ] && [ -z "$(ls -A /app/data/docs 2>/dev/null)" ]; then
+# Seed data/docs with sample documents if docs-seed has content and docs is empty
+if [ -d /app/data/docs-seed ] && [ -n "$(ls -A /app/data/docs-seed 2>/dev/null)" ] && [ -z "$(ls -A /app/data/docs 2>/dev/null)" ]; then
     echo -e "    ${DIM}Seeding /app/data/docs with sample documents...${NC}"
     mkdir -p /app/data/docs
     cp -r /app/data/docs-seed/* /app/data/docs/
