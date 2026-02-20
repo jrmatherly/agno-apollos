@@ -1,49 +1,74 @@
 ---
 title: "Security"
-description: "JWT authentication, RBAC authorization, and approval-gated tools."
+description: "Microsoft Entra ID authentication, RBAC authorization, and approval-gated tools."
 ---
 
-Apollos AI supports opt-in JWT authentication, role-based authorization, and human-in-the-loop approval workflows.
+Apollos AI supports opt-in Microsoft Entra ID authentication, role-based authorization, and human-in-the-loop approval workflows.
 
-## JWT authentication
+## Authentication
 
-Authentication is disabled by default. Set `JWT_SECRET_KEY` to enable it:
+Authentication is disabled by default. When `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, and `AZURE_AUDIENCE` are all set, the backend validates RS256 JWTs issued by Microsoft Entra ID.
+
+### How it works
+
+1. Azure Entra ID issues JWT access tokens signed with RS256
+2. `EntraJWTMiddleware` validates tokens via JWKS discovery (fetched from Entra's OIDC endpoint)
+3. App Roles in the token map to Agno scope strings for per-route authorization
+4. The frontend uses MSAL.js v5 to sign users in and silently refresh tokens every 5 minutes
+
+### Configuration
 
 ```bash
-# .env
-JWT_SECRET_KEY=your-secret-key-here
+# .env — backend
+AZURE_TENANT_ID=<Directory (tenant) ID>
+AZURE_CLIENT_ID=<Application (client) ID>
+AZURE_CLIENT_SECRET=<Client secret value>
+AZURE_AUDIENCE=api://<Application (client) ID>
+FRONTEND_URL=http://localhost:3000
+
+# .env — frontend (baked at build time)
+NEXT_PUBLIC_AZURE_CLIENT_ID=<Application (client) ID>
+NEXT_PUBLIC_AZURE_TENANT_ID=<Directory (tenant) ID>
+NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000
 ```
 
-When `JWT_SECRET_KEY` is set, the backend requires a valid JWT token for all API requests. When empty, authentication is disabled and the API is open.
+When any of the four `AZURE_*` values is empty, auth is disabled and all requests pass through.
 
-```python
-# backend/main.py
-jwt_secret = getenv("JWT_SECRET_KEY", "")
+### App Roles and Scopes
 
-agent_os = AgentOS(
-    authorization=bool(jwt_secret),
-    authorization_config=AuthorizationConfig(
-        verification_keys=[jwt_secret] if jwt_secret else None,
-        algorithm="HS256",
-    )
-    if jwt_secret
-    else None,
-)
-```
+Create App Roles in Azure and assign users. The role value in the token maps to Agno scopes:
 
-## Generating tokens
+| Azure App Role | Key Agno Scopes |
+|----------------|----------------|
+| `GlobalAdmin` | `agent_os:admin` (full bypass) |
+| `Admin` | Full CRUD across all resources |
+| `TeamLead` | Run agents, manage sessions and memories |
+| `Developer` | Read agents, run, manage own sessions |
+| `DevOps` | Metrics, traces, schedules |
+| `InfoSec` | Read-only across all resources |
+| `User` | Basic agent access |
 
-Generate a test token with the auth mise task:
+### Auth API endpoints
+
+| Endpoint | Auth Required | Description |
+|----------|---------------|-------------|
+| `GET /auth/health` | No | Auth status check |
+| `GET /auth/me` | Yes | Current user: OID, email, roles, scopes |
+| `POST /auth/sync` | Yes | Trigger on-demand group sync |
+| `GET /auth/teams` | Yes (`teams:read`) | List active teams |
+| `GET /auth/users` | Yes (`agent_os:admin`) | List all synced users |
+
+### Local development
+
+With empty `AZURE_*` vars, the backend accepts all requests. No configuration needed for local development.
+
+To test specific role behaviors locally:
 
 ```bash
 mise run auth:generate-token
 ```
 
-This produces a signed JWT using the configured `JWT_SECRET_KEY`.
-
-## Frontend authentication
-
-When JWT is enabled, enter the token in the frontend sidebar under the auth token field. The token is sent as a Bearer token with every API request.
+This generates a signed test JWT with the specified role for use with curl or the frontend.
 
 ## Approval workflows
 

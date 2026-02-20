@@ -29,3 +29,26 @@ Known gotchas:
 - Model API for direct calls: `model.response(messages=[Message(role="user", content=...)])` (not `model.invoke(str)`)
 - `enable_session_summaries` is on Agent (not AgentOS); `enable_mcp_server` is on AgentOS
 - `show_tool_calls` is NOT a valid Agent parameter
+
+## Entra ID Auth Package (backend/auth/)
+
+Located at `backend/auth/`. Handles Microsoft Entra ID JWT validation, RBAC scope mapping,
+user/team sync, and auth-specific FastAPI routes.
+
+### Key API contracts
+
+- `auth_config.enabled` → False when Azure vars unset; middleware passes all requests through
+- `request.state` fields set by `EntraJWTMiddleware`: `authenticated`, `user_id` (Entra `oid`),
+  `scopes` (list of strings), `authorization_enabled`, `accessible_resource_ids`, `token`,
+  `session_id`, `dependencies`, `session_state`
+- Use `oid` claim for `user_id` — NOT `sub` (sub is app-specific; oid is stable across apps)
+- `ROLE_SCOPE_MAP` in `scope_mapper.py` maps Entra App Role values → Agno scope strings
+
+### Gotchas
+
+- `EntraJWTMiddleware` extends `BaseHTTPMiddleware` — do not use `authorization=True` on AgentOS
+- JWKS cache fetches from OIDC discovery URL, not a hardcoded endpoint — works with key rotation
+- Group membership overage (`_claim_names.groups` present when >200 groups) always triggers Graph API fetch
+- Entra `oid` ≠ `sub`: `oid` is the stable cross-app user identifier; always use `oid` as `user_id`
+- Token deny list checked per-request via SQLAlchemy; partial index on `expires_at > NOW()` keeps it fast
+- `slowapi` rate limiter: limiter instance initialized in `routes.py`, registered on `base_app` in `main.py`

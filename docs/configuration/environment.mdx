@@ -43,11 +43,28 @@ All LLM and embedding requests route through a [LiteLLM Proxy](https://docs.lite
 
 ## Security
 
+### Entra ID Authentication
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `JWT_SECRET_KEY` | (empty) | HMAC secret for JWT auth. Empty = auth disabled |
+| `AZURE_TENANT_ID` | (empty) | Entra ID Directory (tenant) ID. All 4 required to enable auth. |
+| `AZURE_CLIENT_ID` | (empty) | Entra ID Application (client) ID |
+| `AZURE_CLIENT_SECRET` | (empty) | Client secret for Microsoft Graph API access |
+| `AZURE_AUDIENCE` | (empty) | Token audience. Must be `api://{AZURE_CLIENT_ID}` |
+| `FRONTEND_URL` | `http://localhost:3000` | CORS allowed origin for API responses |
+| `JWT_SECRET_KEY` | (empty) | Legacy HS256 auth. Superseded by Entra ID when Azure vars are set. |
 
-When `JWT_SECRET_KEY` is set, the backend requires a valid JWT token on all API requests. See [security configuration](/configuration/security) for details.
+When all four `AZURE_*` values are set, the backend validates RS256 JWTs from Entra ID. When any is empty, auth is disabled. See [security configuration](/configuration/security) for details.
+
+### Frontend Authentication (build-time)
+
+These are baked into the Next.js bundle at build time. Pass as `build.args` in docker-compose:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_AZURE_CLIENT_ID` | (empty) | Entra ID client ID for MSAL. Empty = manual token entry. |
+| `NEXT_PUBLIC_AZURE_TENANT_ID` | (empty) | Entra ID tenant ID for MSAL |
+| `NEXT_PUBLIC_REDIRECT_URI` | `http://localhost:3000` | MSAL redirect URI after login |
 
 ## Observability
 
