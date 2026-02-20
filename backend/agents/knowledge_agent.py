@@ -44,6 +44,7 @@ knowledge_learnings = create_knowledge("Knowledge Learnings", "knowledge_learnin
 # Documents directory for file browsing
 # ---------------------------------------------------------------------------
 DOCUMENTS_DIR = Path(getenv("DOCUMENTS_DIR", str(Path(__file__).parent.parent.parent / "data" / "docs")))
+PATTERNS_DIR = Path(__file__).parent.parent / "knowledge" / "patterns"
 
 # Wire tools to the knowledge base instance
 search.set_knowledge(knowledge)
@@ -208,6 +209,14 @@ def load_default_documents() -> None:
 
     load_pdf_documents(knowledge)
     load_csv_documents(knowledge)
+
+    # Load search strategy patterns (curated "how to find things" docs)
+    if PATTERNS_DIR.exists():
+        knowledge.insert(
+            name="knowledge-patterns",
+            path=str(PATTERNS_DIR),
+            skip_if_exists=True,
+        )
 
 
 if __name__ == "__main__":
