@@ -69,6 +69,7 @@ Auth and scheduling tasks:
 
 - `mise run auth:generate-token` - generate dev JWT tokens for RBAC testing
 - `mise run schedules:setup` - initialize scheduler tables
+- `mise run hooks:install` - install git pre-commit hook (auto-formats + validates before each commit)
 
 ## Mise Tasks
 

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#MISE description="Install git hooks (pre-commit format + lint + typecheck)"
+#MISE alias="hooks:install"
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+HOOKS_DIR="$ROOT/.git/hooks"
+HOOK_SRC="$ROOT/hooks/pre-commit"
+
+if [ ! -d "$HOOKS_DIR" ]; then
+  echo "Not a git repository: $ROOT"
+  exit 1
+fi
+
+cp "$HOOK_SRC" "$HOOKS_DIR/pre-commit"
+chmod +x "$HOOKS_DIR/pre-commit"
+
+echo "Installed pre-commit hook."
+echo "Hook runs: auto-format (ruff + prettier) → validate (lint + typecheck)"

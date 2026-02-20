@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Pre-commit hook — mirrors the CI validation pipeline.
+# Install with: mise run hooks:install
+set -eo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+echo "[pre-commit] Auto-formatting..."
+
+# Auto-fix Python formatting (ruff format)
+mise run format > /dev/null
+
+# Auto-fix frontend formatting (prettier --write on staged TS/TSX/MDX files)
+STAGED_FRONTEND=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.\(ts\|tsx\|mdx\)$' || true)
+if [ -n "$STAGED_FRONTEND" ]; then
+  cd "$ROOT/frontend"
+  echo "$STAGED_FRONTEND" | sed "s|^frontend/||" | xargs pnpm exec prettier --write --log-level warn 2>/dev/null || \
+    pnpm exec prettier --write "**/*.{ts,tsx,mdx}" --log-level warn
+  cd "$ROOT"
+fi
+
+# Re-stage any files that were auto-formatted (only files already in the index)
+git diff --name-only | xargs -r git add --
+
+echo "[pre-commit] Validating..."
+
+if ! mise run validate 2>&1; then
+  echo ""
+  echo "  Backend validation failed. Run 'mise run format && mise run lint && mise run typecheck' to debug."
+  exit 1
+fi
+
+if ! mise run frontend:validate 2>&1; then
+  echo ""
+  echo "  Frontend validation failed. Run 'mise run frontend:validate' to debug."
+  exit 1
+fi
+
+echo "[pre-commit] All checks passed."

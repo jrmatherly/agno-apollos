@@ -302,19 +302,20 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `MODEL_ID` | No | `gpt-5-mini` | LLM model ID |
 | `EMBEDDING_MODEL_ID` | No | `text-embedding-3-small` | Embedding model ID |
 | `EMBEDDING_DIMENSIONS` | No | `1536` | Embedding vector dimensions |
-| `DB_HOST` | No | `localhost` | Database host |
+| `DB_HOST` | No | `apollos-db` | Database host (use Docker service name) |
 | `DB_PORT` | No | `5432` | Database port |
 | `DB_USER` | No | `ai` | Database user |
 | `DB_PASS` | No | `ai` | Database password |
 | `DB_DATABASE` | No | `ai` | Database name |
-| `RUNTIME_ENV` | No | `prd` | Set to `dev` for auto-reload |
+| `RUNTIME_ENV` | No | `dev` | Set to `dev` for auto-reload, `prd` for production |
 | `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
 | `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by `docker-compose.prod.yaml`) |
 | `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
 | `AZURE_TENANT_ID` | No | - | Entra ID tenant ID. All 4 required to enable auth. |
 | `AZURE_CLIENT_ID` | No | - | Entra ID application (client) ID |
 | `AZURE_CLIENT_SECRET` | No | - | Client secret for Microsoft Graph API access |
-| `AZURE_AUDIENCE` | No | - | Token audience (`api://{AZURE_CLIENT_ID}`) |
+| `AZURE_AUDIENCE` | No | - | Token audience (`api://{AZURE_CLIENT_ID}`). Both `api://` and bare GUID forms accepted. |
+| `AUTH_DEBUG` | No | `True` (dev) | Log diagnostic 401 details: missing tokens, expired tokens, audience mismatches. |
 | `FRONTEND_URL` | No | `http://localhost:3000` | CORS allowed origin |
 | `JWT_SECRET_KEY` | No | - | Legacy HS256 auth. Superseded by Entra ID when Azure vars are set. |
 | `DOCUMENTS_DIR` | No | `data/docs` | Knowledge agent file browsing directory |

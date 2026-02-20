@@ -59,7 +59,9 @@ class EntraJWTMiddleware(BaseHTTPMiddleware):
         token = _extract_bearer_token(request)
         if not token:
             if self.config.auth_debug:
-                logger.warning("401 Missing token: %s %s (no Authorization: Bearer header)", request.method, request.url.path)
+                logger.warning(
+                    "401 Missing token: %s %s (no Authorization: Bearer header)", request.method, request.url.path
+                )
             return JSONResponse(status_code=401, content={"detail": "Missing authentication token"})
 
         # Validate JWT
@@ -72,11 +74,20 @@ class EntraJWTMiddleware(BaseHTTPMiddleware):
         except jwt.InvalidAudienceError as e:
             if self.config.auth_debug:
                 try:
-                    unverified = jwt.decode(token, options={"verify_signature": False, "verify_aud": False, "verify_exp": False})
+                    unverified = jwt.decode(
+                        token, options={"verify_signature": False, "verify_aud": False, "verify_exp": False}
+                    )
                     actual_aud = unverified.get("aud")
                 except Exception:
                     actual_aud = "unable to decode"
-                logger.warning("401 Invalid audience: %s %s — token aud=%r, expected AZURE_AUDIENCE=%s (%s)", request.method, request.url.path, actual_aud, self.config.audience, e)
+                logger.warning(
+                    "401 Invalid audience: %s %s — token aud=%r, expected AZURE_AUDIENCE=%s (%s)",
+                    request.method,
+                    request.url.path,
+                    actual_aud,
+                    self.config.audience,
+                    e,
+                )
             return JSONResponse(status_code=401, content={"detail": "Invalid audience"})
         except jwt.InvalidTokenError as e:
             logger.warning("JWT validation failed: %s", e)

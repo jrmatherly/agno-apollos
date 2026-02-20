@@ -32,7 +32,10 @@ export function useAuth() {
         // Triggers a page redirect to Microsoft login — user will return authenticated
         await instance.acquireTokenRedirect({ scopes: apiScopes })
       } else {
-        console.error('[MSAL] acquireTokenSilent failed (non-interactive error):', err)
+        console.error(
+          '[MSAL] acquireTokenSilent failed (non-interactive error):',
+          err
+        )
       }
       return null
     }

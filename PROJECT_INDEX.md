@@ -451,7 +451,8 @@ Uses **pnpm** for package management:
 | `AZURE_TENANT_ID` | No | — | Entra ID Directory (tenant) ID; all 4 AZURE_* required to enable auth |
 | `AZURE_CLIENT_ID` | No | — | Entra ID Application (client) ID |
 | `AZURE_CLIENT_SECRET` | No | — | Client secret for Microsoft Graph API access |
-| `AZURE_AUDIENCE` | No | — | Token audience; must be `api://{AZURE_CLIENT_ID}` |
+| `AZURE_AUDIENCE` | No | — | Token audience; set to `api://{AZURE_CLIENT_ID}`. Both `api://` and bare GUID forms accepted. |
+| `AUTH_DEBUG` | No | `True` (dev) `False` (prod) | Log diagnostic 401 details: missing tokens, expired tokens, audience mismatches. |
 | `FRONTEND_URL` | No | `http://localhost:3000` | CORS allowed origin for API responses |
 | `NEXT_PUBLIC_AZURE_CLIENT_ID` | No | — | Frontend MSAL client ID (build-time; empty = manual token entry) |
 | `NEXT_PUBLIC_AZURE_TENANT_ID` | No | — | Frontend MSAL tenant ID (build-time) |
