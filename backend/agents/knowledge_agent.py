@@ -8,6 +8,9 @@ Run:
     python -m backend.agents.knowledge_agent
 """
 
+from os import getenv
+from pathlib import Path
+
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
 from agno.learn import (
@@ -18,13 +21,16 @@ from agno.learn import (
     UserMemoryConfig,
     UserProfileConfig,
 )
+from agno.tools.file import FileTools
 
 from backend.context.intent_routing import INTENT_ROUTING
+from backend.context.source_registry import SOURCE_REGISTRY
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
-from backend.tools import approved_ops, awareness, search
+from backend.tools import approved_ops, awareness, save_discovery, search
 from backend.tools.approved_ops import add_knowledge_source
 from backend.tools.awareness import list_knowledge_sources
+from backend.tools.save_discovery import save_intent_discovery
 from backend.tools.search import search_content
 
 # ---------------------------------------------------------------------------
@@ -34,10 +40,17 @@ agent_db = get_postgres_db()
 knowledge = create_knowledge("Knowledge Agent", "knowledge_agent_docs")
 knowledge_learnings = create_knowledge("Knowledge Learnings", "knowledge_learnings")
 
+# ---------------------------------------------------------------------------
+# Documents directory for file browsing
+# ---------------------------------------------------------------------------
+DOCUMENTS_DIR = Path(getenv("DOCUMENTS_DIR", str(Path(__file__).parent.parent.parent / "data" / "docs")))
+PATTERNS_DIR = Path(__file__).parent.parent / "knowledge" / "patterns"
+
 # Wire tools to the knowledge base instance
 search.set_knowledge(knowledge)
 awareness.set_knowledge(knowledge)
 approved_ops.set_knowledge(knowledge)
+save_discovery.set_knowledge(knowledge_learnings)
 
 # ---------------------------------------------------------------------------
 # Agent Instructions
@@ -54,17 +67,38 @@ You are a knowledge assistant. You answer questions by searching your knowledge 
 
 ## Guidelines
 
-- Be direct and concise
-- Quote relevant passages when they add value
-- Provide code examples when asked
-- Don't make up information - only use what's in the knowledge base
+- Provide **answers**, not just file paths or source names
+- Read full documents when available — never answer from snippets alone
+- Include source paths and section references in every answer
+- Include specifics from the source: numbers, dates, names, code examples
+- Don't hallucinate content that doesn't exist in the sources
 
 ## Confidence Signaling
 
-- When you find strong matches, answer directly with citations
-- When matches are partial, say "Based on limited information in the knowledge base..."
-- When no matches are found, say "I found no information on this topic" and suggest alternatives
-- Never present uncertain information as definitive
+- **High confidence**: Direct quote from an authoritative source with full path and section reference
+- **Medium confidence**: Information found but in an unexpected location or from an older document
+- **Low confidence**: Inferred from related documents, not explicitly stated
+
+## Citation Pattern
+
+Every answer MUST include:
+1. The source path or name (e.g., `Agno Introduction` or `data/docs/guide.pdf`)
+2. The specific section or heading when available
+3. Key details from the source: numbers, dates, names
+
+| Bad | Good |
+|-----|------|
+| "I found 3 results for 'auth'" | "JWT authentication uses HS256 by default. Source: `Agno First Agent`, Authentication section" |
+| "See the API docs" | "Rate limit is 100 req/min per user. Source: `agno-docs/introduction.md`, Rate Limits heading" |
+
+## When Information Is NOT Found
+
+Be explicit, not evasive. List what you searched and suggest next steps.
+
+| Bad | Good |
+|-----|------|
+| "I couldn't find that" | "I searched the knowledge base for 'webhook' and 'callback' but found no matches. This topic may not be documented yet." |
+| "Try asking someone" | "No docs for custom middleware. Try searching web for 'Agno middleware' or ask the web search agent." |
 
 {INTENT_ROUTING}
 
@@ -81,6 +115,31 @@ After finding that a source combination works well:
 
 DO NOT save user preferences to shared learnings — those are handled automatically by user profiles.
 DO NOT save trivial or obvious information.
+
+## When to Save Intent Discovery
+
+After finding information in an unexpected location:
+  save_intent_discovery(
+      name="auth_config_in_agent_docs",
+      intent="Find authentication configuration",
+      location="agno-docs/first-agent.md",
+      summary="Auth config examples are in the first-agent guide, not a dedicated auth page",
+      search_terms=["authentication", "auth config", "jwt"],
+  )
+
+After a user asks a question you can now answer quickly:
+  save_intent_discovery(
+      name="rate_limits_location",
+      intent="Find API rate limits",
+      location="agno-docs/introduction.md",
+      summary="Rate limits are documented in the introduction overview section",
+      search_terms=["rate limit", "throttle", "api limits"],
+  )
+
+Use save_intent_discovery for LOCATION mappings (intent -> where to find it).
+Use save_learning for STRATEGY insights (what search approach worked).
+
+{SOURCE_REGISTRY}
 """
 
 # ---------------------------------------------------------------------------
@@ -93,7 +152,22 @@ knowledge_agent = Agent(
     db=agent_db,
     knowledge=knowledge,
     instructions=instructions,
-    tools=[search_content, list_knowledge_sources, add_knowledge_source],
+    tools=[
+        FileTools(
+            base_dir=DOCUMENTS_DIR,
+            enable_read_file=True,
+            enable_list_files=True,
+            enable_search_files=True,
+            enable_read_file_chunk=True,
+            enable_save_file=False,
+            enable_replace_file_chunk=False,
+            enable_delete_file=False,
+        ),
+        search_content,
+        list_knowledge_sources,
+        add_knowledge_source,
+        save_intent_discovery,
+    ],
     search_knowledge=True,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     learning=LearningMachine(
@@ -135,6 +209,14 @@ def load_default_documents() -> None:
 
     load_pdf_documents(knowledge)
     load_csv_documents(knowledge)
+
+    # Load search strategy patterns (curated "how to find things" docs)
+    if PATTERNS_DIR.exists():
+        knowledge.insert(
+            name="knowledge-patterns",
+            path=str(PATTERNS_DIR),
+            skip_if_exists=True,
+        )
 
 
 if __name__ == "__main__":

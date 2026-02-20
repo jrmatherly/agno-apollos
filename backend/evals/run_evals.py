@@ -32,7 +32,7 @@ from rich.table import Table
 from rich.text import Text
 from sqlalchemy import create_engine, text
 
-from backend.evals.grader import GradeResult, grade_response
+from backend.evals.grader import GradeResult, check_source_citation, grade_response
 from backend.evals.test_cases import ALL_CASES, CATEGORIES, TestCase
 
 console = Console()
@@ -53,6 +53,8 @@ class EvalResult(TypedDict, total=False):
     llm_reasoning: str | None
     result_match: bool | None
     result_explanation: str | None
+    source_match: bool | None
+    source_explanation: str | None
 
 
 # ---------------------------------------------------------------------------
@@ -153,10 +155,11 @@ def evaluate_response(
     test_case: TestCase,
     response: str,
     llm_grader: bool = False,
+    check_sources: bool = False,
 ) -> dict:
     """Evaluate an agent response using configured methods.
 
-    Evaluation priority: LLM grading > golden SQL > string matching.
+    Evaluation priority: LLM grading > golden SQL > source check > string matching.
     Golden SQL runs automatically when the test case defines it.
     """
     result: dict = {}
@@ -223,11 +226,21 @@ def evaluate_response(
             result["llm_grade"] = None
             result["llm_reasoning"] = f"Error: {e}"
 
-    # Final status (priority: LLM > golden SQL > string matching)
+    # Source citation check (if enabled and golden_path exists)
+    source_pass: bool | None = None
+    if check_sources and test_case.golden_path:
+        source_match, source_explanation = check_source_citation(response, test_case.golden_path)
+        result["source_match"] = source_match
+        result["source_explanation"] = source_explanation
+        source_pass = source_match
+
+    # Final status (priority: LLM > golden SQL > source check > string matching)
     if llm_grader and llm_pass is not None:
         result["status"] = "PASS" if llm_pass else "FAIL"
     elif result_pass is not None:
         result["status"] = "PASS" if result_pass else "FAIL"
+    elif check_sources and source_pass is not None:
+        result["status"] = "PASS" if source_pass else "FAIL"
     else:
         result["status"] = "PASS" if string_pass else "FAIL"
 
@@ -237,7 +250,7 @@ def evaluate_response(
 # ---------------------------------------------------------------------------
 # Display
 # ---------------------------------------------------------------------------
-def display_results(results: list[EvalResult], verbose: bool, llm_grader: bool) -> None:
+def display_results(results: list[EvalResult], verbose: bool, llm_grader: bool, check_sources: bool = False) -> None:
     """Display results table."""
     table = Table(title="Results", show_lines=True)
     table.add_column("Status", style="bold", width=6)
@@ -263,6 +276,9 @@ def display_results(results: list[EvalResult], verbose: bool, llm_grader: bool) 
                 notes = f"Missing: {', '.join((r.get('missing') or [])[:2])}"
             else:
                 notes = ""
+        if check_sources and r.get("source_explanation"):
+            source_icon = "SRC:Y" if r.get("source_match") else "SRC:N"
+            notes = (notes + " | " if notes else "") + source_icon
         else:
             status = Text("ERR", style="yellow")
             notes = (r.get("error") or "")[:32]
@@ -343,6 +359,7 @@ def run_evals(
     category: str | None = None,
     verbose: bool = False,
     llm_grader: bool = False,
+    check_sources: bool = False,
     direct: bool = False,
     agent_id: str | None = None,
 ) -> None:
@@ -365,6 +382,9 @@ def run_evals(
     golden_count = sum(1 for tc in tests if tc.golden_sql)
     if golden_count:
         mode_info.append(f"Golden SQL ({golden_count} tests)")
+    if check_sources:
+        source_count = sum(1 for tc in tests if tc.golden_path)
+        mode_info.append(f"Source checking ({source_count} tests)")
     mode_info.append("String matching")
     mode_info.append("direct" if direct else "API")
 
@@ -394,6 +414,7 @@ def run_evals(
                     test_case=tc,
                     response=response,
                     llm_grader=llm_grader,
+                    check_sources=check_sources,
                 )
 
                 results.append(
@@ -409,6 +430,8 @@ def run_evals(
                         "llm_reasoning": eval_result.get("llm_reasoning"),
                         "result_match": eval_result.get("result_match"),
                         "result_explanation": eval_result.get("result_explanation"),
+                        "source_match": eval_result.get("source_match"),
+                        "source_explanation": eval_result.get("source_explanation"),
                     }
                 )
             except Exception as e:
@@ -429,7 +452,7 @@ def run_evals(
             progress.advance(task)
 
     total_duration = time.time() - start
-    display_results(results, verbose, llm_grader)
+    display_results(results, verbose, llm_grader, check_sources)
     display_summary(results, total_duration, category)
 
     failed = sum(1 for r in results if r["status"] != "PASS")
@@ -444,12 +467,19 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", "-v", action="store_true", help="Show full responses on failure")
     parser.add_argument("--llm-grader", "-g", action="store_true", help="Use LLM to grade responses")
     parser.add_argument("--direct", action="store_true", help="Run agents directly (no API server needed)")
+    parser.add_argument(
+        "--check-sources",
+        "-s",
+        action="store_true",
+        help="Check source citations and factor into pass/fail",
+    )
     args = parser.parse_args()
 
     run_evals(
         category=args.category,
         verbose=args.verbose,
         llm_grader=args.llm_grader,
+        check_sources=args.check_sources,
         direct=args.direct,
         agent_id=args.agent,
     )

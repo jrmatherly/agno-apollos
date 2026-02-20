@@ -1,0 +1,34 @@
+{
+  "source_name": "Knowledge Base",
+  "source_type": "vector_db",
+  "description": "Loaded documents, URLs, PDFs, and CSVs stored in vector database with hybrid search.",
+  "content_types": [
+    "Markdown documents",
+    "PDF files",
+    "CSV data files",
+    "Web page content (from URLs)"
+  ],
+  "capabilities": [
+    "Vector similarity search (semantic)",
+    "Keyword search (exact match)",
+    "Hybrid search (combined)",
+    "List loaded sources and their status"
+  ],
+  "limitations": [
+    "Only contains explicitly loaded documents",
+    "Chunk boundaries may split context",
+    "No real-time web access (use web search agent for current info)"
+  ],
+  "search_tips": [
+    "Use search_content for exact term matching when vector search is too broad",
+    "Use list_knowledge_sources to see what documents are loaded",
+    "Try multiple search terms — 'auth' vs 'authentication' vs 'JWT' may give different results",
+    "For multi-part questions, search each part separately"
+  ],
+  "common_locations": {
+    "agno_intro": "Agno Introduction (URL source)",
+    "agno_first_agent": "Agno First Agent (URL source)",
+    "pdf_documents": "data/docs/*.pdf",
+    "csv_data": "data/docs/*.csv"
+  }
+}

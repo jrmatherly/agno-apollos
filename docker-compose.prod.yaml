@@ -48,6 +48,8 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
       # Observability
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      # Knowledge agent
+      - DOCUMENTS_DIR=${DOCUMENTS_DIR:-/app/data/docs}
     depends_on:
       - apollos-db
     networks:

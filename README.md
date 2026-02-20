@@ -8,7 +8,7 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 
 | Agent | Pattern | Description |
 |-------|---------|-------------|
-| Knowledge Agent | Agentic RAG | Answers questions from a knowledge base with personalized per-user learning. |
+| Knowledge Agent | Agentic RAG | Answers questions from a knowledge base with file browsing, FAQ-building, source citations, and per-user learning. |
 | MCP Agent | MCP Tool Use | Connects to external services via MCP, learns tool usage patterns. |
 | Web Search Agent | Web Research | Searches the web using DuckDuckGo, learns search patterns and source reliability. |
 | Reasoning Agent | Chain-of-Thought | Self-learning reasoning patterns with configurable depth. |
@@ -66,7 +66,7 @@ To use the cloud-hosted UI instead, go to [os.agno.com](https://os.agno.com) and
 
 ### Knowledge Agent
 
-Answers questions using hybrid search over a vector database (Agentic RAG). Features intent routing, confidence signaling, learning system, and user profiles.
+Answers questions using hybrid search over a vector database (Agentic RAG). Features file browsing (FileTools), FAQ-building (save_intent_discovery), structured source registry, confidence signaling with citation patterns, intent routing, learning system, and user profiles.
 
 **Load documents:**
 

@@ -49,6 +49,11 @@ RUN rm -rf /app/build /app/ApollosAI.egg-info /app/uv.lock
 ENV PATH="/app/.venv/bin:$PATH"
 
 # ---------------------------------------------------------------------------
+# Document seeding: copy sample docs so /app/data/docs can be seeded on first run
+# ---------------------------------------------------------------------------
+RUN mkdir -p /app/data/docs-seed && cp -r /app/data/docs/* /app/data/docs-seed/ 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
 # Entrypoint
 # ---------------------------------------------------------------------------
 RUN chmod +x /app/scripts/entrypoint.sh
