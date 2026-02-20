@@ -4,6 +4,11 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"],
       "_comment": "Live documentation lookup for agno, fastapi, next.js, tailwindcss, shadcn/ui, and other libraries"
+    },
+    "github": {
+      "command": "gh",
+      "args": ["mcp", "stdio"],
+      "_comment": "GitHub issues, PRs, code scanning alerts, and actions. Requires: gh auth login"
     }
   }
 }

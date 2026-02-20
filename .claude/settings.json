@@ -73,6 +73,11 @@
             "type": "command",
             "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '\\bgit commit\\b'; then changed=$(cd \"$CLAUDE_PROJECT_DIR\" && git diff --cached --name-only 2>/dev/null); if echo \"$changed\" | grep -qE 'backend/(agents|teams|workflows)/'; then if ! echo \"$changed\" | grep -qE '(docs/|README.md|PROJECT_INDEX.md)'; then echo 'WARNING: Backend agent/team/workflow files staged but no docs updated. Consider updating: README.md, PROJECT_INDEX.md, docs/, .serena/memories/project-overview.md' >&2; fi; fi; fi",
             "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '\\bgit commit\\b'; then staged=$(cd \"$CLAUDE_PROJECT_DIR\" && git diff --cached --name-only 2>/dev/null); if echo \"$staged\" | grep -qE 'backend/auth/(routes|middleware)\\.py'; then if ! echo \"$staged\" | grep -q 'backend/main.py'; then echo 'WARNING: backend/auth/routes.py or middleware.py staged without backend/main.py. Verify rate limiter registration and middleware order are consistent.' >&2; fi; fi; fi",
+            "timeout": 5000
           }
         ]
       }
