@@ -24,6 +24,7 @@ from agno.learn import (
 from agno.tools.file import FileTools
 
 from backend.context.intent_routing import INTENT_ROUTING
+from backend.context.source_registry import SOURCE_REGISTRY
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
 from backend.tools import approved_ops, awareness, save_discovery, search
@@ -136,6 +137,8 @@ After a user asks a question you can now answer quickly:
 
 Use save_intent_discovery for LOCATION mappings (intent -> where to find it).
 Use save_learning for STRATEGY insights (what search approach worked).
+
+{SOURCE_REGISTRY}
 """
 
 # ---------------------------------------------------------------------------
