@@ -12,7 +12,9 @@ from os import getenv
 from pathlib import Path
 
 from agno.os import AgentOS
-from agno.os.config import AuthorizationConfig
+from fastapi import FastAPI
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from backend.a2a.server import create_a2a_apps
 from backend.agents.data_agent import data_agent
@@ -20,6 +22,11 @@ from backend.agents.knowledge_agent import knowledge_agent
 from backend.agents.mcp_agent import mcp_agent
 from backend.agents.reasoning_agent import reasoning_agent
 from backend.agents.web_search_agent import web_search_agent
+from backend.auth import EntraJWTMiddleware, auth_lifespan, auth_router
+from backend.auth.config import auth_config
+from backend.auth.jwks_cache import jwks_cache
+from backend.auth.routes import limiter
+from backend.auth.security_headers import SecurityHeadersMiddleware
 from backend.db import get_postgres_db
 from backend.registry import create_registry
 from backend.teams.research_team import research_team
@@ -37,10 +44,24 @@ configure_telemetry()
 registry = create_registry()
 
 # ---------------------------------------------------------------------------
+# Base FastAPI app with Entra ID JWT middleware
+# ---------------------------------------------------------------------------
+# base_app is passed to AgentOS, which mounts all AgentOS routes on top.
+# EntraJWTMiddleware runs for every request, sets request.state per the
+# AgentOS middleware contract (authenticated, user_id, scopes, etc.).
+# When auth_config.enabled is False (Azure env vars not set), middleware
+# passes all requests through unauthenticated — safe local dev mode.
+base_app = FastAPI()
+base_app.state.limiter = limiter
+base_app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+# Middleware order matters (LIFO): SecurityHeaders registered first → runs after JWT on response
+base_app.add_middleware(SecurityHeadersMiddleware)
+base_app.add_middleware(EntraJWTMiddleware, config=auth_config, jwks_cache=jwks_cache)
+base_app.include_router(auth_router)  # /auth/health, /auth/me, /auth/sync, etc.
+
+# ---------------------------------------------------------------------------
 # Create Apollos AI
 # ---------------------------------------------------------------------------
-jwt_secret = getenv("JWT_SECRET_KEY", "")
-
 agent_os = AgentOS(
     name="Apollos AI",
     tracing=True,
@@ -52,13 +73,11 @@ agent_os = AgentOS(
     config=str(Path(__file__).parent / "config.yaml"),
     enable_mcp_server=True,
     registry=registry,
-    authorization=bool(jwt_secret),
-    authorization_config=AuthorizationConfig(
-        verification_keys=[jwt_secret] if jwt_secret else None,
-        algorithm="HS256",
-    )
-    if jwt_secret
-    else None,
+    base_app=base_app,  # Custom FastAPI app with JWT middleware pre-wired
+    lifespan=auth_lifespan,  # Initializes JWKS cache, auth tables, background sync
+    cors_allowed_origins=[auth_config.frontend_url] if auth_config.frontend_url else None,
+    # NO authorization=True — auth is fully handled by EntraJWTMiddleware on base_app
+    # NO authorization_config — not applicable for RS256 Entra ID tokens
 )
 
 app = agent_os.get_app()

@@ -9,7 +9,7 @@ Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript,
 Documentation lives at `docs/` — Mintlify site (MDX pages, `docs.json` config). Preview on port 3333 to avoid frontend conflict.
 Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`, `docs/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
 
-Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/registry.py` (component registry for Agent-as-Config), `backend/a2a/` (A2A protocol integration), `backend/maintenance.py` (memory optimization + usage warnings), `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (dual-layer tracing, opt-in), `backend/cli.py` (shared Rich CLI).
+Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/registry.py` (component registry for Agent-as-Config), `backend/a2a/` (A2A protocol integration), `backend/auth/` (Entra ID JWT middleware, RBAC scope mapping, user/team sync, auth API routes), `backend/maintenance.py` (memory optimization + usage warnings), `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (dual-layer tracing, opt-in), `backend/cli.py` (shared Rich CLI).
 Data: `data/docs/` (knowledge docs), `data/tables/` (F1 metadata), `data/queries/` (SQL patterns), `data/business/` (rules).
 Tests: `tests/` — pytest + requests.
 
@@ -97,7 +97,11 @@ Auth and scheduling tasks:
 - All model/embedding config via env vars (MODEL_ID, EMBEDDING_MODEL_ID, LITELLM_BASE_URL, etc.)
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
 - New agents in `backend/agents/`, teams in `backend/teams/`, workflows in `backend/workflows/`. Register all in `backend/main.py`.
-- JWT auth is opt-in: empty `JWT_SECRET_KEY` env var = auth disabled. Set a value to enable RBAC.
+- Auth is opt-in: empty `AZURE_TENANT_ID`/`AZURE_CLIENT_ID`/`AZURE_CLIENT_SECRET`/`AZURE_AUDIENCE` = auth disabled (passthrough mode for local dev). Set all 4 to enable Entra ID RBAC.
+- `JWT_SECRET_KEY` is retained for backward compat but superseded by Entra ID when Azure vars are set.
+- Auth architecture: `EntraJWTMiddleware` on `base_app` (FastAPI), passed to `AgentOS(base_app=base_app)`. No `authorization=True` on AgentOS.
+- `backend/auth/` package: config, middleware, jwks_cache, scope_mapper, models, database, graph, sync_service, dependencies, routes, security_headers, __init__
+- New auth API routes: `GET /auth/health`, `GET /auth/me`, `POST /auth/sync`, `GET /auth/teams`, `GET /auth/users`
 - Telemetry is opt-in: `TRACING_ENABLED=true` stores traces in PostgreSQL (Layer 1). `OTLP_ENDPOINTS` exports to Langfuse/Phoenix/etc (Layer 2). Legacy `OTEL_EXPORTER_OTLP_ENDPOINT` supported as fallback.
 - A2A Protocol: `A2A_ENABLED=true` exposes each agent at `/a2a/agents/{id}` via the Agent-to-Agent protocol (a2a-sdk v0.3.x). Set `A2A_BASE_URL` for production AgentCard URLs.
 - Agent-as-Config: Central Registry in `backend/registry.py` maps tools/functions by name for save/load persistence via Agno Registry.
@@ -107,6 +111,8 @@ Auth and scheduling tasks:
 ### Environment & Config
 
 - When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
+- For Azure auth env vars, update all five: `mise.toml`, `example.env`, `docker-compose.yaml` (backend `environment:` + frontend `build.args:`), `docker-compose.prod.yaml`
+- `NEXT_PUBLIC_AZURE_*` vars are baked at Next.js build time — must be set as `build.args` in docker-compose and declared as `ARG`/`ENV` in `frontend/Dockerfile`
 - `mise.toml` uses `[[env]]` array-of-tables: defaults in first block, `_.file = ".env"` in second block, so `.env` wins. Never use single `[env]` with both `_.file` and explicit values — explicit values override `_.file` regardless of position.
 - `.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based
 - Dependencies: `uv add <package>` (auto-updates uv.lock). Never edit uv.lock manually.

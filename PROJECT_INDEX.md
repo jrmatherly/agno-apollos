@@ -302,11 +302,28 @@ Uses **pnpm** for package management:
 - **Purpose**: Builds `AgentCard` discovery documents and `A2AStarletteApplication` instances for each registered agent
 - **Mount pattern**: Returns `list[tuple[str, ASGIApp]]` for mounting on the FastAPI app at `/a2a/agents/{id}`
 
+### backend/auth/
+- **Exports** (`__init__.py`): `EntraJWTMiddleware`, `auth_lifespan`, `auth_router`
+- **Purpose**: Microsoft Entra ID JWT authentication, RBAC scope mapping, user/team sync, and auth API routes
+- **Key files**:
+  - `config.py` — `AuthConfig` (reads 8 env vars; `enabled` property for passthrough mode)
+  - `middleware.py` — `EntraJWTMiddleware` (BaseHTTPMiddleware; RS256 validation; sets `request.state`)
+  - `jwks_cache.py` — In-memory JWKS cache (OIDC discovery; background refresh; miss throttle)
+  - `scope_mapper.py` — `ROLE_SCOPE_MAP`; maps Entra App Roles → Agno scope strings
+  - `models.py` — SQLAlchemy ORM: `auth_users`, `auth_teams`, `auth_team_memberships`, `auth_denied_tokens`
+  - `database.py` — Async engine + session factory + `create_auth_tables()`
+  - `graph.py` — Microsoft Graph API v1.0 client (delegated + app credentials; 429 handling)
+  - `sync_service.py` — Login user sync + background group sync + deny list management
+  - `dependencies.py` — FastAPI `Depends`: `get_current_user`, `require_scope`
+  - `routes.py` — `/auth/health`, `/auth/me`, `/auth/sync`, `/auth/teams`, `/auth/users`; slowapi rate limiter
+  - `security_headers.py` — `SecurityHeadersMiddleware` (CSP, X-Frame-Options, etc.)
+
 ### backend/main.py
 - **Exports**: `agent_os` (AgentOS), `app` (FastAPI app)
 - **Purpose**: Creates and configures Apollos AI with all agents, teams, workflows, tracing, scheduler, A2A endpoints
 - **Config**: Reads `backend/config.yaml` for UI quick-prompts
-- **Features**: JWT RBAC auth (opt-in), MCP server endpoint, dual-layer telemetry, A2A protocol endpoints (opt-in via `A2A_ENABLED`)
+- **Features**: Entra ID RBAC auth (opt-in via Azure env vars), MCP server endpoint, dual-layer telemetry, A2A protocol endpoints (opt-in via `A2A_ENABLED`)
+- **Auth pattern**: `EntraJWTMiddleware` on `base_app` → `AgentOS(base_app=base_app)`. No `authorization=True`.
 - **Dev mode**: Auto-reload when `RUNTIME_ENV=dev`
 
 ### backend/db/session.py
@@ -328,6 +345,17 @@ Uses **pnpm** for package management:
 - **Purpose**: Browser-side API client for AgentOS
 - **Pattern**: All API calls use dynamic `agentOSUrl` from Zustand store, no hardcoded URLs
 - **Auth**: Bearer token from store, included in all requests
+
+### frontend/src/auth/
+- **Purpose**: MSAL.js v5 authentication integration for Microsoft Entra ID
+- **Key files**:
+  - `msalConfig.ts` — `PublicClientApplication` singleton (null when unconfigured; SSR-safe)
+  - `authProvider.tsx` — `AuthProvider` client component wrapping `MsalProvider`
+  - `useAuth.ts` — `useAuth()` hook (login, logout, `getAccessToken()` with silent/redirect fallback)
+  - `useTokenSync.ts` — Syncs MSAL access token → Zustand `authToken` every 5 minutes
+  - `AuthUserButton.tsx` — Sidebar login/logout UI with user display name
+  - `index.ts` — Re-exports
+- **Activation**: Set `NEXT_PUBLIC_AZURE_CLIENT_ID` at build time. Empty = falls back to manual token entry.
 
 ## Configuration
 
@@ -419,7 +447,15 @@ Uses **pnpm** for package management:
 | `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by docker-compose.prod.yaml) |
 | `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | — | Pre-fill auth token in the frontend UI |
-| `JWT_SECRET_KEY` | No | — | Enable JWT RBAC auth (empty = auth disabled) |
+| `JWT_SECRET_KEY` | No | — | Legacy HS256 auth (deprecated; superseded by Entra ID when Azure vars are set) |
+| `AZURE_TENANT_ID` | No | — | Entra ID Directory (tenant) ID; all 4 AZURE_* required to enable auth |
+| `AZURE_CLIENT_ID` | No | — | Entra ID Application (client) ID |
+| `AZURE_CLIENT_SECRET` | No | — | Client secret for Microsoft Graph API access |
+| `AZURE_AUDIENCE` | No | — | Token audience; must be `api://{AZURE_CLIENT_ID}` |
+| `FRONTEND_URL` | No | `http://localhost:3000` | CORS allowed origin for API responses |
+| `NEXT_PUBLIC_AZURE_CLIENT_ID` | No | — | Frontend MSAL client ID (build-time; empty = manual token entry) |
+| `NEXT_PUBLIC_AZURE_TENANT_ID` | No | — | Frontend MSAL tenant ID (build-time) |
+| `NEXT_PUBLIC_REDIRECT_URI` | No | `http://localhost:3000` | MSAL redirect URI after login (build-time) |
 | `TRACING_ENABLED` | No | — | Set to `true` to store traces in PostgreSQL via Agno (Layer 1) |
 | `OTLP_ENDPOINTS` | No | — | Comma-separated OTLP endpoint URLs for multi-export (Layer 2) |
 | `OTLP_AUTH_HEADERS` | No | — | Comma-separated auth headers parallel to `OTLP_ENDPOINTS` |
@@ -465,7 +501,7 @@ open http://localhost:8000/docs
 - **Agent pattern**: Each agent is a standalone module exporting an `Agent` instance, registered in `backend/main.py`. All agents use `get_model()` from `backend/models.py`, guardrails (PII + prompt injection), agentic memory, and session summaries.
 - **Teams**: Multi-agent teams in `backend/teams/`, using Agno's `Team` class with coordinate mode.
 - **Workflows**: Multi-step pipelines in `backend/workflows/`, using Agno's `Workflow`, `Step`, `Loop`, and `Condition` classes for iterative refinement and conditional routing.
-- **Security**: JWT RBAC auth (opt-in via `JWT_SECRET_KEY`), human-in-the-loop approval workflows (`@approval` decorator on tools).
+- **Security**: Entra ID RBAC auth (opt-in via `AZURE_*` env vars) — `EntraJWTMiddleware` validates RS256 JWTs, maps App Roles to Agno scopes, and sets `request.state` per AgentOS contract. Passthrough mode (no auth required) when Azure vars are unset. Human-in-the-loop approval workflows (`@approval` decorator on tools).
 - **Observability**: Dual-layer observability. Layer 1: `TRACING_ENABLED=true` stores agent traces in PostgreSQL via Agno. Layer 2: `OTLP_ENDPOINTS` exports to Langfuse, Arize Phoenix, Grafana, or any OTLP backend (multi-export, comma-separated, per-endpoint auth). Legacy `OTEL_EXPORTER_OTLP_ENDPOINT` preserved as fallback.
 - **A2A Protocol**: `A2A_ENABLED=true` mounts each registered agent as a `A2AStarletteApplication` at `/a2a/agents/{id}`, exposing AgentCard discovery and JSON-RPC messaging with SSE streaming (a2a-sdk v0.3.x).
 - **Learning**: All agents use full `LearningMachine` stack (learned_knowledge, user_profile, user_memory, session_context) with domain-specific learning triggers.

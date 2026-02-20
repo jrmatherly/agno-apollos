@@ -28,3 +28,20 @@ These are build-time `NEXT_PUBLIC_*` vars — baked into the static bundle:
 
 - `NEXT_PUBLIC_DEFAULT_ENDPOINT` — default backend URL shown in the UI (default: `http://localhost:8000`)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` — optional: pre-fills the auth token field in the frontend UI
+
+### MSAL / Entra ID (build-time, optional)
+
+- `NEXT_PUBLIC_AZURE_CLIENT_ID` — Entra ID application (client) ID; empty = MSAL disabled
+- `NEXT_PUBLIC_AZURE_TENANT_ID` — Entra ID tenant ID
+- `NEXT_PUBLIC_REDIRECT_URI` — MSAL redirect URI after login (default: `http://localhost:3000`)
+
+These must be passed as `build.args` in docker-compose **and** declared as `ARG`/`ENV` in `frontend/Dockerfile`. Setting only `environment:` is not sufficient — Next.js bakes them at build time, not runtime.
+
+## Auth Integration (MSAL.js v5)
+
+- `src/auth/` — MSAL integration package
+- When `NEXT_PUBLIC_AZURE_CLIENT_ID` is set (build-time), `AuthProvider` wraps the app with `MsalProvider`
+- `useTokenSync()` syncs MSAL access token into Zustand `authToken` every 5 minutes
+- All API calls in `src/api/os.ts` already inject `authToken` as `Authorization: Bearer`
+- `AuthUserButton.tsx` replaces `AuthToken.tsx` in the sidebar when MSAL is configured
+- For local dev without Entra ID: keep `NEXT_PUBLIC_AZURE_CLIENT_ID` empty — falls back to manual token entry
