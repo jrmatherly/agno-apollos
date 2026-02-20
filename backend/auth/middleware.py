@@ -1,3 +1,5 @@
+import logging
+
 import jwt
 from agno.os.scopes import get_accessible_resource_ids, has_required_scopes
 from fastapi import Request
@@ -11,6 +13,8 @@ from backend.auth.database import auth_session_factory
 from backend.auth.jwks_cache import JWKSCache
 from backend.auth.models import AuthDeniedToken
 from backend.auth.scope_mapper import get_required_scopes, roles_to_scopes
+
+logger = logging.getLogger(__name__)
 
 # Routes that never require authentication
 EXCLUDED_ROUTES = frozenset(
@@ -64,7 +68,8 @@ class EntraJWTMiddleware(BaseHTTPMiddleware):
         except jwt.InvalidAudienceError:
             return JSONResponse(status_code=401, content={"detail": "Invalid audience"})
         except jwt.InvalidTokenError as e:
-            return JSONResponse(status_code=401, content={"detail": f"Invalid token: {e}"})
+            logger.warning("JWT validation failed: %s", e)
+            return JSONResponse(status_code=401, content={"detail": "Invalid token"})
 
         oid = payload.get("oid")
         if not oid:
