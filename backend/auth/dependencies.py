@@ -1,6 +1,5 @@
-from fastapi import Depends, HTTPException, Request
-
 from agno.os.scopes import has_required_scopes
+from fastapi import Depends, HTTPException, Request
 
 
 def get_current_user(request: Request) -> dict:  # type: ignore[type-arg]

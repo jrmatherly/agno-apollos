@@ -1,11 +1,10 @@
 import jwt
+from agno.os.scopes import get_accessible_resource_ids, has_required_scopes
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
-
-from agno.os.scopes import get_accessible_resource_ids, has_required_scopes
 
 from backend.auth.config import AuthConfig
 from backend.auth.database import auth_session_factory
@@ -14,15 +13,17 @@ from backend.auth.models import AuthDeniedToken
 from backend.auth.scope_mapper import get_required_scopes, roles_to_scopes
 
 # Routes that never require authentication
-EXCLUDED_ROUTES = frozenset([
-    "/",
-    "/health",
-    "/auth/health",
-    "/docs",
-    "/redoc",
-    "/openapi.json",
-    "/docs/oauth2-redirect",
-])
+EXCLUDED_ROUTES = frozenset(
+    [
+        "/",
+        "/health",
+        "/auth/health",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        "/docs/oauth2-redirect",
+    ]
+)
 
 
 class EntraJWTMiddleware(BaseHTTPMiddleware):
@@ -159,10 +160,12 @@ class EntraJWTMiddleware(BaseHTTPMiddleware):
         """Check token deny list."""
         async with auth_session_factory() as session:
             result = await session.execute(
-                select(AuthDeniedToken).where(
+                select(AuthDeniedToken)
+                .where(
                     AuthDeniedToken.oid == oid,
                     AuthDeniedToken.expires_at > func.now(),
-                ).limit(1)
+                )
+                .limit(1)
             )
             return result.scalar_one_or_none() is not None
 

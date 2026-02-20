@@ -49,7 +49,9 @@ class GraphClient:
         while next_link:
             resp = None
             for attempt in range(4):
-                resp = await self._client.get(next_link, headers=headers, params=params if "?" not in next_link else None)
+                resp = await self._client.get(
+                    next_link, headers=headers, params=params if "?" not in next_link else None
+                )
                 if resp.status_code == 429:
                     retry_after = int(resp.headers.get("Retry-After", 2**attempt))
                     await asyncio.sleep(retry_after)

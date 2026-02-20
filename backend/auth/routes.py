@@ -47,10 +47,7 @@ async def list_teams(  # type: ignore[return]
         select(AuthTeam).where(AuthTeam.is_active == True)  # noqa: E712
     )
     teams = result.scalars().all()
-    return [
-        {"id": str(t.id), "name": t.name, "source": t.source, "description": t.description}
-        for t in teams
-    ]
+    return [{"id": str(t.id), "name": t.name, "source": t.source, "description": t.description} for t in teams]
 
 
 @auth_router.get("/users")
@@ -63,7 +60,4 @@ async def list_users(  # type: ignore[return]
         select(AuthUser).where(AuthUser.is_active == True)  # noqa: E712
     )
     users = result.scalars().all()
-    return [
-        {"oid": u.oid, "email": u.email, "name": u.display_name, "roles": u.roles}
-        for u in users
-    ]
+    return [{"oid": u.oid, "email": u.email, "name": u.display_name, "roles": u.roles} for u in users]
