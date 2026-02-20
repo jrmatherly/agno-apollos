@@ -72,6 +72,7 @@ Data loading tasks:
 Testing and evaluation tasks:
 - `mise run test` - run integration tests (pytest, requires running backend)
 - `mise run evals:run` - run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `--direct` mode; golden SQL comparison runs automatically)
+- `mise run agent:cli` - run agent via CLI (`-- <module> [-q question]`)
 
 Test conventions:
 - Tests use fixtures from `tests/conftest.py`: `backend_url` (waits for healthy backend), `session` (requests with retries), `url_for` (builds API URLs, rejects `/v1/` prefix)
@@ -106,7 +107,8 @@ Auth and scheduling tasks:
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
 - New agents go in `backend/agents/`, new teams in `backend/teams/`, new workflows in `backend/workflows/`. Register all in `backend/main.py`.
 - All agents must have guardrails: `pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()]` — includes inline/ephemeral agents in workflows
-- Agents with learning use `LearningMachine(learned_knowledge=LearnedKnowledgeConfig(mode=LearningMode.AGENTIC, knowledge=...))` from `agno.learn`
+- All agents use full LearningMachine stack: learned_knowledge (AGENTIC, shared), user_profile, user_memory, session_context
+- Agent CLI: `python -m backend.agents.<name>` for direct testing (shared module at `backend/cli.py`)
 - Data agent uses dual knowledge system: static `data_knowledge` (curated) + dynamic `data_learnings` (discovered via LearningMachine)
 - JWT auth is opt-in: empty `JWT_SECRET_KEY` env var = auth disabled. Set a value to enable RBAC.
 - Telemetry is opt-in: empty `OTEL_EXPORTER_OTLP_ENDPOINT` env var = traces not exported.

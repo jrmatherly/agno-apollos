@@ -15,6 +15,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `backend/main.py` - Entry point: registers agents, teams, workflows, auth, telemetry, MCP server
 - `backend/models.py` - Shared model factory (`get_model()`)
 - `backend/config.yaml` - Chat quick prompts config
+- `backend/cli.py` - Shared Rich CLI module for direct agent testing
 - `backend/telemetry.py` - OpenTelemetry trace export (opt-in)
 - `backend/agents/` - Agent definitions (knowledge, mcp, web_search, reasoning, data)
 - `backend/teams/research_team.py` - Multi-agent research team (coordinate mode)
@@ -33,11 +34,11 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
 
 ## Agents
-1. **Knowledge Agent** (`knowledge-agent`): RAG with pgvector hybrid search, learning system, user profiles, intent routing, custom tools
-2. **MCP Agent** (`mcp-agent`): Connects to external tools via MCP protocol
-3. **Web Search Agent** (`web-search-agent`): Web research via DuckDuckGo with source citations
-4. **Reasoning Agent** (`reasoning-agent`): Chain-of-thought reasoning (2-6 steps)
-5. **Data Analyst** (`data-agent`): Read-only PostgreSQL queries (Dash pattern) with dual knowledge system (curated `data_knowledge` + dynamic `data_learnings`), runtime schema introspection, validated query saving, F1 dataset support, and insight-focused instructions
+1. **Knowledge Agent** (`knowledge-agent`): RAG with pgvector hybrid search, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), intent routing, custom tools
+2. **MCP Agent** (`mcp-agent`): Connects to external tools via MCP protocol, full LearningMachine, learns tool usage patterns
+3. **Web Search Agent** (`web-search-agent`): Web research via DuckDuckGo, full LearningMachine, learns search patterns and source reliability
+4. **Reasoning Agent** (`reasoning-agent`): Chain-of-thought reasoning (2-6 steps), full LearningMachine, learns effective reasoning approaches
+5. **Data Analyst** (`data-agent`): Read-only PostgreSQL queries (Dash pattern) with dual knowledge system (curated `data_knowledge` + dynamic `data_learnings`), full LearningMachine, runtime schema introspection, validated query saving, F1 dataset support, and insight-focused instructions
 
 ## Teams
 1. **Research Team** (`research-team`): Coordinate-mode multi-agent research (web_researcher + analyst), safety parameters (max_iterations=5, num_history_runs=5, add_datetime_to_context)
@@ -73,7 +74,8 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run ci` / `clean`
 - `mise run release` - create GitHub release (interactive version prompt)
 - `mise run test` - integration tests (pytest, requires running backend)
-- `mise run evals:run` - LLM-based evaluation suite (`-v` verbose, `-g` LLM grading, `-r` golden SQL, `--direct` no API)
+- `mise run evals:run` - LLM-based evaluation suite (`-c` category, `-v` verbose, `-g` LLM grading, `--direct` no API; golden SQL runs automatically)
+- `mise run agent:cli` - run agent via CLI (`-- <module> [-q question]`)
 - `mise run load-sample-data` - load F1 sample data into PostgreSQL
 - `mise run load-knowledge` - populate vector DB with curated knowledge (`--recreate` to rebuild)
 - `mise run auth:generate-token` - generate dev JWT tokens

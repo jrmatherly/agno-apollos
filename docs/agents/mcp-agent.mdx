@@ -8,19 +8,35 @@ The MCP Agent connects to external tools using the [Model Context Protocol](http
 ```python
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+from agno.learn import (
+    LearnedKnowledgeConfig, LearningMachine, LearningMode,
+    SessionContextConfig, UserMemoryConfig, UserProfileConfig,
+)
 from agno.tools.mcp import MCPTools
 
-from backend.db import get_postgres_db
+from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
+
+agent_db = get_postgres_db()
+mcp_learnings = create_knowledge("MCP Learnings", "mcp_learnings")
 
 mcp_agent = Agent(
     id="mcp-agent",
     name="MCP Agent",
     model=get_model(),
-    db=get_postgres_db(),
+    db=agent_db,
     tools=[MCPTools(url="https://docs.agno.com/mcp")],
     instructions=instructions,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    learning=LearningMachine(
+        learned_knowledge=LearnedKnowledgeConfig(
+            mode=LearningMode.AGENTIC,
+            knowledge=mcp_learnings,
+        ),
+        user_profile=UserProfileConfig(db=agent_db),
+        user_memory=UserMemoryConfig(db=agent_db),
+        session_context=SessionContextConfig(db=agent_db),
+    ),
     enable_agentic_memory=True,
     add_datetime_to_context=True,
     add_history_to_context=True,
@@ -38,6 +54,10 @@ mcp_agent = Agent(
 | MCP tool discovery | `MCPTools(url=...)` connects to any MCP server |
 | Session memory | `db=get_postgres_db()` persists conversations |
 | Guardrails | PII detection and prompt injection via `pre_hooks` |
+| Shared learnings | `LearnedKnowledgeConfig(mode=AGENTIC)` saves tool usage patterns collectively |
+| User profiles | `UserProfileConfig` personalizes per user |
+| User memory | `UserMemoryConfig` remembers user requests |
+| Session context | `SessionContextConfig` tracks session state |
 | Datetime context | `add_datetime_to_context=True` for time-aware queries |
 | Chat history | `read_chat_history=True`, `num_history_runs=5` for multi-turn context |
 | Session summaries | `enable_session_summaries=True` for conversation persistence |
@@ -62,6 +82,15 @@ tools=[
 ```
 
 See the [Agno MCP docs](https://docs.agno.com/tools/mcp) for advanced MCP configuration, including SSE transport and dynamic headers.
+
+## CLI testing
+
+Run the agent directly without the API server:
+
+```sh
+mise run agent:cli -- mcp_agent -q "What tools do you have access to?"
+mise run agent:cli -- mcp_agent  # interactive mode
+```
 
 ## Example queries
 

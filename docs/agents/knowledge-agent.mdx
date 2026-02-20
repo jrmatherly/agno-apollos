@@ -10,7 +10,7 @@ from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
 from agno.learn import (
     LearnedKnowledgeConfig, LearningMachine, LearningMode,
-    UserMemoryConfig, UserProfileConfig,
+    SessionContextConfig, UserMemoryConfig, UserProfileConfig,
 )
 
 from backend.db import create_knowledge, get_postgres_db
@@ -19,11 +19,14 @@ from backend.tools.search import search_content
 from backend.tools.awareness import list_knowledge_sources
 from backend.tools.approved_ops import add_knowledge_source
 
+agent_db = get_postgres_db()
+knowledge_learnings = create_knowledge("Knowledge Learnings", "knowledge_learnings")
+
 knowledge_agent = Agent(
     id="knowledge-agent",
     name="Knowledge Agent",
     model=get_model(),
-    db=get_postgres_db(),
+    db=agent_db,
     knowledge=create_knowledge("Knowledge Agent", "knowledge_agent_docs"),
     instructions=instructions,
     tools=[search_content, list_knowledge_sources, add_knowledge_source],
@@ -36,6 +39,7 @@ knowledge_agent = Agent(
         ),
         user_profile=UserProfileConfig(db=agent_db),
         user_memory=UserMemoryConfig(db=agent_db),
+        session_context=SessionContextConfig(db=agent_db),
     ),
     enable_agentic_memory=True,
     add_datetime_to_context=True,
@@ -56,6 +60,7 @@ knowledge_agent = Agent(
 | Guardrails | PII detection and prompt injection via `pre_hooks` |
 | Learning | `LearningMachine` saves useful patterns for future queries |
 | User profiles | `UserProfileConfig` and `UserMemoryConfig` for per-user context |
+| Session context | `SessionContextConfig` tracks session state across turns |
 | Custom tools | `search_content`, `list_knowledge_sources`, `add_knowledge_source` |
 | Intent routing | Routes queries by type (factual, exploratory, comparative) |
 | Confidence signaling | Indicates certainty level in responses |
@@ -88,6 +93,15 @@ The knowledge system supports multiple document formats via `backend/knowledge/l
 ## Approval-gated tools
 
 The `add_knowledge_source` tool uses the `@approval` decorator for human-in-the-loop confirmation before adding new sources. This requires JWT auth to be enabled. See [security configuration](/configuration/security).
+
+## CLI testing
+
+Run the agent directly without the API server:
+
+```sh
+mise run agent:cli -- knowledge_agent -q "What is Agno?"
+mise run agent:cli -- knowledge_agent  # interactive mode
+```
 
 ## Example queries
 

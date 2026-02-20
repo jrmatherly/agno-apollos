@@ -8,11 +8,11 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 
 | Agent | Pattern | Description |
 |-------|---------|-------------|
-| Knowledge Agent | Agentic RAG | Answers questions from a knowledge base with learning and user profiles. |
-| MCP Agent | MCP Tool Use | Connects to external services via MCP. |
-| Web Search Agent | Web Research | Searches the web using DuckDuckGo with source citations. |
-| Reasoning Agent | Chain-of-Thought | Step-by-step reasoning with configurable depth. |
-| Data Analyst | SQL Analysis | Read-only PostgreSQL queries with dual knowledge system, runtime schema introspection, and query learning. |
+| Knowledge Agent | Agentic RAG | Answers questions from a knowledge base with personalized per-user learning. |
+| MCP Agent | MCP Tool Use | Connects to external services via MCP, learns tool usage patterns. |
+| Web Search Agent | Web Research | Searches the web using DuckDuckGo, learns search patterns and source reliability. |
+| Reasoning Agent | Chain-of-Thought | Self-learning reasoning patterns with configurable depth. |
+| Data Analyst | SQL Analysis | Read-only PostgreSQL queries with dual knowledge system, personalized per-user experience. |
 
 ### Teams
 
@@ -71,7 +71,7 @@ Answers questions using hybrid search over a vector database (Agentic RAG). Feat
 **Load documents:**
 
 ```sh
-docker exec -it apollos-backend python -m backend.agents.knowledge_agent
+mise run load-docs
 ```
 
 **Try it:**
@@ -247,11 +247,27 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run docs:validate` | Validate docs build and check broken links |
 | `mise run docs:docker` | Start docs in Docker (`--prod` for GHCR image) |
 | `mise run test` | Run integration tests (requires running backend) |
-| `mise run evals:run` | Run eval suite (`-v` verbose, `-g` LLM grading, `-r` golden SQL, `--direct`) |
+| `mise run evals:run` | Run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `--direct`) |
+| `mise run agent:cli` | Run agent via CLI (`-- <module> [-q question]`) |
 | `mise run load-sample-data` | Load F1 sample data into PostgreSQL |
 | `mise run load-knowledge` | Populate vector DB with curated knowledge (`--recreate` to rebuild) |
 | `mise run auth:generate-token` | Generate dev JWT tokens for RBAC testing |
 | `mise run schedules:setup` | Initialize scheduler tables |
+
+### CLI Testing
+
+Run agents directly without the API server:
+
+```sh
+# Interactive mode
+mise run agent:cli -- data_agent
+
+# Single question
+mise run agent:cli -- reasoning_agent -q "Compare REST vs GraphQL"
+
+# With session persistence
+mise run agent:cli -- knowledge_agent -s my-session -q "What is Agno?"
+```
 
 ### Local Development (without Docker)
 

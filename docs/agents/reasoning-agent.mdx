@@ -8,20 +8,36 @@ The Reasoning Agent uses Agno's built-in `reasoning=True` capability for structu
 ```python
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+from agno.learn import (
+    LearnedKnowledgeConfig, LearningMachine, LearningMode,
+    SessionContextConfig, UserMemoryConfig, UserProfileConfig,
+)
 
-from backend.db import get_postgres_db
+from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
+
+agent_db = get_postgres_db()
+reasoning_learnings = create_knowledge("Reasoning Learnings", "reasoning_learnings")
 
 reasoning_agent = Agent(
     id="reasoning-agent",
     name="Reasoning Agent",
     model=get_model(),
-    db=get_postgres_db(),
+    db=agent_db,
     instructions=instructions,
     reasoning=True,
     reasoning_min_steps=2,
     reasoning_max_steps=6,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    learning=LearningMachine(
+        learned_knowledge=LearnedKnowledgeConfig(
+            mode=LearningMode.AGENTIC,
+            knowledge=reasoning_learnings,
+        ),
+        user_profile=UserProfileConfig(db=agent_db),
+        user_memory=UserMemoryConfig(db=agent_db),
+        session_context=SessionContextConfig(db=agent_db),
+    ),
     enable_agentic_memory=True,
     add_datetime_to_context=True,
     add_history_to_context=True,
@@ -40,6 +56,10 @@ reasoning_agent = Agent(
 | Step bounds | `reasoning_min_steps=2`, `reasoning_max_steps=6` |
 | Session memory | `db=get_postgres_db()` persists conversations |
 | Guardrails | PII detection and prompt injection via `pre_hooks` |
+| Shared learnings | `LearnedKnowledgeConfig(mode=AGENTIC)` saves reasoning patterns collectively |
+| User profiles | `UserProfileConfig` personalizes per user |
+| User memory | `UserMemoryConfig` remembers user requests |
+| Session context | `SessionContextConfig` tracks session state |
 | Datetime context | `add_datetime_to_context=True` for time-aware queries |
 | Chat history | `read_chat_history=True`, `num_history_runs=5` for multi-turn context |
 | Session summaries | `enable_session_summaries=True` for conversation persistence |
@@ -55,6 +75,15 @@ The `reasoning_min_steps` and `reasoning_max_steps` parameters control how many 
 | `reasoning_max_steps` | `10` | Maximum reasoning steps allowed |
 
 Lower step counts produce faster responses. Higher counts produce more thorough analysis. The default configuration (2-6 steps) balances depth with response time.
+
+## CLI testing
+
+Run the agent directly without the API server:
+
+```sh
+mise run agent:cli -- reasoning_agent -q "Compare REST vs GraphQL"
+mise run agent:cli -- reasoning_agent  # interactive mode
+```
 
 ## Example queries
 
