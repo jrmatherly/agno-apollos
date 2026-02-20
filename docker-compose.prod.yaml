@@ -30,6 +30,7 @@ services:
     environment:
       - RUNTIME_ENV=${RUNTIME_ENV:-prd}
       - AGNO_DEBUG=${AGNO_DEBUG:-False}
+      - AUTH_DEBUG=${AUTH_DEBUG:-False}
       - PYTHONPATH=/app
       # Database
       - DB_HOST=${DB_HOST:-apollos-db}

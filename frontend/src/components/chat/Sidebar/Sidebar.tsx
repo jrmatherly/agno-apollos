@@ -220,7 +220,8 @@ const Sidebar = ({
     selectedModel,
     hydrated,
     isEndpointLoading,
-    mode
+    mode,
+    authToken
   } = useStore()
   const [isMounted, setIsMounted] = useState(false)
   const [agentId] = useQueryState('agent')
@@ -228,9 +229,11 @@ const Sidebar = ({
 
   useEffect(() => {
     setIsMounted(true)
-
-    if (hydrated) initialize()
-  }, [selectedEndpoint, initialize, hydrated, mode])
+    // When MSAL is configured, wait for the token to be synced before initializing.
+    // Calling initialize() with an empty token sends unauthenticated requests that
+    // return 401, causing spurious toast errors before the token is ready.
+    if (hydrated && (!isMsalConfigured || authToken)) initialize()
+  }, [selectedEndpoint, initialize, hydrated, mode, authToken])
 
   const handleNewChat = () => {
     clearChat()

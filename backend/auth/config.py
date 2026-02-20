@@ -12,6 +12,7 @@ class AuthConfig:
     jwks_refresh_interval: int = field(default_factory=lambda: int(getenv("JWKS_REFRESH_INTERVAL", "3600")))
     jwks_miss_cooldown: int = field(default_factory=lambda: int(getenv("JWKS_MISS_COOLDOWN", "300")))
     group_sync_interval: int = field(default_factory=lambda: int(getenv("GROUP_SYNC_INTERVAL", "900")))
+    auth_debug: bool = field(default_factory=lambda: getenv("AUTH_DEBUG", "").lower() in ("true", "1", "yes"))
 
     @property
     def enabled(self) -> bool:

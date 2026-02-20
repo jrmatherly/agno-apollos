@@ -50,7 +50,8 @@ All LLM and embedding requests route through a [LiteLLM Proxy](https://docs.lite
 | `AZURE_TENANT_ID` | (empty) | Entra ID Directory (tenant) ID. All 4 required to enable auth. |
 | `AZURE_CLIENT_ID` | (empty) | Entra ID Application (client) ID |
 | `AZURE_CLIENT_SECRET` | (empty) | Client secret for Microsoft Graph API access |
-| `AZURE_AUDIENCE` | (empty) | Token audience. Must be `api://{AZURE_CLIENT_ID}` |
+| `AZURE_AUDIENCE` | (empty) | Token audience. Set to `api://{AZURE_CLIENT_ID}`. When the SPA client and API share one app registration, Azure issues tokens with a bare GUID audience — both formats are accepted. |
+| `AUTH_DEBUG` | `True` (dev) `False` (prod) | Log diagnostic 401 details: missing tokens, expired tokens, and audience mismatches with the actual `aud` value. |
 | `FRONTEND_URL` | `http://localhost:3000` | CORS allowed origin for API responses |
 | `JWT_SECRET_KEY` | (empty) | Legacy HS256 auth. Superseded by Entra ID when Azure vars are set. |
 

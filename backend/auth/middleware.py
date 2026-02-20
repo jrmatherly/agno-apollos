@@ -58,14 +58,25 @@ class EntraJWTMiddleware(BaseHTTPMiddleware):
         # Extract Bearer token
         token = _extract_bearer_token(request)
         if not token:
+            if self.config.auth_debug:
+                logger.warning("401 Missing token: %s %s (no Authorization: Bearer header)", request.method, request.url.path)
             return JSONResponse(status_code=401, content={"detail": "Missing authentication token"})
 
         # Validate JWT
         try:
             payload = await self._validate_token(token)
         except jwt.ExpiredSignatureError:
+            if self.config.auth_debug:
+                logger.warning("401 Expired token: %s %s", request.method, request.url.path)
             return JSONResponse(status_code=401, content={"detail": "Token has expired"})
-        except jwt.InvalidAudienceError:
+        except jwt.InvalidAudienceError as e:
+            if self.config.auth_debug:
+                try:
+                    unverified = jwt.decode(token, options={"verify_signature": False, "verify_aud": False, "verify_exp": False})
+                    actual_aud = unverified.get("aud")
+                except Exception:
+                    actual_aud = "unable to decode"
+                logger.warning("401 Invalid audience: %s %s — token aud=%r, expected AZURE_AUDIENCE=%s (%s)", request.method, request.url.path, actual_aud, self.config.audience, e)
             return JSONResponse(status_code=401, content={"detail": "Invalid audience"})
         except jwt.InvalidTokenError as e:
             logger.warning("JWT validation failed: %s", e)
@@ -137,12 +148,20 @@ class EntraJWTMiddleware(BaseHTTPMiddleware):
         if public_key is None:
             raise jwt.InvalidTokenError(f"Unknown signing key: {kid}")
 
+        # Accept both api://clientId and bare clientId audience forms.
+        # Azure issues tokens with aud=clientId (GUID) when the SPA client and API
+        # resource share the same app registration (single-app setup), even with
+        # accessTokenAcceptedVersion=2. Both forms are equivalent and equally secure
+        # since we also validate issuer, signature, and azp.
+        aud = self.config.audience
+        accepted_audiences = [aud, aud.removeprefix("api://") if aud.startswith("api://") else f"api://{aud}"]
+
         # Validate: RS256 only, audience, issuer, expiry, clock skew tolerance
         payload: dict = jwt.decode(  # type: ignore[type-arg]
             token,
             key=public_key,
             algorithms=["RS256"],
-            audience=self.config.audience,
+            audience=accepted_audiences,
             issuer=self.config.expected_issuer,
             options={
                 "verify_exp": True,

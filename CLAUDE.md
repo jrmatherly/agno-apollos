@@ -98,6 +98,7 @@ Auth and scheduling tasks:
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
 - New agents in `backend/agents/`, teams in `backend/teams/`, workflows in `backend/workflows/`. Register all in `backend/main.py`.
 - Auth is opt-in: empty `AZURE_TENANT_ID`/`AZURE_CLIENT_ID`/`AZURE_CLIENT_SECRET`/`AZURE_AUDIENCE` = auth disabled (passthrough mode for local dev). Set all 4 to enable Entra ID RBAC.
+- **Azure audience**: `AZURE_AUDIENCE` is set as `api://clientId` but middleware accepts both `api://clientId` and bare GUID — Azure issues the bare GUID when SPA client and API resource share one app registration (single-app setup), even with `accessTokenAcceptedVersion: 2`.
 - `JWT_SECRET_KEY` is retained for backward compat but superseded by Entra ID when Azure vars are set.
 - Auth architecture: `EntraJWTMiddleware` on `base_app` (FastAPI), passed to `AgentOS(base_app=base_app)`. No `authorization=True` on AgentOS.
 - `backend/auth/` package: config, middleware, jwks_cache, scope_mapper, models, database, graph, sync_service, dependencies, routes, security_headers, __init__

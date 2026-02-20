@@ -52,3 +52,7 @@ user/team sync, and auth-specific FastAPI routes.
 - Entra `oid` ≠ `sub`: `oid` is the stable cross-app user identifier; always use `oid` as `user_id`
 - Token deny list checked per-request via SQLAlchemy; partial index on `expires_at > NOW()` keeps it fast
 - `slowapi` rate limiter: limiter instance initialized in `routes.py`, registered on `base_app` in `main.py`
+- **Single-app audience**: When SPA client and API resource share one app registration, Azure issues `aud = clientId` (bare GUID) even with `accessTokenAcceptedVersion: 2`. Middleware accepts both `api://clientId` and bare GUID — `AZURE_AUDIENCE` stays as `api://clientId` form.
+- **AUTH_DEBUG env var**: Set `AUTH_DEBUG=true` to enable diagnostic 401 logging (missing token, expired, invalid audience — logs actual `aud` value on mismatch). Default: True in dev, False in prod.
+- **AuthGuard component**: `frontend/src/components/auth/AuthGuard.tsx` gates the UI. Must check `inProgress === InteractionStatus.None` before calling `loginRedirect()` — calling earlier throws `BrowserAuthError: uninitialized_public_client_application`.
+- **Sidebar initialize() gate**: `initialize()` is gated on `!isMsalConfigured || authToken` — prevents unauthenticated API calls before `useTokenSync` completes its first silent token acquisition.

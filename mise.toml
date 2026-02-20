@@ -39,6 +39,7 @@ DB_DRIVER = "postgresql+psycopg"
 
 RUNTIME_ENV = "dev"
 AGNO_DEBUG = "True"
+AUTH_DEBUG = "True"
 
 # Documents directory for knowledge agent file browsing
 DOCUMENTS_DIR = "{{config_root}}/data/docs"

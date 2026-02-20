@@ -34,6 +34,26 @@ NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000
 
 When any of the four `AZURE_*` values is empty, auth is disabled and all requests pass through.
 
+<Note>
+**Single-app registration audience:** When the SPA client and API resource share one Azure App Registration, Azure issues access tokens with `aud = {AZURE_CLIENT_ID}` (bare GUID) instead of `api://{AZURE_CLIENT_ID}`, even when `accessTokenAcceptedVersion: 2` is set in the manifest. The backend accepts both forms. Keep `AZURE_AUDIENCE=api://{AZURE_CLIENT_ID}` in your `.env`.
+</Note>
+
+### Azure App Registration requirements
+
+The following must be configured in your Azure App Registration before auth will work:
+
+| Setting | Location | Value |
+|---------|----------|-------|
+| Platform | Authentication | Single-page application (SPA) |
+| Redirect URI | Authentication | `http://localhost:3000` (or your frontend URL) |
+| Access tokens | Authentication | Enable (for implicit flow) |
+| `accessTokenAcceptedVersion` | Manifest | `2` |
+| App Roles | App roles | `GlobalAdmin`, `Admin`, `TeamLead`, `Developer`, `DevOps`, `InfoSec`, `User` |
+| Expose an API | Expose an API | `api://{AZURE_CLIENT_ID}` with `access_as_user` delegated scope |
+| API permissions | API permissions | `User.Read` (Microsoft Graph, delegated) |
+
+Assign users or groups to App Roles under **Enterprise Applications → Your App → Users and groups**. Users with no assigned role receive 403 on protected endpoints.
+
 ### App Roles and Scopes
 
 Create App Roles in Azure and assign users. The role value in the token maps to Agno scopes:
@@ -57,6 +77,25 @@ Create App Roles in Azure and assign users. The role value in the token maps to 
 | `POST /auth/sync` | Yes | Trigger on-demand group sync |
 | `GET /auth/teams` | Yes (`teams:read`) | List active teams |
 | `GET /auth/users` | Yes (`agent_os:admin`) | List all synced users |
+
+### Debugging 401 errors
+
+Set `AUTH_DEBUG=true` to enable diagnostic logging for all 401 responses:
+
+```bash
+# .env (or mise.toml for dev)
+AUTH_DEBUG=True
+```
+
+The middleware logs the reason for each 401, including the actual `aud` value on audience mismatches:
+
+```
+WARNING 401 Invalid audience: GET /agents — token aud='4837d7c1-...', expected AZURE_AUDIENCE=api://4837d7c1-...
+WARNING 401 Missing token: GET /agents (no Authorization: Bearer header)
+WARNING 401 Expired token: GET /teams
+```
+
+`AUTH_DEBUG` defaults to `True` in development and `False` in production.
 
 ### Local development
 
