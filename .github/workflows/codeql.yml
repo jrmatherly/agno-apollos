@@ -42,6 +42,10 @@ on:
   schedule:
     - cron: "0 6 * * 1" # Monday 6am UTC
 
+concurrency:
+  group: codeql-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   actions: read
   contents: read
@@ -67,7 +71,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@58d4c8134bcf8ae089f888d056501755e0da2b44 # v4
+        uses: github/codeql-action/init@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -75,6 +79,6 @@ jobs:
           queries: security-extended
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@58d4c8134bcf8ae089f888d056501755e0da2b44 # v4
+        uses: github/codeql-action/analyze@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
         with:
           category: "/language:${{ matrix.language }}"
