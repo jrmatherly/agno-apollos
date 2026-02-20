@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Run tool-call reliability evals for all agents and teams"
+#MISE alias="evals:rel"
+
+set -euo pipefail
+
+echo "Running reliability evals..." > /dev/tty
+uv run python3 -m backend.evals.reliability_evals
