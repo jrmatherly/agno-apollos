@@ -178,10 +178,70 @@ DATA_AGENT_CASES: list[TestCase] = [
 # Knowledge Agent Test Cases
 # ---------------------------------------------------------------------------
 KNOWLEDGE_AGENT_CASES: list[TestCase] = [
+    # Basic — direct factual lookups from loaded documents
     TestCase(
         question="What is Agno?",
         expected_strings=["Agno", "framework", "agent"],
         category="basic",
+        agent_id="knowledge-agent",
+        golden_path="Agno Introduction",
+    ),
+    TestCase(
+        question="How do I create my first agent?",
+        expected_strings=["Agent", "model"],
+        category="basic",
+        agent_id="knowledge-agent",
+        golden_path="Agno First Agent",
+    ),
+    TestCase(
+        question="What models does Agno support?",
+        expected_strings=["model"],
+        category="basic",
+        agent_id="knowledge-agent",
+        golden_path="Agno Introduction",
+    ),
+    # Navigation — requires searching across sources
+    TestCase(
+        question="What tools can an Agno agent use?",
+        expected_strings=["tool"],
+        category="navigation",
+        agent_id="knowledge-agent",
+    ),
+    TestCase(
+        question="How does the knowledge base work?",
+        expected_strings=["knowledge", "vector"],
+        category="navigation",
+        agent_id="knowledge-agent",
+    ),
+    TestCase(
+        question="What documents are in the knowledge base?",
+        expected_strings=["Agno"],
+        category="navigation",
+        agent_id="knowledge-agent",
+    ),
+    # Edge cases — topics not in knowledge base
+    TestCase(
+        question="What is the company pet policy?",
+        expected_strings=["no"],
+        category="edge_case",
+        agent_id="knowledge-agent",
+    ),
+    TestCase(
+        question="How do I configure Kubernetes for Agno?",
+        expected_strings=["no"],
+        category="edge_case",
+        agent_id="knowledge-agent",
+    ),
+    TestCase(
+        question="What are the current stock prices?",
+        expected_strings=["no"],
+        category="edge_case",
+        agent_id="knowledge-agent",
+    ),
+    TestCase(
+        question="Tell me about Project XYZ123",
+        expected_strings=["no"],
+        category="edge_case",
         agent_id="knowledge-agent",
     ),
 ]
@@ -203,4 +263,4 @@ WEB_SEARCH_CASES: list[TestCase] = [
 # ---------------------------------------------------------------------------
 ALL_CASES = DATA_AGENT_CASES + KNOWLEDGE_AGENT_CASES + WEB_SEARCH_CASES
 
-CATEGORIES = ["basic", "aggregation", "data_quality", "complex", "edge_case"]
+CATEGORIES = ["basic", "aggregation", "data_quality", "complex", "edge_case", "navigation"]
