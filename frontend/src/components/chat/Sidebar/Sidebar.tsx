@@ -10,6 +10,7 @@ import Icon from '@/components/ui/icon'
 import { getProviderIcon } from '@/lib/modelProvider'
 import Sessions from './Sessions'
 import AuthToken from './AuthToken'
+import { AuthUserButton, isMsalConfigured } from '@/auth'
 import { isValidUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useQueryState } from 'nuqs'
@@ -273,7 +274,11 @@ const Sidebar = ({
         {isMounted && (
           <>
             <Endpoint />
-            <AuthToken hasEnvToken={hasEnvToken} envToken={envToken} />
+            {isMsalConfigured ? (
+              <AuthUserButton />
+            ) : (
+              <AuthToken hasEnvToken={hasEnvToken} envToken={envToken} />
+            )}
             {isEndpointActive && (
               <>
                 <motion.div
