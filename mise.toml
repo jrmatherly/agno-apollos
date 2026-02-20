@@ -43,8 +43,22 @@ AGNO_DEBUG = "True"
 # Documents directory for knowledge agent file browsing
 DOCUMENTS_DIR = "{{config_root}}/data/docs"
 
-# Authentication (set JWT_SECRET_KEY to enable RBAC; empty = auth disabled)
+# Authentication — Legacy HS256 (retained for backward-compat tooling)
 JWT_SECRET_KEY = ""
+
+# Authentication — Azure Entra ID (set all 4 to enable; empty = Entra auth disabled)
+AZURE_TENANT_ID = ""
+AZURE_CLIENT_ID = ""
+AZURE_CLIENT_SECRET = ""
+AZURE_AUDIENCE = ""
+
+# CORS: Frontend URL allowed by Access-Control-Allow-Origin (empty = all origins)
+FRONTEND_URL = "http://localhost:3000"
+
+# JWKS cache tuning (these are the defaults in AuthConfig — uncomment to override)
+# JWKS_REFRESH_INTERVAL = "3600"
+# JWKS_MISS_COOLDOWN = "300"
+# GROUP_SYNC_INTERVAL = "900"
 
 # Observability
 # Set TRACING_ENABLED=true to store traces in PostgreSQL

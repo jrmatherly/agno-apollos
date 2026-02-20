@@ -48,8 +48,14 @@ services:
       - MODEL_ID=${MODEL_ID:-gpt-5-mini}
       - EMBEDDING_MODEL_ID=${EMBEDDING_MODEL_ID:-text-embedding-3-small}
       - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-1536}
-      # Authentication
+      # Authentication — Legacy HS256
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      # Authentication — Azure Entra ID (set all 4 to enable; empty = auth disabled)
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
+      - AZURE_AUDIENCE=${AZURE_AUDIENCE:-}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       # Observability
       - TRACING_ENABLED=${TRACING_ENABLED:-}
       - OTLP_ENDPOINTS=${OTLP_ENDPOINTS:-}
@@ -94,6 +100,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_AZURE_CLIENT_ID=${NEXT_PUBLIC_AZURE_CLIENT_ID:-}
+        - NEXT_PUBLIC_AZURE_TENANT_ID=${NEXT_PUBLIC_AZURE_TENANT_ID:-}
+        - NEXT_PUBLIC_REDIRECT_URI=${NEXT_PUBLIC_REDIRECT_URI:-http://localhost:3000}
     image: apollos-frontend:${IMAGE_TAG:-latest}
     container_name: apollos-frontend
     restart: unless-stopped
