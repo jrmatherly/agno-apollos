@@ -10,6 +10,8 @@ When an agent is saved, tools and functions are serialized by name.
 The Registry restores them to full callables when loading.
 """
 
+from os import getenv
+
 from agno.registry import Registry
 from agno.tools.mcp import MCPTools
 from agno.tools.postgres import PostgresTools
@@ -47,7 +49,11 @@ def create_registry() -> Registry:
             WebSearchTools(enable_search=True, enable_news=True),
             # Data agent tools
             PostgresTools(
-                db_url=db_url,
+                host=getenv("DB_HOST", "apollos-db"),
+                port=int(getenv("DB_PORT", "5432")),
+                user=getenv("DB_USER", "ai"),
+                password=getenv("DB_PASS", "ai"),
+                db_name=getenv("DB_DATABASE", "ai"),
                 include_tools=["show_tables", "describe_table", "summarize_table", "inspect_query"],
             ),
             # MCP agent tools
