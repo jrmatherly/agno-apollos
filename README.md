@@ -311,7 +311,12 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
 | `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by `docker-compose.prod.yaml`) |
 | `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
-| `JWT_SECRET_KEY` | No | - | Enable JWT RBAC auth (empty = disabled) |
+| `AZURE_TENANT_ID` | No | - | Entra ID tenant ID. All 4 required to enable auth. |
+| `AZURE_CLIENT_ID` | No | - | Entra ID application (client) ID |
+| `AZURE_CLIENT_SECRET` | No | - | Client secret for Microsoft Graph API access |
+| `AZURE_AUDIENCE` | No | - | Token audience (`api://{AZURE_CLIENT_ID}`) |
+| `FRONTEND_URL` | No | `http://localhost:3000` | CORS allowed origin |
+| `JWT_SECRET_KEY` | No | - | Legacy HS256 auth. Superseded by Entra ID when Azure vars are set. |
 | `DOCUMENTS_DIR` | No | `data/docs` | Knowledge agent file browsing directory |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | - | OTel trace export endpoint (empty = disabled) |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | - | Pre-fill auth token in the frontend UI |

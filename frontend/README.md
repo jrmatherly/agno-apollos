@@ -40,21 +40,33 @@ To change the endpoint:
 
 ### Authentication (Optional)
 
-If your AgentOS instance requires authentication:
+If your AgentOS instance requires authentication, two modes are supported:
 
-**Option 1: Environment Variable**
+**Microsoft Entra ID (MSAL.js v5)**
 
-Set `NEXT_PUBLIC_OS_SECURITY_KEY` in the root `.env` file:
+Set build-time environment variables before building the Docker image:
 
 ```sh
-NEXT_PUBLIC_OS_SECURITY_KEY=your_auth_token_here
+NEXT_PUBLIC_AZURE_CLIENT_ID=<Application (client) ID>
+NEXT_PUBLIC_AZURE_TENANT_ID=<Directory (tenant) ID>
+NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000
 ```
 
-**Option 2: UI Configuration**
+When configured, the sidebar shows a login button. MSAL handles token acquisition and silent refresh automatically.
+
+**Manual token entry**
+
+If `NEXT_PUBLIC_AZURE_CLIENT_ID` is empty, a manual auth token field appears in the sidebar instead:
 
 1. In the left sidebar, locate the "Auth Token" section
 2. Enter your authentication token
 3. The token will be included as a Bearer token in API requests
+
+Optionally pre-fill the token at build time:
+
+```sh
+NEXT_PUBLIC_OS_SECURITY_KEY=your_auth_token_here
+```
 
 ## Development
 
