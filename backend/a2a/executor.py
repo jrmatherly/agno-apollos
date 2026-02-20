@@ -6,6 +6,7 @@ Wraps Agno agents for A2A protocol message handling.
 Supports both synchronous and streaming (SSE) responses.
 """
 
+import asyncio
 import logging
 
 from a2a.server.agent_execution import AgentExecutor, RequestContext
@@ -31,18 +32,19 @@ class AgnoAgentExecutor(AgentExecutor):
         text = " ".join(text_parts).strip()
 
         if not text:
-            event_queue.enqueue_event(new_agent_text_message("No message content received."))
+            await event_queue.enqueue_event(new_agent_text_message("No message content received."))
             return
 
         logger.info("A2A request for %s: %s", self.agent.name, text[:100])
 
         try:
-            result = await self.agent.arun(Message(role="user", content=text))
+            # Agent.run is synchronous — run in a thread to avoid blocking the event loop
+            result = await asyncio.to_thread(self.agent.run, Message(role="user", content=text))
             content = result.content if result else "No response generated."
-            event_queue.enqueue_event(new_agent_text_message(content or ""))
+            await event_queue.enqueue_event(new_agent_text_message(content or ""))
         except Exception:
             logger.exception("A2A execution failed for %s", self.agent.name)
-            event_queue.enqueue_event(new_agent_text_message("An error occurred processing your request."))
+            await event_queue.enqueue_event(new_agent_text_message("An error occurred processing your request."))
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
         """Handle cancellation request."""

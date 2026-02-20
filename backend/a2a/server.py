@@ -17,6 +17,7 @@ from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from agno.agent import Agent
+from starlette.types import ASGIApp
 
 from backend.a2a.executor import AgnoAgentExecutor
 
@@ -27,7 +28,11 @@ AGENT_METADATA: dict[str, dict] = {
     "knowledge-agent": {
         "description": "Answer questions from loaded documents and a curated knowledge base with source citations",
         "skills": [
-            {"id": "knowledge-qa", "name": "Knowledge Q&A", "description": "Answer questions from loaded documents and knowledge base"},
+            {
+                "id": "knowledge-qa",
+                "name": "Knowledge Q&A",
+                "description": "Answer questions from loaded documents and knowledge base",
+            },
         ],
     },
     "data-agent": {
@@ -39,19 +44,31 @@ AGENT_METADATA: dict[str, dict] = {
     "web-search-agent": {
         "description": "Search the web for current information, news, and real-time data",
         "skills": [
-            {"id": "web-search", "name": "Web Search", "description": "Search the web for current information and news"},
+            {
+                "id": "web-search",
+                "name": "Web Search",
+                "description": "Search the web for current information and news",
+            },
         ],
     },
     "reasoning-agent": {
         "description": "Analyze complex topics with structured multi-step reasoning and produce comprehensive reports",
         "skills": [
-            {"id": "reasoning", "name": "Multi-Step Reasoning", "description": "Analyze complex topics with structured reasoning"},
+            {
+                "id": "reasoning",
+                "name": "Multi-Step Reasoning",
+                "description": "Analyze complex topics with structured reasoning",
+            },
         ],
     },
     "mcp-agent": {
         "description": "Execute tools and access services via Model Context Protocol servers",
         "skills": [
-            {"id": "mcp-tools", "name": "MCP Tool Execution", "description": "Execute tools via Model Context Protocol"},
+            {
+                "id": "mcp-tools",
+                "name": "MCP Tool Execution",
+                "description": "Execute tools via Model Context Protocol",
+            },
         ],
     },
 }
@@ -69,19 +86,19 @@ def create_agent_card(agent: Agent, base_url: str) -> AgentCard:
         url=f"{base_url}/a2a/agents/{agent.id}",
         version=getenv("APP_VERSION", "1.0.0"),
         capabilities=AgentCapabilities(streaming=True),
+        default_input_modes=["text"],
+        default_output_modes=["text"],
         skills=[AgentSkill(**skill) for skill in skills],
     )
 
 
-def create_a2a_apps(agents: list[Agent], base_url: str) -> list[tuple[str, "ASGIApp"]]:
+def create_a2a_apps(agents: list[Agent], base_url: str) -> list[tuple[str, ASGIApp]]:
     """Create A2A Starlette apps for all agents.
 
     Returns a list of (mount_path, asgi_app) tuples for mounting on the FastAPI app.
     Use app.mount(path, asgi_app) for each pair — this is the standard FastAPI
     pattern for sub-applications and avoids fragile app.routes.append().
     """
-    from starlette.types import ASGIApp  # noqa: F811 — used in type hint above
-
     mounts: list[tuple[str, ASGIApp]] = []
 
     for agent in agents:

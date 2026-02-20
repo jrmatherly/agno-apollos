@@ -57,9 +57,9 @@ def create_registry() -> Registry:
         ],
         functions=[
             # Knowledge agent custom tools
-            search_content,
-            list_knowledge_sources,
-            add_knowledge_source,
+            search_content,  # type: ignore[list-item]  # Agno @tool wraps Callable
+            list_knowledge_sources,  # type: ignore[list-item]
+            add_knowledge_source,  # type: ignore[list-item]
             # Data agent custom tools
             save_validated_query,
             introspect_schema,
