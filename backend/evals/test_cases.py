@@ -20,6 +20,7 @@ class TestCase:
     agent_id: str = "data-agent"
     golden_sql: str | None = None
     expected_result: str | None = None
+    golden_path: str | None = None
 
 
 # ---------------------------------------------------------------------------

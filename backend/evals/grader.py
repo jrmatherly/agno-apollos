@@ -134,3 +134,36 @@ def compare_results(
         return False, f"Missing expected values: {missing}"
 
     return True, "All expected values found in actual results"
+
+
+def check_source_citation(response: str, golden_path: str) -> tuple[bool, str]:
+    """Check if the response cites the expected source document.
+
+    Checks for full path, filename, or partial path match.
+
+    Args:
+        response: The agent's response text.
+        golden_path: Expected source document path.
+
+    Returns:
+        Tuple of (matched, explanation).
+    """
+    response_lower = response.lower()
+
+    # Check full path
+    if golden_path.lower() in response_lower:
+        return True, f"Found full path: {golden_path}"
+
+    # Check filename only
+    filename = golden_path.split("/")[-1]
+    if filename.lower() in response_lower:
+        return True, f"Found filename: {filename}"
+
+    # Check partial path (last 2 segments)
+    parts = golden_path.split("/")
+    if len(parts) >= 2:
+        partial = "/".join(parts[-2:])
+        if partial.lower() in response_lower:
+            return True, f"Found partial path: {partial}"
+
+    return False, f"Expected citation: {golden_path}"
