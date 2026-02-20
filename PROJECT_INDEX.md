@@ -13,7 +13,8 @@ apollos-ai/
 │   ├── Dockerfile           # agnohq/python:3.12, two-layer caching, uv sync --locked
 │   ├── Dockerfile.dockerignore  # Build context exclusions (BuildKit convention)
 │   ├── models.py              # Shared model factory (get_model())
-│   ├── telemetry.py           # OpenTelemetry trace export (opt-in via env var)
+│   ├── telemetry.py           # Dual-layer observability: trace-to-DB (Agno) + OTLP multi-export (opt-in)
+│   ├── registry.py            # Component registry for Agent-as-Config persistence (tools/functions/models/dbs)
 │   ├── cli.py                # Shared Rich CLI module for direct agent testing
 │   ├── agents/              # AI agent implementations
 │   │   ├── __init__.py
@@ -58,6 +59,10 @@ apollos-ai/
 │   │   ├── __init__.py
 │   │   ├── load_sample_data.py  # Download and load F1 data (1950-2020) into PostgreSQL
 │   │   └── load_knowledge.py    # Load table/query/business knowledge into vector DB
+│   ├── a2a/                 # A2A protocol integration (expose agents as A2A-compliant servers)
+│   │   ├── __init__.py
+│   │   ├── executor.py          # AgnoAgentExecutor — wraps Agno agents for A2A message handling
+│   │   └── server.py            # AgentCard builder + A2AStarletteApplication mount helpers
 │   └── db/                  # Database layer
 │       ├── __init__.py      # Re-exports: get_postgres_db, create_knowledge, db_url
 │       ├── session.py       # PostgresDb factory + Knowledge factory (pgvector hybrid)
@@ -161,7 +166,7 @@ apollos-ai/
 │   ├── agents/              # Agent documentation (overview + per-agent pages + creating guide)
 │   ├── teams/               # Team documentation (overview)
 │   ├── workflows/           # Workflow documentation (overview)
-│   ├── configuration/       # Environment, security, telemetry, Docker config
+│   ├── configuration/       # Environment, security, telemetry, A2A, Docker config
 │   ├── reference/           # Architecture and mise-tasks reference
 │   ├── logo/                # Apollos AI logo assets
 │   ├── images/              # Documentation images
@@ -279,11 +284,26 @@ Uses **pnpm** for package management:
 - **Steps**: Initial Research (web_search_agent) → Quality Refinement Loop (quality_reviewer + gap filling, max 3 iterations) → Complexity-based Condition (deep analysis vs basic synthesis via reasoning_agent)
 - **Primitives**: Uses Agno `Loop` (with `end_condition` callback) and `Condition` (with `evaluator` function)
 
+### backend/registry.py
+- **Exports**: `create_registry()` factory function
+- **Purpose**: Central component registry for Agent-as-Config persistence — maps tools/functions/models/dbs by name so agents can be saved to and loaded from PostgreSQL
+- **Contents**: Web search, Postgres, MCP, reasoning tools; custom functions (search, knowledge ops, data tools); default model and database
+
+### backend/a2a/executor.py
+- **Exports**: `AgnoAgentExecutor` class
+- **Purpose**: Wraps Agno `Agent` instances for A2A protocol message handling
+- **Key pattern**: `Agent.run()` is synchronous; uses `asyncio.to_thread()` to avoid blocking the async event loop. `event_queue.enqueue_event()` requires `await`.
+
+### backend/a2a/server.py
+- **Exports**: `create_a2a_apps()` factory function, `AGENT_METADATA` dict
+- **Purpose**: Builds `AgentCard` discovery documents and `A2AStarletteApplication` instances for each registered agent
+- **Mount pattern**: Returns `list[tuple[str, ASGIApp]]` for mounting on the FastAPI app at `/a2a/agents/{id}`
+
 ### backend/main.py
 - **Exports**: `agent_os` (AgentOS), `app` (FastAPI app)
-- **Purpose**: Creates and configures Apollos AI with all agents, teams, workflows, tracing, scheduler
+- **Purpose**: Creates and configures Apollos AI with all agents, teams, workflows, tracing, scheduler, A2A endpoints
 - **Config**: Reads `backend/config.yaml` for UI quick-prompts
-- **Features**: JWT RBAC auth (opt-in), MCP server endpoint, telemetry export
+- **Features**: JWT RBAC auth (opt-in), MCP server endpoint, dual-layer telemetry, A2A protocol endpoints (opt-in via `A2A_ENABLED`)
 - **Dev mode**: Auto-reload when `RUNTIME_ENV=dev`
 
 ### backend/db/session.py
@@ -351,6 +371,7 @@ Uses **pnpm** for package management:
 | `opentelemetry-exporter-otlp-proto-http` | OTLP HTTP trace exporter |
 | `openinference-instrumentation-agno` | Agno-specific OTel instrumentation |
 | `litellm` | Multi-provider LLM routing (external proxy, no [proxy] extra) |
+| `a2a-sdk` | Agent-to-Agent protocol SDK (A2AStarletteApplication, AgentCard, AgentExecutor) |
 | `ddgs` | Web search backend for web_search_agent |
 | `fastmcp` | MCP server for AgentOS |
 | `pypdf` | PDF document reader for knowledge loaders |
@@ -396,7 +417,12 @@ Uses **pnpm** for package management:
 | `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | — | Pre-fill auth token in the frontend UI |
 | `JWT_SECRET_KEY` | No | — | Enable JWT RBAC auth (empty = auth disabled) |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OTel trace export endpoint (empty = traces not exported) |
+| `TRACING_ENABLED` | No | — | Set to `true` to store traces in PostgreSQL via Agno (Layer 1) |
+| `OTLP_ENDPOINTS` | No | — | Comma-separated OTLP endpoint URLs for multi-export (Layer 2) |
+| `OTLP_AUTH_HEADERS` | No | — | Comma-separated auth headers parallel to `OTLP_ENDPOINTS` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | Legacy single-endpoint fallback (use `OTLP_ENDPOINTS` for new setups) |
+| `A2A_ENABLED` | No | — | Set to `true` to expose agents via A2A protocol endpoints |
+| `A2A_BASE_URL` | No | `http://localhost:8000` | Base URL used in AgentCard discovery documents |
 | `DOCUMENTS_DIR` | No | `./data/docs` | Knowledge agent file browsing directory |
 | `WAIT_FOR_DB` | No | — | Container waits for DB readiness |
 | `PRINT_ENV_ON_LOAD` | No | — | Print env vars on container start |
@@ -437,7 +463,8 @@ open http://localhost:8000/docs
 - **Teams**: Multi-agent teams in `backend/teams/`, using Agno's `Team` class with coordinate mode.
 - **Workflows**: Multi-step pipelines in `backend/workflows/`, using Agno's `Workflow`, `Step`, `Loop`, and `Condition` classes for iterative refinement and conditional routing.
 - **Security**: JWT RBAC auth (opt-in via `JWT_SECRET_KEY`), human-in-the-loop approval workflows (`@approval` decorator on tools).
-- **Observability**: OpenTelemetry trace export (opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`), Agno native tracing, MCP server endpoint.
+- **Observability**: Dual-layer observability. Layer 1: `TRACING_ENABLED=true` stores agent traces in PostgreSQL via Agno. Layer 2: `OTLP_ENDPOINTS` exports to Langfuse, Arize Phoenix, Grafana, or any OTLP backend (multi-export, comma-separated, per-endpoint auth). Legacy `OTEL_EXPORTER_OTLP_ENDPOINT` preserved as fallback.
+- **A2A Protocol**: `A2A_ENABLED=true` mounts each registered agent as a `A2AStarletteApplication` at `/a2a/agents/{id}`, exposing AgentCard discovery and JSON-RPC messaging with SSE streaming (a2a-sdk v0.3.x).
 - **Learning**: All agents use full `LearningMachine` stack (learned_knowledge, user_profile, user_memory, session_context) with domain-specific learning triggers.
 - **LLM Provider**: LiteLLM Proxy (all LLM and embedding traffic routes through self-hosted proxy).
 - **Frontend**: Next.js 15 with standalone output. Connects to backend via browser-side fetch (not server-side). Default endpoint configurable via `NEXT_PUBLIC_DEFAULT_ENDPOINT` env var (defaults to `http://localhost:8000`).

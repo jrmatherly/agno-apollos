@@ -1,0 +1,83 @@
+---
+title: "A2A Protocol"
+description: "Expose Apollos AI agents as A2A-compliant servers for agent-to-agent communication."
+---
+
+The Agent-to-Agent (A2A) protocol lets external agents and applications discover and communicate with Apollos AI agents using a standard HTTP interface with SSE streaming.
+
+Enable it with a single env var:
+
+```bash
+# .env
+A2A_ENABLED=true
+A2A_BASE_URL=http://localhost:8000  # Base URL for AgentCard discovery URLs
+```
+
+## Endpoints
+
+When `A2A_ENABLED=true`, each registered agent gets two endpoints:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /a2a/agents/{agent-id}/.well-known/agent.json` | AgentCard discovery |
+| `POST /a2a/agents/{agent-id}` | Send messages (JSON-RPC, supports streaming) |
+
+Available agents:
+
+| Agent ID | Description |
+|----------|-------------|
+| `knowledge-agent` | Answer questions from loaded documents and knowledge base |
+| `data-agent` | Query databases and analyze data with SQL |
+| `web-search-agent` | Search the web for current information |
+| `reasoning-agent` | Multi-step reasoning and structured analysis |
+| `mcp-agent` | Execute tools via Model Context Protocol |
+
+## AgentCards
+
+Each agent advertises its capabilities via an AgentCard at `/.well-known/agent.json`:
+
+```json
+{
+  "name": "Knowledge Agent",
+  "description": "Answer questions from loaded documents and a curated knowledge base with source citations",
+  "url": "http://localhost:8000/a2a/agents/knowledge-agent",
+  "version": "1.0.0",
+  "capabilities": { "streaming": true },
+  "defaultInputModes": ["text"],
+  "defaultOutputModes": ["text"],
+  "skills": [
+    {
+      "id": "knowledge-qa",
+      "name": "Knowledge Q&A",
+      "description": "Answer questions from loaded documents and knowledge base"
+    }
+  ]
+}
+```
+
+## Docker configuration
+
+```yaml
+# docker-compose.yaml
+environment:
+  - A2A_ENABLED=${A2A_ENABLED:-}
+  - A2A_BASE_URL=${A2A_BASE_URL:-http://localhost:8000}
+```
+
+Set `A2A_BASE_URL` to your production domain when deploying:
+
+```bash
+A2A_BASE_URL=https://api.yourdomain.com
+```
+
+## Implementation
+
+A2A support uses the `a2a-sdk` (v0.3.x) and wraps each Agno agent in an `AgnoAgentExecutor`. The executor runs agent calls in a thread pool to avoid blocking the async event loop.
+
+- `backend/a2a/executor.py` — `AgnoAgentExecutor` wraps Agno agents for A2A message handling
+- `backend/a2a/server.py` — builds AgentCards and mounts `A2AStarletteApplication` instances
+- `backend/main.py` — conditionally activates A2A endpoints when `A2A_ENABLED=true`
+
+<Note>
+A2A endpoints are mounted as Starlette sub-applications on the FastAPI app. They coexist with existing AgentOS endpoints without conflict.
+</Note>

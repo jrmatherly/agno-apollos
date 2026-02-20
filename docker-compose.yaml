@@ -51,7 +51,13 @@ services:
       # Authentication
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
       # Observability
+      - TRACING_ENABLED=${TRACING_ENABLED:-}
+      - OTLP_ENDPOINTS=${OTLP_ENDPOINTS:-}
+      - OTLP_AUTH_HEADERS=${OTLP_AUTH_HEADERS:-}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      # A2A Protocol
+      - A2A_ENABLED=${A2A_ENABLED:-}
+      - A2A_BASE_URL=${A2A_BASE_URL:-http://localhost:8000}
       # Knowledge agent
       - DOCUMENTS_DIR=${DOCUMENTS_DIR:-/app/data/docs}
     depends_on:

@@ -48,6 +48,7 @@
           "configuration/environment",
           "configuration/security",
           "configuration/telemetry",
+          "configuration/a2a",
           "configuration/docker"
         ]
       },

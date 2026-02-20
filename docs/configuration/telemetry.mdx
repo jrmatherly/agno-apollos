@@ -1,60 +1,86 @@
 ---
 title: "Telemetry"
-description: "OpenTelemetry trace export for agent observability."
+description: "Dual-layer observability: trace-to-database and OTLP multi-export."
 ---
 
-Apollos AI generates traces via Agno's built-in `tracing=True` and can export them to any OpenTelemetry-compatible backend.
+Apollos AI provides two observability layers. Both are opt-in and safe to leave unconfigured in local dev.
 
-## Configuration
+| Layer | Mechanism | When to enable |
+|-------|-----------|----------------|
+| Trace-to-database | Agno stores traces in PostgreSQL | Always-on observability with no external dependency |
+| OTLP multi-export | OpenInference exports to external backends | Langfuse, Arize Phoenix, Grafana, SIEM, any OTLP collector |
 
-Telemetry export is opt-in. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable it:
+## Layer 1: Trace-to-database
+
+Set `TRACING_ENABLED=true` to store all agent traces in PostgreSQL via Agno's built-in tracing:
 
 ```bash
 # .env
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+TRACING_ENABLED=true
 ```
 
-When the variable is empty or unset, no traces are exported. Agno still generates internal traces for debugging.
+Traces are queryable programmatically via Agno's `get_trace` and `get_spans` APIs. No external service required.
 
-## How it works
+## Layer 2: OTLP multi-export
 
-```python
-# backend/telemetry.py
-def configure_telemetry() -> None:
-    endpoint = getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-    if not endpoint:
-        return
+Set `OTLP_ENDPOINTS` to export traces to one or more OTLP-compatible backends simultaneously:
 
-    provider = TracerProvider()
-    exporter = OTLPSpanExporter(endpoint=f"{endpoint}/v1/traces")
-    provider.add_span_processor(BatchSpanProcessor(exporter))
-    trace.set_tracer_provider(provider)
+```bash
+# Single backend
+OTLP_ENDPOINTS=https://us.cloud.langfuse.com/api/public/otel
+
+# Multiple backends (comma-separated)
+OTLP_ENDPOINTS=https://us.cloud.langfuse.com/api/public/otel,http://siem.internal:4318
+
+# Auth headers (parallel to OTLP_ENDPOINTS)
+OTLP_AUTH_HEADERS=Authorization=Basic abc123,X-API-Key=xyz789
 ```
 
-`configure_telemetry()` is called at startup in `backend/main.py`. It no-ops when the endpoint is not configured.
+The endpoint URL is normalized automatically. If it doesn't end with `/v1/traces`, that path is appended.
 
-## Compatible backends
+Uses [OpenInference](https://github.com/Arize-ai/openinference) instrumentation for Agno-aware span attributes (agent name, tool calls, knowledge retrieval).
+
+### Compatible backends
 
 Any OTLP HTTP-compatible collector works:
 
-| Backend | Endpoint example |
-|---------|-----------------|
-| [Jaeger](https://www.jaegertracing.io/) | `http://localhost:4318` |
+| Backend | Endpoint |
+|---------|----------|
+| [Langfuse](https://langfuse.com/) | `https://us.cloud.langfuse.com/api/public/otel` |
+| [Arize Phoenix](https://phoenix.arize.com/) | `https://app.phoenix.arize.com/v1/traces` |
 | [Grafana Tempo](https://grafana.com/oss/tempo/) | `http://localhost:4318` |
 | [SigNoz](https://signoz.io/) | `http://localhost:4318` |
 | [Honeycomb](https://www.honeycomb.io/) | `https://api.honeycomb.io` |
+| OTel Collector | `http://otel-collector:4318` |
+
+<Tip>
+For complex routing or fan-out, add an [OTel Collector](https://opentelemetry.io/docs/collector/) as a Docker service and point `OTLP_ENDPOINTS` at it. Zero code changes required.
+</Tip>
+
+## Legacy single-endpoint
+
+The original `OTEL_EXPORTER_OTLP_ENDPOINT` is still supported as a single-endpoint fallback:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
+
+Use `OTLP_ENDPOINTS` for new setups.
 
 ## Docker configuration
 
-The OTLP endpoint is propagated to the backend container in both compose files:
+All telemetry variables are propagated to the backend container:
 
 ```yaml
 # docker-compose.yaml
 environment:
-  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+  - TRACING_ENABLED=${TRACING_ENABLED:-}
+  - OTLP_ENDPOINTS=${OTLP_ENDPOINTS:-}
+  - OTLP_AUTH_HEADERS=${OTLP_AUTH_HEADERS:-}
+  - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
 ```
 
-An empty default means telemetry is disabled unless explicitly configured.
+Empty defaults mean telemetry is disabled unless explicitly configured.
 
 ## What gets traced
 

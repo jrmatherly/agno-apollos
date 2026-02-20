@@ -53,9 +53,21 @@ When `JWT_SECRET_KEY` is set, the backend requires a valid JWT token on all API 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | (empty) | OTLP HTTP endpoint for trace export. Empty = disabled |
+| `TRACING_ENABLED` | (empty) | Set to `true` to store traces in PostgreSQL via Agno |
+| `OTLP_ENDPOINTS` | (empty) | Comma-separated OTLP endpoint URLs for multi-export |
+| `OTLP_AUTH_HEADERS` | (empty) | Comma-separated auth headers (parallel to `OTLP_ENDPOINTS`) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | (empty) | Legacy single-endpoint fallback. Prefer `OTLP_ENDPOINTS` |
 
-When set, agent traces are exported to the specified OpenTelemetry collector. See [telemetry configuration](/configuration/telemetry) for details.
+See [telemetry configuration](/configuration/telemetry) for setup details and compatible backends.
+
+## A2A Protocol
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `A2A_ENABLED` | (empty) | Set to `true` to expose agents via A2A protocol endpoints |
+| `A2A_BASE_URL` | `http://localhost:8000` | Base URL used in AgentCard discovery URLs |
+
+When `A2A_ENABLED=true`, each agent is accessible at `/a2a/agents/{agent-id}` via the [Agent-to-Agent protocol](https://a2a-protocol.org). See [A2A configuration](/configuration/a2a) for details.
 
 ## Knowledge Agent
 
