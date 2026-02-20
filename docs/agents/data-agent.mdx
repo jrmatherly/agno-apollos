@@ -8,7 +8,10 @@ The Data Analyst queries PostgreSQL with read-only tools, following the [Dash pa
 ```python
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
-from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode
+from agno.learn import (
+    LearnedKnowledgeConfig, LearningMachine, LearningMode,
+    SessionContextConfig, UserMemoryConfig, UserProfileConfig,
+)
 from agno.tools.postgres import PostgresTools
 
 from backend.context.business_rules import BUSINESS_CONTEXT
@@ -19,6 +22,7 @@ from backend.tools.introspect import create_introspect_schema_tool
 from backend.tools.save_query import create_save_validated_query_tool
 
 # Dual knowledge system
+agent_db = get_postgres_db()
 data_knowledge = create_knowledge("Data Knowledge", "data_knowledge")
 data_learnings = create_knowledge("Data Learnings", "data_learnings")
 
@@ -26,7 +30,7 @@ data_agent = Agent(
     id="data-agent",
     name="Data Analyst",
     model=get_model(),
-    db=get_postgres_db(),
+    db=agent_db,
     instructions=INSTRUCTIONS,
     knowledge=data_knowledge,
     search_knowledge=True,
@@ -45,8 +49,15 @@ data_agent = Agent(
             mode=LearningMode.AGENTIC,
             knowledge=data_learnings,
         ),
+        user_profile=UserProfileConfig(db=agent_db),
+        user_memory=UserMemoryConfig(db=agent_db),
+        session_context=SessionContextConfig(db=agent_db),
     ),
     enable_agentic_memory=True,
+    add_datetime_to_context=True,
+    add_history_to_context=True,
+    read_chat_history=True,
+    num_history_runs=5,
     markdown=True,
     enable_session_summaries=True,
 )
@@ -60,6 +71,8 @@ The agent maintains two separate knowledge stores in pgvector.
 |-------|---------|------------|
 | `data_knowledge` (static) | Table schemas, validated queries, business rules | `mise run load-knowledge` loads from `data/tables/`, `data/queries/`, `data/business/` |
 | `data_learnings` (dynamic) | Error patterns, type gotchas, user corrections | `LearningMachine` saves automatically in `AGENTIC` mode |
+
+The agent also tracks per-user preferences (`UserProfileConfig`), remembers user requests (`UserMemoryConfig`), and maintains session state (`SessionContextConfig`).
 
 The agent searches `data_knowledge` automatically before each response (`search_knowledge=True`) and uses the learning system to save discovered patterns.
 
@@ -116,6 +129,15 @@ Which team has the most constructor championships?
 Show me the fastest lap records at Monza
 Compare Ferrari and Mercedes points over the last decade
 What tables are in the database?
+```
+
+## CLI testing
+
+Run the agent directly without the API server:
+
+```sh
+mise run agent:cli -- data_agent -q "How many races has Lewis Hamilton won?"
+mise run agent:cli -- data_agent  # interactive mode
 ```
 
 ## Insight-focused responses

@@ -10,7 +10,14 @@ Run:
 
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
-from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode, UserMemoryConfig, UserProfileConfig
+from agno.learn import (
+    LearnedKnowledgeConfig,
+    LearningMachine,
+    LearningMode,
+    SessionContextConfig,
+    UserMemoryConfig,
+    UserProfileConfig,
+)
 
 from backend.context.intent_routing import INTENT_ROUTING
 from backend.db import create_knowledge, get_postgres_db
@@ -61,13 +68,19 @@ You are a knowledge assistant. You answer questions by searching your knowledge 
 
 {INTENT_ROUTING}
 
-## Learning Guidelines
+## When to Save Learning
 
-- Save a learning when you discover something that would help answer similar questions in the future
-- Save patterns that worked well (search strategies, source combinations, answer structures)
-- Save corrections when you initially gave wrong information and then corrected it
-- Do NOT save user-specific preferences (those belong in user profiles, not shared learnings)
-- Do NOT save trivial or obvious information
+After discovering a useful search strategy:
+  save_learning(title="multi-term search for API docs", learning="Searching for 'create agent' + 'tools' gives better results than broad 'agent' search")
+
+After a user correction:
+  save_learning(title="correction: AgentOS requires FastAPI", learning="AgentOS.get_app() returns a FastAPI app, not a standalone server")
+
+After finding that a source combination works well:
+  save_learning(title="combine intro + first-agent for onboarding questions", learning="New user questions about getting started are best answered by combining these two sources")
+
+DO NOT save user preferences to shared learnings — those are handled automatically by user profiles.
+DO NOT save trivial or obvious information.
 """
 
 # ---------------------------------------------------------------------------
@@ -88,12 +101,9 @@ knowledge_agent = Agent(
             mode=LearningMode.AGENTIC,
             knowledge=knowledge_learnings,
         ),
-        user_profile=UserProfileConfig(
-            db=agent_db,
-        ),
-        user_memory=UserMemoryConfig(
-            db=agent_db,
-        ),
+        user_profile=UserProfileConfig(db=agent_db),
+        user_memory=UserMemoryConfig(db=agent_db),
+        session_context=SessionContextConfig(db=agent_db),
     ),
     enable_agentic_memory=True,
     add_datetime_to_context=True,
@@ -128,4 +138,11 @@ def load_default_documents() -> None:
 
 
 if __name__ == "__main__":
-    load_default_documents()
+    import sys
+
+    if "--load-docs" in sys.argv:
+        load_default_documents()
+    else:
+        from backend.cli import run_agent_cli
+
+        run_agent_cli(knowledge_agent, default_question="What is Agno?")

@@ -16,7 +16,14 @@ from os import getenv
 
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
-from agno.learn import LearnedKnowledgeConfig, LearningMachine, LearningMode
+from agno.learn import (
+    LearnedKnowledgeConfig,
+    LearningMachine,
+    LearningMode,
+    SessionContextConfig,
+    UserMemoryConfig,
+    UserProfileConfig,
+)
 from agno.tools.postgres import PostgresTools
 
 from backend.context.business_rules import BUSINESS_CONTEXT
@@ -83,16 +90,21 @@ You remember the gotchas, the type mismatches, the date formats that tripped you
 4. Provide **insights**, not just data, based on context
 5. Offer `save_validated_query` if the query is reusable
 
-## When to save_learning
+## When to Save Learning
 
 After fixing a type error:
-  save_learning(title="column X is TEXT not INTEGER", learning="Use string comparison")
+  save_learning(title="column X is TEXT not INTEGER", learning="Use string comparison for position column in drivers_championship")
 
 After discovering a date format:
-  save_learning(title="table date parsing", learning="Use TO_DATE(date, 'format')")
+  save_learning(title="race_wins date parsing", learning="Use TO_DATE(date, 'DD Mon YYYY') for race_wins.date column")
 
-After a user corrects you:
-  save_learning(title="domain fact", learning="The corrected information")
+After a user corrects your interpretation:
+  save_learning(title="domain fact: championship points system", learning="Points system changed in 2010 from 10-8-6 to 25-18-15")
+
+After finding a query pattern that works well:
+  save_learning(title="safe position filtering pattern", learning="Use position ~ '^[0-9]+$' before CAST to handle 'Ret', 'DSQ' values")
+
+DO NOT save user preferences to shared learnings — those are handled automatically by user profiles.
 
 ## Insights, Not Just Data
 
@@ -148,6 +160,9 @@ data_agent = Agent(
             mode=LearningMode.AGENTIC,
             knowledge=data_learnings,
         ),
+        user_profile=UserProfileConfig(db=agent_db),
+        user_memory=UserMemoryConfig(db=agent_db),
+        session_context=SessionContextConfig(db=agent_db),
     ),
     enable_agentic_memory=True,
     add_datetime_to_context=True,
@@ -157,3 +172,9 @@ data_agent = Agent(
     markdown=True,
     enable_session_summaries=True,
 )
+
+
+if __name__ == "__main__":
+    from backend.cli import run_agent_cli
+
+    run_agent_cli(data_agent, default_question="How many races has Lewis Hamilton won?")

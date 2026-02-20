@@ -8,19 +8,35 @@ The Web Search Agent searches the web using DuckDuckGo and synthesizes results w
 ```python
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+from agno.learn import (
+    LearnedKnowledgeConfig, LearningMachine, LearningMode,
+    SessionContextConfig, UserMemoryConfig, UserProfileConfig,
+)
 from agno.tools.websearch import WebSearchTools
 
-from backend.db import get_postgres_db
+from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
+
+agent_db = get_postgres_db()
+web_search_learnings = create_knowledge("Web Search Learnings", "web_search_learnings")
 
 web_search_agent = Agent(
     id="web-search-agent",
     name="Web Search",
     model=get_model(),
-    db=get_postgres_db(),
+    db=agent_db,
     tools=[WebSearchTools(enable_search=True, enable_news=True)],
     instructions=instructions,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    learning=LearningMachine(
+        learned_knowledge=LearnedKnowledgeConfig(
+            mode=LearningMode.AGENTIC,
+            knowledge=web_search_learnings,
+        ),
+        user_profile=UserProfileConfig(db=agent_db),
+        user_memory=UserMemoryConfig(db=agent_db),
+        session_context=SessionContextConfig(db=agent_db),
+    ),
     enable_agentic_memory=True,
     add_datetime_to_context=True,
     add_history_to_context=True,
@@ -40,6 +56,10 @@ web_search_agent = Agent(
 | Source citations | Instructions require URL citations for every claim |
 | Session memory | `db=get_postgres_db()` persists conversations |
 | Guardrails | PII detection and prompt injection via `pre_hooks` |
+| Shared learnings | `LearnedKnowledgeConfig(mode=AGENTIC)` saves search patterns collectively |
+| User profiles | `UserProfileConfig` personalizes per user |
+| User memory | `UserMemoryConfig` remembers user requests |
+| Session context | `SessionContextConfig` tracks session state |
 | Datetime context | `add_datetime_to_context=True` for time-aware queries |
 | Session summaries | `enable_session_summaries=True` for conversation persistence |
 
@@ -53,6 +73,15 @@ web_search_agent = Agent(
 | News search | `enable_news=True` | Current news articles |
 
 The agent automatically selects the appropriate tool based on the query. Time-sensitive queries use news search; general knowledge queries use web search.
+
+## CLI testing
+
+Run the agent directly without the API server:
+
+```sh
+mise run agent:cli -- web_search_agent -q "What are the latest developments in AI?"
+mise run agent:cli -- web_search_agent  # interactive mode
+```
 
 ## Example queries
 

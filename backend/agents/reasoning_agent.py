@@ -8,14 +8,23 @@ Uses Agno's built-in reasoning capability (reasoning=True) for structured thinki
 
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
+from agno.learn import (
+    LearnedKnowledgeConfig,
+    LearningMachine,
+    LearningMode,
+    SessionContextConfig,
+    UserMemoryConfig,
+    UserProfileConfig,
+)
 
-from backend.db import get_postgres_db
+from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
 
 # ---------------------------------------------------------------------------
 # Setup
 # ---------------------------------------------------------------------------
 agent_db = get_postgres_db()
+reasoning_learnings = create_knowledge("Reasoning Learnings", "reasoning_learnings")
 
 # ---------------------------------------------------------------------------
 # Agent Instructions
@@ -36,6 +45,19 @@ You are a reasoning and analysis assistant.
 - Identify assumptions and state them explicitly
 - When comparing options, use structured tables
 - If you need more information to give a good answer, ask
+
+## When to Save Learning
+
+After finding an effective reasoning approach for a question type:
+  save_learning(title="comparison tasks: use structured table", learning="When users ask to compare options, a table with pros/cons/trade-offs is more effective than prose")
+
+After discovering that a question type needs specific depth:
+  save_learning(title="math proofs need 4+ steps", learning="Mathematical proofs and formal logic benefit from at least 4 reasoning steps for clarity")
+
+After a user indicates your reasoning was unclear:
+  save_learning(title="avoid nested conditionals in explanation", learning="Flatten nested if/then reasoning into numbered steps for clarity")
+
+DO NOT save user preferences to shared learnings — those are handled automatically by user profiles.
 """
 
 # ---------------------------------------------------------------------------
@@ -51,6 +73,15 @@ reasoning_agent = Agent(
     reasoning_min_steps=2,
     reasoning_max_steps=6,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
+    learning=LearningMachine(
+        learned_knowledge=LearnedKnowledgeConfig(
+            mode=LearningMode.AGENTIC,
+            knowledge=reasoning_learnings,
+        ),
+        user_profile=UserProfileConfig(db=agent_db),
+        user_memory=UserMemoryConfig(db=agent_db),
+        session_context=SessionContextConfig(db=agent_db),
+    ),
     enable_agentic_memory=True,
     add_datetime_to_context=True,
     add_history_to_context=True,
@@ -59,3 +90,9 @@ reasoning_agent = Agent(
     markdown=True,
     enable_session_summaries=True,
 )
+
+
+if __name__ == "__main__":
+    from backend.cli import run_agent_cli
+
+    run_agent_cli(reasoning_agent, default_question="Walk me through the pros and cons of microservices vs monoliths.")

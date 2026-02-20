@@ -14,6 +14,7 @@ apollos-ai/
 │   ├── Dockerfile.dockerignore  # Build context exclusions (BuildKit convention)
 │   ├── models.py              # Shared model factory (get_model())
 │   ├── telemetry.py           # OpenTelemetry trace export (opt-in via env var)
+│   ├── cli.py                # Shared Rich CLI module for direct agent testing
 │   ├── agents/              # AI agent implementations
 │   │   ├── __init__.py
 │   │   ├── knowledge_agent.py   # Agentic RAG agent (hybrid search, learning, user profiles)
@@ -104,6 +105,8 @@ apollos-ai/
 │   ├── load-knowledge       # Load knowledge files into vector DB
 │   ├── evals/               # Evaluation tasks
 │   │   └── run              # Run eval suite (Rich CLI, LLM grading, golden SQL)
+│   ├── agent/               # Agent tasks
+│   │   └── cli              # Run agent via CLI (docker exec)
 │   ├── schedules/           # Scheduler tasks
 │   │   └── setup            # Initialize scheduler tables
 │   ├── docker/              # Docker-specific tasks
@@ -221,32 +224,37 @@ Uses **pnpm** for package management:
 - **Purpose**: Shared model factory — all agents use this instead of inline `LiteLLMOpenAI`
 - **Config**: `MODEL_ID`, `LITELLM_BASE_URL`, `LITELLM_API_KEY` env vars
 
+### backend/cli.py
+- **Exports**: `run_agent_cli()` function
+- **Purpose**: Shared Rich CLI module for running agents directly from the command line
+- **Features**: Single-question mode (`-q`), interactive prompt loop, session persistence (`-s`), streaming toggle
+
 ### backend/agents/knowledge_agent.py
-- **Exports**: `knowledge_agent` (Agent instance), `load_default_documents()` function
+- **Exports**: `knowledge_agent` (Agent instance), `knowledge_learnings` (Knowledge), `load_default_documents()` function
 - **Purpose**: RAG agent using pgvector hybrid search over ingested documents
-- **Features**: Agentic memory, intent routing, confidence signaling, learning system (LearningMachine), user profiles (UserProfileConfig, UserMemoryConfig), guardrails, session summaries, custom tools (search_content, list_knowledge_sources, add_knowledge_source)
+- **Features**: Agentic memory, intent routing, confidence signaling, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, custom tools (search_content, list_knowledge_sources, add_knowledge_source)
 - **Knowledge source**: Loads from `docs.agno.com` + PDF/CSV files from `data/docs/`
 
 ### backend/agents/mcp_agent.py
-- **Exports**: `mcp_agent` (Agent instance)
+- **Exports**: `mcp_agent` (Agent instance), `mcp_learnings` (Knowledge)
 - **Purpose**: Tool-use agent connecting to external services via MCP protocol
 - **MCP endpoint**: `https://docs.agno.com/mcp`
-- **Features**: Agentic memory, guardrails, session summaries
+- **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries
 
 ### backend/agents/web_search_agent.py
-- **Exports**: `web_search_agent` (Agent instance)
+- **Exports**: `web_search_agent` (Agent instance), `web_search_learnings` (Knowledge)
 - **Purpose**: Web research agent using DuckDuckGo search + news
-- **Features**: Agentic memory, guardrails, session summaries, source citations
+- **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, source citations
 
 ### backend/agents/reasoning_agent.py
-- **Exports**: `reasoning_agent` (Agent instance)
+- **Exports**: `reasoning_agent` (Agent instance), `reasoning_learnings` (Knowledge)
 - **Purpose**: Chain-of-thought reasoning with configurable step depth (2-6 steps)
-- **Features**: Agentic memory, guardrails, session summaries, `reasoning=True`
+- **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, `reasoning=True`
 
 ### backend/agents/data_agent.py
 - **Exports**: `data_agent` (Agent instance), `data_knowledge` (Knowledge), `data_learnings` (Knowledge)
 - **Purpose**: Self-learning data analyst with dual knowledge system (Dash pattern)
-- **Features**: Agentic memory, guardrails, session summaries, dual knowledge (curated + learnings), business rules context, insight-focused instructions
+- **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, dual knowledge (curated + learnings), business rules context, insight-focused instructions
 - **Tools**: PostgresTools (show_tables, describe_table, summarize_table, inspect_query), `introspect_schema`, `save_validated_query`
 
 ### backend/context/semantic_model.py
@@ -423,7 +431,7 @@ open http://localhost:8000/docs
 - **Workflows**: Multi-step pipelines in `backend/workflows/`, using Agno's `Workflow`, `Step`, `Loop`, and `Condition` classes for iterative refinement and conditional routing.
 - **Security**: JWT RBAC auth (opt-in via `JWT_SECRET_KEY`), human-in-the-loop approval workflows (`@approval` decorator on tools).
 - **Observability**: OpenTelemetry trace export (opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`), Agno native tracing, MCP server endpoint.
-- **Learning**: Agents use `LearningMachine` for agentic learning. Knowledge agent has user profiles and memory.
+- **Learning**: All agents use full `LearningMachine` stack (learned_knowledge, user_profile, user_memory, session_context) with domain-specific learning triggers.
 - **LLM Provider**: LiteLLM Proxy (all LLM and embedding traffic routes through self-hosted proxy).
 - **Frontend**: Next.js 15 with standalone output. Connects to backend via browser-side fetch (not server-side). Default endpoint configurable via `NEXT_PUBLIC_DEFAULT_ENDPOINT` env var (defaults to `http://localhost:8000`).
 - **Deployment**: Two compose files: `docker-compose.yaml` (dev, local builds) and `docker-compose.prod.yaml` (prod, GHCR images). Multi-arch images for production.
