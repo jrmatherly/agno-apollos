@@ -8,6 +8,9 @@ Run:
     python -m backend.agents.knowledge_agent
 """
 
+from os import getenv
+from pathlib import Path
+
 from agno.agent import Agent
 from agno.guardrails import PIIDetectionGuardrail, PromptInjectionGuardrail
 from agno.learn import (
@@ -18,6 +21,7 @@ from agno.learn import (
     UserMemoryConfig,
     UserProfileConfig,
 )
+from agno.tools.file import FileTools
 
 from backend.context.intent_routing import INTENT_ROUTING
 from backend.db import create_knowledge, get_postgres_db
@@ -33,6 +37,11 @@ from backend.tools.search import search_content
 agent_db = get_postgres_db()
 knowledge = create_knowledge("Knowledge Agent", "knowledge_agent_docs")
 knowledge_learnings = create_knowledge("Knowledge Learnings", "knowledge_learnings")
+
+# ---------------------------------------------------------------------------
+# Documents directory for file browsing
+# ---------------------------------------------------------------------------
+DOCUMENTS_DIR = Path(getenv("DOCUMENTS_DIR", str(Path(__file__).parent.parent.parent / "data" / "docs")))
 
 # Wire tools to the knowledge base instance
 search.set_knowledge(knowledge)
@@ -93,7 +102,21 @@ knowledge_agent = Agent(
     db=agent_db,
     knowledge=knowledge,
     instructions=instructions,
-    tools=[search_content, list_knowledge_sources, add_knowledge_source],
+    tools=[
+        FileTools(
+            base_dir=DOCUMENTS_DIR,
+            enable_read_file=True,
+            enable_list_files=True,
+            enable_search_files=True,
+            enable_read_file_chunk=True,
+            enable_save_file=False,
+            enable_replace_file_chunk=False,
+            enable_delete_file=False,
+        ),
+        search_content,
+        list_knowledge_sources,
+        add_knowledge_source,
+    ],
     search_knowledge=True,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     learning=LearningMachine(
