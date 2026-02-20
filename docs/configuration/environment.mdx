@@ -69,6 +69,18 @@ See [telemetry configuration](/configuration/telemetry) for setup details and co
 
 When `A2A_ENABLED=true`, each agent is accessible at `/a2a/agents/{agent-id}` via the [Agent-to-Agent protocol](https://a2a-protocol.org). See [A2A configuration](/configuration/a2a) for details.
 
+## Evals
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AGENT_JUDGE_ENABLED` | `false` | Set to `true` to run `AgentAsJudgeEval` as a post-hook on every agent response. Disabled by default to avoid extra LLM calls. |
+
+When enabled, each agent response is scored against per-agent quality criteria (accuracy, relevance, conciseness) and the result is stored in the `eval_runs` table. Scores below 7 (out of 10) are flagged in logs.
+
+<Note>
+`AGENT_JUDGE_ENABLED=true` adds one LLM call per agent run. Keep disabled in production unless you need continuous quality monitoring.
+</Note>
+
 ## Knowledge Agent
 
 | Variable | Default | Description |

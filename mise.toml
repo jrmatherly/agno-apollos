@@ -60,6 +60,9 @@ OTEL_EXPORTER_OTLP_ENDPOINT = ""
 A2A_ENABLED = ""
 A2A_BASE_URL = "http://localhost:8000"
 
+# Agent-as-judge quality evaluation (set to true to enable; adds LLM call per agent run)
+AGENT_JUDGE_ENABLED = ""
+
 [[env]]
 _.file = ".env"
 
@@ -87,6 +90,8 @@ experimental = true
 # release             Create a GitHub release (interactive version prompt)
 # test                Run integration tests (requires running backend)
 # evals:run           Run agent eval suite (-c -v -g -s --direct)
+# evals:reliability   Run tool-call reliability evals for all agents and teams
+# maintenance:optimize-memories  Summarize and compress agent memories for all users
 # auth:generate-token Generate a test JWT token for development
 # schedules:setup     Create default scheduler schedules
 # agent:cli           Run an agent via CLI (-- <module> [-q question])

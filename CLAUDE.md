@@ -9,7 +9,7 @@ Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript,
 Documentation lives at `docs/` — Mintlify site (MDX pages, `docs.json` config). Preview on port 3333 to avoid frontend conflict.
 Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`, `docs/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
 
-Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/registry.py` (component registry for Agent-as-Config), `backend/a2a/` (A2A protocol integration), `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (dual-layer tracing, opt-in), `backend/cli.py` (shared Rich CLI).
+Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/registry.py` (component registry for Agent-as-Config), `backend/a2a/` (A2A protocol integration), `backend/maintenance.py` (memory optimization + usage warnings), `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (dual-layer tracing, opt-in), `backend/cli.py` (shared Rich CLI).
 Data: `data/docs/` (knowledge docs), `data/tables/` (F1 metadata), `data/queries/` (SQL patterns), `data/business/` (rules).
 Tests: `tests/` — pytest + requests.
 
@@ -57,6 +57,8 @@ Testing and evaluation tasks:
 
 - `mise run test` - run integration tests (pytest, requires running backend)
 - `mise run evals:run` - run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `-s` source checking, `--direct` mode; golden SQL comparison runs automatically)
+- `mise run evals:reliability` - run tool-call reliability evals for all agents and research team
+- `mise run maintenance:optimize-memories` - summarize and compress agent memories for all users
 - `mise run agent:cli` - run agent via CLI (`-- <module> [-q question]`)
 
 Test conventions:

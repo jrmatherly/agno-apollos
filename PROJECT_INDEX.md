@@ -54,7 +54,9 @@ apollos-ai/
 │   │   ├── __init__.py
 │   │   ├── grader.py            # LLM grader (GradeResult) + golden SQL comparison + source citation checking
 │   │   ├── test_cases.py        # TestCase dataclass with golden SQL/path, 15 F1 + 10 knowledge + 1 web cases
-│   │   └── run_evals.py         # Rich CLI runner (string match, LLM grade, SQL compare, source check, API/direct)
+│   │   ├── run_evals.py         # Rich CLI runner (string match, LLM grade, SQL compare, source check, API/direct)
+│   │   ├── reliability_evals.py # Tool-call reliability evals (ReliabilityEval) for agents and research team
+│   │   └── judge.py             # Agent-as-judge post_hook factory (AgentAsJudgeEval, opt-in via AGENT_JUDGE_ENABLED)
 │   ├── scripts/             # Data loading scripts
 │   │   ├── __init__.py
 │   │   ├── load_sample_data.py  # Download and load F1 data (1950-2020) into PostgreSQL
@@ -63,9 +65,10 @@ apollos-ai/
 │   │   ├── __init__.py
 │   │   ├── executor.py          # AgnoAgentExecutor — wraps Agno agents for A2A message handling
 │   │   └── server.py            # AgentCard builder + A2AStarletteApplication mount helpers
+│   ├── maintenance.py       # Scheduled maintenance: memory optimization (MemoryManager) + usage warnings
 │   └── db/                  # Database layer
-│       ├── __init__.py      # Re-exports: get_postgres_db, create_knowledge, db_url
-│       ├── session.py       # PostgresDb factory + Knowledge factory (pgvector hybrid)
+│       ├── __init__.py      # Re-exports: get_postgres_db, get_eval_db, create_knowledge, db_url
+│       ├── session.py       # PostgresDb factory + eval DB factory + Knowledge factory (pgvector hybrid)
 │       └── url.py           # Builds DB URL from env vars (DB_HOST, DB_PORT, etc.)
 ├── frontend/                # Next.js frontend (Apollos UI)
 │   ├── Dockerfile           # Multi-stage standalone build (node:24-alpine)
