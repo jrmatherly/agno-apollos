@@ -12,11 +12,14 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - **Model**: LiteLLM Proxy via `agno.models.litellm.LiteLLMOpenAI`
 
 ## Key Files
-- `backend/main.py` - Entry point: registers agents, teams, workflows, auth, telemetry, MCP server
+- `backend/main.py` - Entry point: registers agents, teams, workflows, auth, dual-layer telemetry, registry, MCP server, A2A endpoints (opt-in)
 - `backend/models.py` - Shared model factory (`get_model()`)
 - `backend/config.yaml` - Chat quick prompts config
 - `backend/cli.py` - Shared Rich CLI module for direct agent testing
-- `backend/telemetry.py` - OpenTelemetry trace export (opt-in)
+- `backend/telemetry.py` - Dual-layer observability: trace-to-DB (Agno, `TRACING_ENABLED`) + OTLP multi-export (`OTLP_ENDPOINTS`, opt-in)
+- `backend/registry.py` - Component registry for Agent-as-Config persistence (`create_registry()` factory)
+- `backend/a2a/executor.py` - `AgnoAgentExecutor` wraps Agno agents for A2A message handling (asyncio.to_thread for sync agent)
+- `backend/a2a/server.py` - Builds AgentCards + mounts `A2AStarletteApplication` per agent
 - `backend/agents/` - Agent definitions (knowledge, mcp, web_search, reasoning, data)
 - `backend/teams/research_team.py` - Multi-agent research team (coordinate mode)
 - `backend/workflows/research_workflow.py` - Quality-gated research pipeline (Loop + Condition)
@@ -47,7 +50,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 1. **Research Workflow** (`research-workflow`): Quality-gated research pipeline (Search → Loop refinement → Conditional analysis)
 
 ## Dependencies (pyproject.toml)
-agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, litellm, ddgs, fastmcp, pypdf, aiofiles, pandas, httpx, rich
+agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, openinference-instrumentation-agno, a2a-sdk[all], litellm, ddgs, fastmcp, pypdf, aiofiles, pandas, httpx, rich
 Dev: mypy, ruff, pytest, requests, pandas-stubs
 
 ## Frontend Dependencies (package.json)
@@ -101,7 +104,12 @@ Run `mise tasks` for full list. Key tasks:
 - `IMAGE_TAG` (Docker image tag, default: latest)
 - `GHCR_OWNER` (GHCR image owner for prod compose, default: jrmatherly)
 - `JWT_SECRET_KEY` (empty = auth disabled; set to enable JWT RBAC)
-- `OTEL_EXPORTER_OTLP_ENDPOINT` (empty = traces not exported; set for OTel)
+- `TRACING_ENABLED` (set to `true` for trace-to-PostgreSQL via Agno)
+- `OTLP_ENDPOINTS` (comma-separated OTLP URLs for multi-export — Langfuse, Phoenix, etc.)
+- `OTLP_AUTH_HEADERS` (comma-separated auth headers parallel to `OTLP_ENDPOINTS`)
+- `OTEL_EXPORTER_OTLP_ENDPOINT` (legacy single-endpoint fallback; prefer `OTLP_ENDPOINTS`)
+- `A2A_ENABLED` (set to `true` to expose agents via A2A protocol at `/a2a/agents/{id}`)
+- `A2A_BASE_URL` (base URL for AgentCard discovery, default: http://localhost:8000)
 - `NEXT_PUBLIC_DEFAULT_ENDPOINT` (default endpoint shown in frontend UI, default: http://localhost:8000)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
 
@@ -109,7 +117,7 @@ Run `mise tasks` for full list. Key tasks:
 - Mintlify site in `docs/` (MDX pages, `docs.json` config)
 - Preview on port 3333 (`mise run docs:dev`) to avoid frontend port conflict
 - Style guide at `docs/CLAUDE.md` (excluded from Mintlify build via `.mintignore`)
-- Sections: Getting started, Agents, Teams, Workflows, Configuration, Reference, Contributing
+- Sections: Getting started, Agents, Teams, Workflows, Configuration (environment, security, telemetry, A2A, Docker), Reference, Contributing
 
 ## Security & CI/CD
 - CodeQL scanning on push/PR to main + weekly (Python, JS/TS, Actions)
