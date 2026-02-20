@@ -1,9 +1,11 @@
 # Apollos AI - Project Overview
 
 ## Purpose
+
 Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS with PostgreSQL/pgvector backend and a self-hosted Next.js frontend.
 
 ## Architecture
+
 - **Framework**: Agno (agno.os.AgentOS)
 - **API**: FastAPI via `backend/main.py` → `agent_os.get_app()`
 - **Frontend**: Next.js 15 (App Router), React 18, TypeScript, pnpm, Tailwind CSS, shadcn/ui
@@ -12,6 +14,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - **Model**: LiteLLM Proxy via `agno.models.litellm.LiteLLMOpenAI`
 
 ## Key Files
+
 - `backend/main.py` - Entry point: registers agents, teams, workflows, auth, dual-layer telemetry, registry, MCP server, A2A endpoints (opt-in)
 - `backend/models.py` - Shared model factory (`get_model()`)
 - `backend/config.yaml` - Chat quick prompts config
@@ -37,6 +40,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
 
 ## Agents
+
 1. **Knowledge Agent** (`knowledge-agent`): RAG with pgvector hybrid search, file browsing (FileTools), FAQ-building (save_intent_discovery), structured source registry, confidence signaling with citations, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), intent routing, common search patterns
 2. **MCP Agent** (`mcp-agent`): Connects to external tools via MCP protocol, full LearningMachine, learns tool usage patterns
 3. **Web Search Agent** (`web-search-agent`): Web research via DuckDuckGo, full LearningMachine, learns search patterns and source reliability
@@ -44,19 +48,24 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 5. **Data Analyst** (`data-agent`): Read-only PostgreSQL queries (Dash pattern) with dual knowledge system (curated `data_knowledge` + dynamic `data_learnings`), full LearningMachine, runtime schema introspection, validated query saving, F1 dataset support, and insight-focused instructions
 
 ## Teams
+
 1. **Research Team** (`research-team`): Coordinate-mode multi-agent research (web_researcher + analyst), safety parameters (max_iterations=5, num_history_runs=5, add_datetime_to_context)
 
 ## Workflows
+
 1. **Research Workflow** (`research-workflow`): Quality-gated research pipeline (Search → Loop refinement → Conditional analysis)
 
 ## Dependencies (pyproject.toml)
-agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-*, opentelemetry-exporter-otlp-proto-http, openinference-instrumentation-agno, a2a-sdk[all], litellm, ddgs, fastmcp, pypdf, aiofiles, pandas, httpx, rich
+
+agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-\*, opentelemetry-exporter-otlp-proto-http, openinference-instrumentation-agno, a2a-sdk[all], litellm, ddgs, fastmcp, pypdf, aiofiles, pandas, httpx, rich
 Dev: mypy, ruff, pytest, requests, pandas-stubs
 
 ## Frontend Dependencies (package.json)
-next, react, react-dom, tailwindcss, zustand, framer-motion, @radix-ui/*, react-markdown, nuqs
+
+next, react, react-dom, tailwindcss, zustand, framer-motion, @radix-ui/\*, react-markdown, nuqs
 
 ## Dev Tools
+
 - mise (task runner + tool manager, see `mise.toml` and `mise-tasks/`)
 - ruff (line-length=120)
 - mypy (with pydantic plugin)
@@ -65,7 +74,9 @@ next, react, react-dom, tailwindcss, zustand, framer-motion, @radix-ui/*, react-
 - Node.js 24 + pnpm latest (managed by mise)
 
 ## Mise Tasks
+
 Run `mise tasks` for full list. Key tasks:
+
 - `mise run setup` - install all deps (`--ci` for locked/frozen mode)
 - `mise run format` / `lint` / `typecheck` / `validate` - backend code quality
 - `mise run dev` - docker compose watch
@@ -89,11 +100,57 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run docs:validate` - validate docs build + check broken links
 
 ## Adding an Agent
+
 1. Create `backend/agents/my_agent.py` with Agent definition
 2. Import and register in `backend/main.py` agents list
 3. Restart containers
 
+## Authentication & RBAC
+
+**Provider**: Microsoft Entra ID (Azure AD) via custom JWT middleware
+**Pattern**: `EntraJWTMiddleware` on FastAPI `base_app` → `AgentOS(base_app=base_app)`. No `authorization=True` on AgentOS.
+**Mode**: Opt-in — auth disabled (passthrough) when any of `AZURE_TENANT_ID`/`AZURE_CLIENT_ID`/`AZURE_CLIENT_SECRET`/`AZURE_AUDIENCE` is unset
+
+### Backend auth package: `backend/auth/`
+
+- `config.py` — `AuthConfig` dataclass (reads 8 env vars; `enabled` property)
+- `jwks_cache.py` — OIDC discovery → in-memory JWKS (kid→RSAPublicKey); background refresh every 1h
+- `middleware.py` — `EntraJWTMiddleware`; validates RS256; sets `request.state` fields per AgentOS contract
+- `scope_mapper.py` — `ROLE_SCOPE_MAP`; maps Entra App Roles → Agno scope strings
+- `models.py` — SQLAlchemy ORM: `auth_users`, `auth_teams`, `auth_team_memberships`, `auth_denied_tokens`
+- `graph.py` — Microsoft Graph API v1.0 client (delegated + app credentials; 429 handling)
+- `sync_service.py` — Login sync + background group sync; deprovisioned user denial
+- `security_headers.py` — `SecurityHeadersMiddleware` (CSP, X-Frame-Options, etc.)
+- `routes.py` — `/auth/health`, `/auth/me`, `/auth/sync`, `/auth/teams`, `/auth/users`; slowapi rate limits
+- `dependencies.py` — FastAPI `Depends` helpers for scope enforcement
+
+### Frontend auth package: `frontend/src/auth/`
+
+- `msalConfig.ts` — `PublicClientApplication` singleton (null when unconfigured; SSR-safe)
+- `authProvider.tsx` — `MsalProvider` wrapper; passes through when unconfigured
+- `useAuth.ts` — `useMsal()` wrapper; silent token acquisition with redirect fallback
+- `useTokenSync.ts` — Syncs MSAL access token → Zustand `authToken` every 5 minutes
+- `AuthUserButton.tsx` — Sidebar login/logout UI; replaces manual token entry when configured
+
+### App Roles (Azure) → Scopes (Agno)
+
+| Role        | Key Scopes                 |
+| ----------- | -------------------------- |
+| GlobalAdmin | `agent_os:admin` (bypass)  |
+| Admin       | Full CRUD all resources    |
+| TeamLead    | run, sessions, memories    |
+| Developer   | read, run, sessions        |
+| DevOps      | metrics, traces, schedules |
+| InfoSec     | read-only all              |
+| User        | basic read, sessions       |
+
+### Key env vars
+
+Backend: `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_AUDIENCE`, `FRONTEND_URL`
+Frontend (build-time): `NEXT_PUBLIC_AZURE_CLIENT_ID`, `NEXT_PUBLIC_AZURE_TENANT_ID`, `NEXT_PUBLIC_REDIRECT_URI`
+
 ## Environment Variables
+
 - `LITELLM_API_KEY` (required)
 - `LITELLM_BASE_URL` (default: http://localhost:4000/v1)
 - `MODEL_ID` (default: gpt-5-mini)
@@ -103,7 +160,10 @@ Run `mise tasks` for full list. Key tasks:
 - `RUNTIME_ENV` (dev enables auto-reload)
 - `IMAGE_TAG` (Docker image tag, default: latest)
 - `GHCR_OWNER` (GHCR image owner for prod compose, default: jrmatherly)
-- `JWT_SECRET_KEY` (empty = auth disabled; set to enable JWT RBAC)
+- `AZURE_TENANT_ID` / `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `AZURE_AUDIENCE` (all 4 required to enable Entra ID auth; empty = passthrough mode)
+- `FRONTEND_URL` (CORS allowed origin, default: http://localhost:3000)
+- `JWT_SECRET_KEY` (legacy HS256 auth; superseded by Entra ID when Azure vars are set)
+- `NEXT_PUBLIC_AZURE_CLIENT_ID` / `NEXT_PUBLIC_AZURE_TENANT_ID` / `NEXT_PUBLIC_REDIRECT_URI` (frontend MSAL config, baked at build time)
 - `TRACING_ENABLED` (set to `true` for trace-to-PostgreSQL via Agno)
 - `OTLP_ENDPOINTS` (comma-separated OTLP URLs for multi-export — Langfuse, Phoenix, etc.)
 - `OTLP_AUTH_HEADERS` (comma-separated auth headers parallel to `OTLP_ENDPOINTS`)
@@ -114,15 +174,17 @@ Run `mise tasks` for full list. Key tasks:
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
 
 ## Documentation
+
 - Mintlify site in `docs/` (MDX pages, `docs.json` config)
 - Preview on port 3333 (`mise run docs:dev`) to avoid frontend port conflict
 - Style guide at `docs/CLAUDE.md` (excluded from Mintlify build via `.mintignore`)
 - Sections: Getting started, Agents, Teams, Workflows, Configuration (environment, security, telemetry, A2A, Docker), Reference, Contributing
 
 ## Security & CI/CD
+
 - CodeQL scanning on push/PR to main + weekly (Python, JS/TS, Actions)
 - CI workflows use pinned action SHAs for supply-chain security
 - CI workflows use mise tasks (not raw commands) for consistency
 - Explicit `permissions` block on all workflows (least-privilege)
 - Docker images publish to GHCR (ghcr.io/<owner>/apollos-backend, apollos-frontend, apollos-docs)
-- Docs image builds on push to main (docs/** changes), backend/frontend images build on release
+- Docs image builds on push to main (docs/\*\* changes), backend/frontend images build on release
