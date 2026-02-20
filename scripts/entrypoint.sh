@@ -37,6 +37,13 @@ if [[ "$WAIT_FOR_DB" = true || "$WAIT_FOR_DB" = True ]]; then
     echo ""
 fi
 
+# Seed data/docs with sample documents if directory is empty
+if [ -d /app/data/docs-seed ] && [ -z "$(ls -A /app/data/docs 2>/dev/null)" ]; then
+    echo -e "    ${DIM}Seeding /app/data/docs with sample documents...${NC}"
+    mkdir -p /app/data/docs
+    cp -r /app/data/docs-seed/* /app/data/docs/
+fi
+
 case "$1" in
     chill)
         echo -e "    ${DIM}Mode: chill${NC}"
