@@ -46,7 +46,14 @@ DOCUMENTS_DIR = "{{config_root}}/data/docs"
 # Authentication (set JWT_SECRET_KEY to enable RBAC; empty = auth disabled)
 JWT_SECRET_KEY = ""
 
-# Observability (set to export OTel traces; empty = traces not exported)
+# Observability
+# Set TRACING_ENABLED=true to store traces in PostgreSQL
+TRACING_ENABLED = ""
+# Comma-separated OTLP endpoints (e.g., Langfuse, SIEM, Arize Phoenix)
+OTLP_ENDPOINTS = ""
+# Comma-separated auth headers (parallel to OTLP_ENDPOINTS)
+OTLP_AUTH_HEADERS = ""
+# Legacy: still supported as single-endpoint fallback
 OTEL_EXPORTER_OTLP_ENDPOINT = ""
 
 [[env]]
