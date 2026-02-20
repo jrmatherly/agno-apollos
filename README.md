@@ -247,7 +247,7 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run docs:validate` | Validate docs build and check broken links |
 | `mise run docs:docker` | Start docs in Docker (`--prod` for GHCR image) |
 | `mise run test` | Run integration tests (requires running backend) |
-| `mise run evals:run` | Run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `--direct`) |
+| `mise run evals:run` | Run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `-s` source checking, `--direct`) |
 | `mise run agent:cli` | Run agent via CLI (`-- <module> [-q question]`) |
 | `mise run load-sample-data` | Load F1 sample data into PostgreSQL |
 | `mise run load-knowledge` | Populate vector DB with curated knowledge (`--recreate` to rebuild) |
@@ -312,6 +312,7 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by `docker-compose.prod.yaml`) |
 | `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
 | `JWT_SECRET_KEY` | No | - | Enable JWT RBAC auth (empty = disabled) |
+| `DOCUMENTS_DIR` | No | `data/docs` | Knowledge agent file browsing directory |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | - | OTel trace export endpoint (empty = disabled) |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | - | Pre-fill auth token in the frontend UI |
 

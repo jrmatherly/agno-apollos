@@ -59,8 +59,8 @@ graph LR
     end
 
     subgraph ka ["knowledge_agent"]
-        KT["tools/search<br/>tools/awareness<br/>tools/approved_ops"]
-        KC["context/intent_routing"]
+        KT["FileTools<br/>tools/search<br/>tools/awareness<br/>tools/approved_ops<br/>tools/save_discovery"]
+        KC["context/intent_routing<br/>context/source_registry"]
     end
 
     subgraph da ["data_agent"]
@@ -79,7 +79,7 @@ graph LR
 
 | Agent | Tools | Context | Knowledge |
 |-------|-------|---------|-----------|
-| `knowledge_agent` | search, awareness, approved_ops | intent_routing | Single knowledge base (PDF/CSV) |
+| `knowledge_agent` | FileTools, search, awareness, approved_ops, save_discovery | intent_routing, source_registry | Knowledge base (PDF/CSV/URL) + search patterns |
 | `data_agent` | PostgresTools, introspect, save_query | semantic_model, business_rules | Dual: static `data_knowledge` + dynamic `data_learnings` |
 | `web_search_agent` | WebSearchTools (DuckDuckGo) | None | None |
 | `reasoning_agent` | ReasoningTools | None | None |
@@ -155,6 +155,7 @@ Static context injected into agent instructions as formatted strings.
 | `semantic_model.py` | Markdown table schema | Inline Python dict | data_agent |
 | `business_rules.py` | Formatted metrics and rules | `data/business/*.json` | data_agent |
 | `intent_routing.py` | Search strategy table | Inline Python string | knowledge_agent |
+| `source_registry.py` | Source metadata and search tips | `backend/knowledge/sources/*.json` | knowledge_agent |
 
 ## Frontend component tree
 
@@ -219,13 +220,15 @@ graph LR
     EVAL --> STR["String matching"]
     EVAL --> LLM["LLM grading<br/>(grader.py)"]
     EVAL --> SQL["Golden SQL<br/>comparison"]
+    EVAL --> SRC["Source citation<br/>checking"]
 ```
 
 | Mode | Flag | Requires backend |
 |------|------|-----------------|
 | String matching | (default) | Yes (API) or No (direct) |
 | LLM grading | `-g` | Yes (API) or No (direct) |
-| Golden SQL | `-r` | Yes (API + database) |
+| Golden SQL | (automatic) | Yes (API + database) |
+| Source citation | `-s` | Yes (API) or No (direct) |
 | Direct invocation | `--direct` | No |
 
 ## Data directory layout

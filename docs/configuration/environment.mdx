@@ -57,6 +57,14 @@ When `JWT_SECRET_KEY` is set, the backend requires a valid JWT token on all API 
 
 When set, agent traces are exported to the specified OpenTelemetry collector. See [telemetry configuration](/configuration/telemetry) for details.
 
+## Knowledge Agent
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DOCUMENTS_DIR` | `data/docs` | Directory for document browsing via FileTools |
+
+The knowledge agent uses `DOCUMENTS_DIR` to set the base directory for its file browsing tools. In Docker, this defaults to `/app/data/docs`.
+
 ## Runtime
 
 | Variable | Default | Description |

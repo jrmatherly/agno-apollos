@@ -1,9 +1,9 @@
 ---
 title: "Knowledge Agent"
-description: "Agentic RAG agent with hybrid search, learning system, and user profiles."
+description: "Agentic RAG agent with hybrid search, file browsing, FAQ-building, source citations, and per-user learning."
 ---
 
-The Knowledge Agent answers questions using hybrid search (vector + keyword) over documents stored in PostgreSQL with pgvector. It features intent routing, confidence signaling, a learning system, and per-user profiles.
+The Knowledge Agent answers questions using hybrid search (vector + keyword) over documents stored in PostgreSQL with pgvector. It features file browsing, FAQ-building, a structured source registry, confidence signaling with citation patterns, intent routing, a learning system, and per-user profiles.
 
 ```python
 from agno.agent import Agent
@@ -12,24 +12,44 @@ from agno.learn import (
     LearnedKnowledgeConfig, LearningMachine, LearningMode,
     SessionContextConfig, UserMemoryConfig, UserProfileConfig,
 )
+from agno.tools.file import FileTools
 
+from backend.context.intent_routing import INTENT_ROUTING
+from backend.context.source_registry import SOURCE_REGISTRY
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
-from backend.tools.search import search_content
-from backend.tools.awareness import list_knowledge_sources
 from backend.tools.approved_ops import add_knowledge_source
+from backend.tools.awareness import list_knowledge_sources
+from backend.tools.save_discovery import save_intent_discovery
+from backend.tools.search import search_content
 
 agent_db = get_postgres_db()
+knowledge = create_knowledge("Knowledge Agent", "knowledge_agent_docs")
 knowledge_learnings = create_knowledge("Knowledge Learnings", "knowledge_learnings")
+
+DOCUMENTS_DIR = Path(getenv("DOCUMENTS_DIR", "data/docs"))
 
 knowledge_agent = Agent(
     id="knowledge-agent",
     name="Knowledge Agent",
     model=get_model(),
     db=agent_db,
-    knowledge=create_knowledge("Knowledge Agent", "knowledge_agent_docs"),
+    knowledge=knowledge,
     instructions=instructions,
-    tools=[search_content, list_knowledge_sources, add_knowledge_source],
+    tools=[
+        FileTools(
+            base_dir=DOCUMENTS_DIR,
+            enable_read_file=True,
+            enable_list_files=True,
+            enable_search_files=True,
+            enable_read_file_chunk=True,
+            enable_save_file=False,
+        ),
+        search_content,
+        list_knowledge_sources,
+        add_knowledge_source,
+        save_intent_discovery,
+    ],
     search_knowledge=True,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     learning=LearningMachine(
@@ -55,18 +75,32 @@ knowledge_agent = Agent(
 
 | Feature | Configuration |
 |---------|--------------|
-| Hybrid search | `search_knowledge=True`, hybrid search on Knowledge |
+| Hybrid search | `search_knowledge=True`, pgvector hybrid search on Knowledge |
+| File browsing | `FileTools` with read-only access to `DOCUMENTS_DIR` |
+| FAQ-building | `save_intent_discovery` maps intents to document locations |
+| Source registry | `SOURCE_REGISTRY` context provides structured source metadata |
+| Confidence signaling | Instructions define high/medium/low confidence citation patterns |
+| Intent routing | `INTENT_ROUTING` context routes queries by type (factual, exploratory, comparative) |
+| Common patterns | Curated search strategies loaded from `backend/knowledge/patterns/` |
 | Session memory | `db=get_postgres_db()` persists conversations across sessions |
 | Guardrails | PII detection and prompt injection via `pre_hooks` |
 | Learning | `LearningMachine` saves useful patterns for future queries |
 | User profiles | `UserProfileConfig` and `UserMemoryConfig` for per-user context |
 | Session context | `SessionContextConfig` tracks session state across turns |
-| Custom tools | `search_content`, `list_knowledge_sources`, `add_knowledge_source` |
-| Intent routing | Routes queries by type (factual, exploratory, comparative) |
-| Confidence signaling | Indicates certainty level in responses |
+| Custom tools | `search_content`, `list_knowledge_sources`, `add_knowledge_source`, `save_intent_discovery` |
 | Datetime context | `add_datetime_to_context=True` for time-aware queries |
 | Chat history | `read_chat_history=True`, `num_history_runs=5` for multi-turn context |
 | Session summaries | `enable_session_summaries=True` for conversation persistence |
+
+## Tools
+
+| Tool | Source | Purpose |
+|------|--------|---------|
+| `FileTools` | `agno.tools.file` | Browse, read, and search files in the documents directory |
+| `search_content` | `backend/tools/search.py` | Full-text search over the knowledge base |
+| `list_knowledge_sources` | `backend/tools/awareness.py` | List available knowledge sources |
+| `add_knowledge_source` | `backend/tools/approved_ops.py` | Add new sources (approval-gated) |
+| `save_intent_discovery` | `backend/tools/save_discovery.py` | Save intent-to-location mappings for future lookups |
 
 ## Loading documents
 
@@ -76,23 +110,48 @@ The knowledge base must be populated before the agent can answer questions:
 mise run load-docs
 ```
 
-The agent loads URL-based documents from `docs.agno.com` plus any PDF and CSV files from `data/docs/`.
+The agent loads:
+- URL-based documents from `docs.agno.com`
+- PDF and CSV files from `data/docs/`
+- Common search patterns from `backend/knowledge/patterns/`
 
 To add custom documents, place PDF or CSV files in `data/docs/` and re-run `mise run load-docs`.
 
-## Document loaders
+<Note>
+Docker containers seed `data/docs/` from built-in documents on first run. See [Docker configuration](/configuration/docker).
+</Note>
 
-The knowledge system supports multiple document formats via `backend/knowledge/loaders.py`:
+## Document loaders
 
 | Format | Loader | Source |
 |--------|--------|--------|
 | URL | Built-in `Knowledge.insert()` | Configured in `knowledge_agent.py` |
 | PDF | `PDFReader` from `agno.knowledge.reader.pdf_reader` | Files in `data/docs/*.pdf` |
 | CSV | `CSVReader` from `agno.knowledge.reader.csv_reader` | Files in `data/docs/*.csv` |
+| Markdown | Built-in `Knowledge.insert()` | Patterns from `backend/knowledge/patterns/` |
+
+## Context modules
+
+Two context modules are injected into the agent's instructions:
+
+| Module | Source | Purpose |
+|--------|--------|---------|
+| `INTENT_ROUTING` | `backend/context/intent_routing.py` | Routes queries by type for optimal search strategy |
+| `SOURCE_REGISTRY` | `backend/context/source_registry.py` | Structured metadata about knowledge sources, capabilities, and search tips |
+
+The source registry loads from `backend/knowledge/sources/knowledge_sources.json`.
 
 ## Approval-gated tools
 
 The `add_knowledge_source` tool uses the `@approval` decorator for human-in-the-loop confirmation before adding new sources. This requires JWT auth to be enabled. See [security configuration](/configuration/security).
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DOCUMENTS_DIR` | `data/docs` | Base directory for FileTools file browsing |
+
+See [environment configuration](/configuration/environment) for all variables.
 
 ## CLI testing
 
@@ -101,6 +160,7 @@ Run the agent directly without the API server:
 ```sh
 mise run agent:cli -- knowledge_agent -q "What is Agno?"
 mise run agent:cli -- knowledge_agent  # interactive mode
+mise run agent:cli -- knowledge_agent -u user123 -m  # with user ID and markdown
 ```
 
 ## Example queries
@@ -109,4 +169,5 @@ mise run agent:cli -- knowledge_agent  # interactive mode
 What is Agno?
 How do I create my first agent?
 What documents are in your knowledge base?
+List the files in the documents directory
 ```

@@ -31,12 +31,12 @@ FastAPI application using Agno's `AgentOS` as the runtime. Registers agents, tea
 | `backend/agents/` | Agent modules (each exports an `Agent` instance) |
 | `backend/teams/` | Multi-agent team definitions |
 | `backend/workflows/` | Multi-step workflow pipelines |
-| `backend/tools/` | Custom tools (search, awareness, approval-gated ops, introspect, save_query) |
-| `backend/context/` | Agent context providers (semantic model, business rules, intent routing) |
-| `backend/knowledge/` | Document loaders for the knowledge base |
+| `backend/tools/` | Custom tools (search, awareness, approval-gated ops, introspect, save_query, save_discovery) |
+| `backend/context/` | Agent context providers (semantic model, business rules, intent routing, source registry) |
+| `backend/knowledge/` | Document loaders, source metadata (`sources/`), search patterns (`patterns/`) |
 | `backend/scripts/` | Data loading scripts (sample data, knowledge base) |
 | `backend/db/` | Database layer (connection factory, URL builder, knowledge factory) |
-| `backend/evals/` | Evaluation harness (LLM grading, golden SQL comparison, Rich CLI) |
+| `backend/evals/` | Evaluation harness (LLM grading, golden SQL comparison, source citation checking, Rich CLI) |
 | `backend/telemetry.py` | OpenTelemetry trace export configuration |
 
 ### Frontend (`apollos-frontend`)
@@ -97,13 +97,17 @@ apollos-ai/
 │   │   ├── awareness.py
 │   │   ├── approved_ops.py
 │   │   ├── introspect.py
-│   │   └── save_query.py
+│   │   ├── save_query.py
+│   │   └── save_discovery.py
 │   ├── context/             # Agent context providers
 │   │   ├── semantic_model.py
 │   │   ├── business_rules.py
-│   │   └── intent_routing.py
-│   ├── knowledge/           # Document loaders
-│   │   └── loaders.py
+│   │   ├── intent_routing.py
+│   │   └── source_registry.py
+│   ├── knowledge/           # Document loaders and knowledge assets
+│   │   ├── loaders.py
+│   │   ├── sources/         # Structured source metadata JSON
+│   │   └── patterns/        # Common search strategy patterns
 │   ├── scripts/             # Data loading scripts
 │   │   ├── load_sample_data.py
 │   │   └── load_knowledge.py

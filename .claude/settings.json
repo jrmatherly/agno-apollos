@@ -21,6 +21,11 @@
             "type": "command",
             "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == *.py ]]; then if grep -qE '(member_timeout|max_interactions_to_share|timeout_seconds|show_tool_calls)' \"$file\" 2>/dev/null; then echo 'WARNING: File contains known invalid Agno params (member_timeout, max_interactions_to_share, timeout_seconds, show_tool_calls). Verify with: python3 -c \"import inspect; from agno.X import Y; print(inspect.signature(Y.__init__))\"' >&2; fi; fi",
             "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_FILE_PATHS\"; if [ -n \"$file\" ] && [[ \"$file\" == *.mdx ]]; then if ! head -10 \"$file\" 2>/dev/null | grep -q '^title:'; then echo 'WARNING: MDX file missing title in frontmatter. Every MDX page needs title and description.' >&2; fi; if ! head -10 \"$file\" 2>/dev/null | grep -q '^description:'; then echo 'WARNING: MDX file missing description in frontmatter.' >&2; fi; fi",
+            "timeout": 5000
           }
         ]
       }
