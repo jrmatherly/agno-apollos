@@ -56,6 +56,10 @@ OTLP_AUTH_HEADERS = ""
 # Legacy: still supported as single-endpoint fallback
 OTEL_EXPORTER_OTLP_ENDPOINT = ""
 
+# A2A Protocol (set A2A_ENABLED=true to expose agents via A2A endpoints)
+A2A_ENABLED = ""
+A2A_BASE_URL = "http://localhost:8000"
+
 [[env]]
 _.file = ".env"
 
