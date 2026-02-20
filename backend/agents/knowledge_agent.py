@@ -26,9 +26,10 @@ from agno.tools.file import FileTools
 from backend.context.intent_routing import INTENT_ROUTING
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
-from backend.tools import approved_ops, awareness, search
+from backend.tools import approved_ops, awareness, save_discovery, search
 from backend.tools.approved_ops import add_knowledge_source
 from backend.tools.awareness import list_knowledge_sources
+from backend.tools.save_discovery import save_intent_discovery
 from backend.tools.search import search_content
 
 # ---------------------------------------------------------------------------
@@ -47,6 +48,7 @@ DOCUMENTS_DIR = Path(getenv("DOCUMENTS_DIR", str(Path(__file__).parent.parent.pa
 search.set_knowledge(knowledge)
 awareness.set_knowledge(knowledge)
 approved_ops.set_knowledge(knowledge)
+save_discovery.set_knowledge(knowledge_learnings)
 
 # ---------------------------------------------------------------------------
 # Agent Instructions
@@ -90,6 +92,29 @@ After finding that a source combination works well:
 
 DO NOT save user preferences to shared learnings — those are handled automatically by user profiles.
 DO NOT save trivial or obvious information.
+
+## When to Save Intent Discovery
+
+After finding information in an unexpected location:
+  save_intent_discovery(
+      name="auth_config_in_agent_docs",
+      intent="Find authentication configuration",
+      location="agno-docs/first-agent.md",
+      summary="Auth config examples are in the first-agent guide, not a dedicated auth page",
+      search_terms=["authentication", "auth config", "jwt"],
+  )
+
+After a user asks a question you can now answer quickly:
+  save_intent_discovery(
+      name="rate_limits_location",
+      intent="Find API rate limits",
+      location="agno-docs/introduction.md",
+      summary="Rate limits are documented in the introduction overview section",
+      search_terms=["rate limit", "throttle", "api limits"],
+  )
+
+Use save_intent_discovery for LOCATION mappings (intent -> where to find it).
+Use save_learning for STRATEGY insights (what search approach worked).
 """
 
 # ---------------------------------------------------------------------------
@@ -116,6 +141,7 @@ knowledge_agent = Agent(
         search_content,
         list_knowledge_sources,
         add_knowledge_source,
+        save_intent_discovery,
     ],
     search_knowledge=True,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
