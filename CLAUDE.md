@@ -1,10 +1,5 @@
 # Apollos AI
 
-## MANDATORY: Use td for Task Management
-
-You must run td usage --new-session at conversation start (or after /clear) to see current work.
-Use td usage -q for subsequent reads.
-
 ## Project Structure
 
 All Python backend code lives under `backend/` as a proper package.
@@ -13,24 +8,10 @@ Docker WORKDIR `/app` is the project root, not the Python package.
 Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript, pnpm.
 Documentation lives at `docs/` — Mintlify site (MDX pages, `docs.json` config). Preview on port 3333 to avoid frontend conflict.
 Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`, `docs/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
-Frontend Dockerfile uses multi-stage build with `output: 'standalone'` in next.config.ts.
 
-Backend packages:
-- `backend/models.py` — Shared model factory (`get_model()`). All agents use this instead of inline `LiteLLMOpenAI`.
-- `backend/agents/` — Agent definitions (knowledge, mcp, web_search, reasoning, data)
-- `backend/teams/` — Multi-agent team definitions (research_team)
-- `backend/workflows/` — Workflow definitions (research_workflow)
-- `backend/tools/` — Custom tools (search, awareness, approved_ops, introspect, save_query, save_discovery)
-- `backend/context/` — Context modules (semantic_model, intent_routing, business_rules, source_registry)
-- `backend/knowledge/` — Document loaders (PDF/CSV from `data/docs/`), source metadata (`sources/`), search patterns (`patterns/`)
-- `backend/evals/` — LLM-based eval harness (grader, test cases, runner, source citation checking)
-- `backend/telemetry.py` — OpenTelemetry trace export (opt-in)
-- `backend/scripts/` — Data loading scripts (load_sample_data, load_knowledge)
-- `tests/` — Integration tests (pytest + requests)
-- `data/docs/` — Document storage for knowledge agent loaders
-- `data/tables/` — F1 table metadata JSON files for knowledge base
-- `data/queries/` — Common SQL query patterns
-- `data/business/` — Business rules and metrics definitions
+Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (OTel, opt-in), `backend/cli.py` (shared Rich CLI).
+Data: `data/docs/` (knowledge docs), `data/tables/` (F1 metadata), `data/queries/` (SQL patterns), `data/business/` (rules).
+Tests: `tests/` — pytest + requests.
 
 ## Commands (mise)
 
@@ -55,29 +36,35 @@ Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 Tool versions managed by mise (see `mise.toml`): Python 3.12, uv latest, Node 24, pnpm latest.
 
 Frontend tasks:
+
 - `mise run frontend:setup` - install frontend deps (add `--ci` for frozen lockfile)
 - `mise run frontend:dev` - start frontend dev server (port 3000)
 - `mise run frontend:build` - production build
 - `mise run frontend:lint` / `frontend:format` / `frontend:typecheck` / `frontend:validate`
 
 Docs tasks:
+
 - `mise run docs:dev` - preview docs site locally (port 3333, avoids frontend port conflict)
 - `mise run docs:validate` - validate docs build and check for broken links
 - `mise run docs:docker` - start docs in Docker (add `--prod` for GHCR image)
 
 Data loading tasks:
+
 - `mise run load-sample-data` - load F1 sample data into PostgreSQL for dev/demo/evals
 - `mise run load-knowledge` - load knowledge files (tables, queries, business rules) into vector DB (add `--recreate` to drop and reload)
 
 Testing and evaluation tasks:
+
 - `mise run test` - run integration tests (pytest, requires running backend)
 - `mise run evals:run` - run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `-s` source checking, `--direct` mode; golden SQL comparison runs automatically)
 - `mise run agent:cli` - run agent via CLI (`-- <module> [-q question]`)
 
 Test conventions:
+
 - Tests use fixtures from `tests/conftest.py`: `backend_url` (waits for healthy backend), `session` (requests with retries), `url_for` (builds API URLs, rejects `/v1/` prefix)
 
 Auth and scheduling tasks:
+
 - `mise run auth:generate-token` - generate dev JWT tokens for RBAC testing
 - `mise run schedules:setup` - initialize scheduler tables
 
@@ -100,75 +87,46 @@ Auth and scheduling tasks:
 
 ## Conventions
 
-- **API routes have NO `/v1/` prefix.** AgentOS registers at `/agents/...`, `/teams/...`, `/workflows/...`, `/schedules/...`. Agno's upstream docs use `/v1/` paths — do NOT copy that pattern. In tests, use the `url_for` helper from conftest.py.
-- **Agent/team run endpoints use form data, not JSON.** AgentOS `POST /agents/{id}/runs` uses `Form(...)` params. Send `data={"message": ..., "stream": "false"}` (not `json=`). Boolean form fields must be strings (`"false"`, not `False`).
-- Model provider: `LiteLLMOpenAI` from `agno.models.litellm` (proxy class, uses `base_url`). Use `backend/models.py:get_model()` — never inline model creation.
+### API & Backend
+
+- **API routes have NO `/v1/` prefix.** AgentOS registers at `/agents/...`, `/teams/...`, `/workflows/...`, `/schedules/...`. Agno upstream docs use `/v1/` paths — do NOT copy that pattern. In tests, use the `url_for` helper from conftest.py.
+- **Agent/team run endpoints use form data, not JSON.** `POST /agents/{id}/runs` uses `Form(...)` params. Send `data={"message": ..., "stream": "false"}` (not `json=`). Boolean form fields must be strings (`"false"`, not `False`).
+- Model provider: use `get_model()` from `backend/models.py` — never inline `LiteLLMOpenAI` creation.
 - All model/embedding config via env vars (MODEL_ID, EMBEDDING_MODEL_ID, LITELLM_BASE_URL, etc.)
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
-- New agents go in `backend/agents/`, new teams in `backend/teams/`, new workflows in `backend/workflows/`. Register all in `backend/main.py`.
-- All agents must have guardrails: `pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()]` — includes inline/ephemeral agents in workflows
-- All agents use full LearningMachine stack: learned_knowledge (AGENTIC, shared), user_profile, user_memory, session_context
-- Agent CLI: `python -m backend.agents.<name>` for direct testing (shared module at `backend/cli.py`)
-- Data agent uses dual knowledge system: static `data_knowledge` (curated) + dynamic `data_learnings` (discovered via LearningMachine)
+- New agents in `backend/agents/`, teams in `backend/teams/`, workflows in `backend/workflows/`. Register all in `backend/main.py`.
 - JWT auth is opt-in: empty `JWT_SECRET_KEY` env var = auth disabled. Set a value to enable RBAC.
 - Telemetry is opt-in: empty `OTEL_EXPORTER_OTLP_ENDPOINT` env var = traces not exported.
 - `DOCUMENTS_DIR` env var controls the knowledge agent file browsing directory (default: `data/docs`).
-- When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
-- Keep `agnohq/python:3.12` and `agnohq/pgvector:18` base images. Frontend and docs use `node:24-alpine`.
 - ruff line-length: 120
-- Env var defaults live in `mise.toml` [[env]] section and `backend/db/session.py`
+
+### Environment & Config
+
+- When adding/changing env vars, update all four files: `mise.toml` (defaults), `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
 - `mise.toml` uses `[[env]]` array-of-tables: defaults in first block, `_.file = ".env"` in second block, so `.env` wins. Never use single `[env]` with both `_.file` and explicit values — explicit values override `_.file` regardless of position.
-- Dependencies: `uv add <package>` (auto-updates uv.lock), never edit uv.lock manually
-- `uv.lock` records the project version — any version bump in pyproject.toml requires `uv lock` to keep the lockfile in sync
-- Frontend uses pnpm (not npm/yarn). Use `--ci` flag on setup/frontend:setup tasks for locked/frozen mode in CI.
-- After changing frontend/package.json, run `mise run frontend:setup` to regenerate pnpm-lock.yaml.
-- Frontend API calls are browser-side (client fetch), not server-side. API URL is configured in UI, not env vars.
+- `.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based
+- Dependencies: `uv add <package>` (auto-updates uv.lock). Never edit uv.lock manually.
+- `uv.lock` records the project version — any version bump in pyproject.toml requires `uv lock` to keep the lockfile in sync.
+
+### Docker & Infrastructure
+
 - Two compose files: `docker-compose.yaml` (dev, builds locally) and `docker-compose.prod.yaml` (prod, pulls GHCR images)
 - Docker compose env vars use `${VAR:-default}` substitution — never hardcode values. Defaults must match `mise.toml` and `example.env`.
-- Docker compose has 3 core services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000), plus optional `apollos-docs` (:3333, behind `docs` profile)
-- CI workflows run backend and frontend validation as parallel jobs using mise tasks
-- CI workflows use pinned action SHAs (not tags) for supply-chain security
-- CodeQL security scanning runs on push/PR to main + weekly schedule (security-extended suite)
+- Core services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000), optional `apollos-docs` (:3333, behind `docs` profile)
+- Base images: `agnohq/python:3.12` and `agnohq/pgvector:18`. Frontend and docs use `node:24-alpine`.
+- `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root `.`, not `backend/`)
 - Docker images publish to GHCR (`ghcr.io/<owner>/apollos-backend`, `ghcr.io/<owner>/apollos-frontend`, `ghcr.io/<owner>/apollos-docs`)
-- Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions (pyproject.toml, package.json, uv.lock) → tags → GitHub release → Docker image builds
-- `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root, not `backend/`)
-- VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
-- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, mise.toml (task listing comment block), docs/ (Mintlify site — especially per-agent pages in agents/*.mdx, reference/architecture.mdx, reference/code-map.mdx, configuration/environment.mdx)
+
+### CI/CD
+
+- CI workflows use pinned action SHAs (not tags) for supply-chain security
+- CI workflows use mise tasks (not raw commands) for consistency
+- CodeQL security scanning runs on push/PR to main + weekly schedule (security-extended suite)
+- Release flow: `mise run release` → validates → interactive version prompt → checks CI → bumps versions (pyproject.toml, package.json, uv.lock) → tags → GitHub release → Docker builds
+
+### Documentation
+
+- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, mise.toml (task listing comment block), docs/ (especially agents/*.mdx, reference/architecture.mdx, reference/code-map.mdx, configuration/environment.mdx)
 - example.env must stay in sync when env vars are added/changed across the project
-- `.env` values must use Docker service names (e.g., `DB_HOST=apollos-db`) since the primary workflow is Docker-based
-
-## Agno Framework API Notes
-
-Always verify Agno API signatures with `python3 -c "import inspect; from agno.X import Y; print(inspect.signature(Y))"` before using. Docs and examples frequently have wrong signatures.
-
-Known gotchas:
-- `@tool` must be outer decorator, `@approval` inner (otherwise mypy error on Function type)
-- `@approval(type="audit")` requires explicit HITL flag on `@tool()` (e.g., `@tool(requires_confirmation=True)`). Plain `@approval` auto-sets this.
-- Team: use `id=` (not `team_id=`), `mode=TeamMode.coordinate` (not string). Import `from agno.team.team import TeamMode`.
-- `member_timeout` and `max_interactions_to_share` do not exist on Team in current version
-- Workflow Step: takes `agent=` or `executor=` (no `instructions` or `timeout_seconds` params)
-- Condition: takes `evaluator` + `steps` + `else_steps` (not `on_true`/`on_false`)
-- Loop `end_condition`: receives `List[StepOutput]`, returns `True` to break. Condition `evaluator`: receives `StepInput`, returns `True` for primary path. Check `step_input.input` for user query (not `previous_step_content` which has accumulated output).
-- Knowledge readers: `agno.knowledge.reader.pdf_reader.PDFReader` (not `agno.document.reader`)
-- `include_tools`/`exclude_tools`: On base `Toolkit` class, passed via `**kwargs` to PostgresTools etc.
-- Model API for direct calls: `model.response(messages=[Message(role="user", content=...)])` (not `model.invoke(str)`)
-- `enable_session_summaries` is on Agent (not AgentOS); `enable_mcp_server` is on AgentOS
-- `show_tool_calls` is NOT a valid Agent parameter
-
-## Agno Docs Style
-
-When writing documentation, follow `docs/CLAUDE.md`:
-- No em dashes, no "learn how to", no contrastive negation
-- Code first, explain after. Tables over prose for comparisons.
-
-## Documentation Site (Mintlify)
-
-- Docs site lives at `docs/` — Mintlify MDX pages with `docs.json` config
-- Preview: `mise run docs:dev` (port 3333, avoids frontend :3000 conflict)
-- Validate: `mise run docs:validate` (runs `mint validate` + `mint broken-links`)
-- Navigation structure defined in `docs/docs.json` — add new pages there or they won't appear in sidebar
-- `docs/CLAUDE.md` is the docs style guide (excluded from build via `.mintignore`)
-- `.mintignore` auto-excludes README.md, LICENSE.md, CHANGELOG.md, CONTRIBUTING.md — manually exclude other non-doc files
-- Every MDX page needs `title` and `description` in frontmatter
-- Internal links use root-relative paths without extensions: `/agents/overview` not `./agents/overview.mdx`
-- Logo assets in `docs/logo/`, images in `docs/images/`
+- VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
+- Docs style guide: follow `docs/CLAUDE.md` when writing or editing any Mintlify MDX pages
