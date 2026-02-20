@@ -36,6 +36,15 @@ def get_postgres_db(contents_table: str | None = None) -> PostgresDb:
     return PostgresDb(id=DB_ID, db_url=db_url)
 
 
+def get_eval_db() -> PostgresDb:
+    """Create a PostgresDb instance with eval table enabled.
+
+    Returns:
+        Configured PostgresDb instance with eval_table="eval_runs".
+    """
+    return PostgresDb(id=DB_ID, db_url=db_url, eval_table="eval_runs")
+
+
 def create_knowledge(name: str, table_name: str) -> Knowledge:
     """Create a Knowledge instance with PgVector hybrid search.
 
