@@ -14,13 +14,13 @@ from pathlib import Path
 from agno.os import AgentOS
 from agno.os.config import AuthorizationConfig
 
+from backend.a2a.server import create_a2a_apps
 from backend.agents.data_agent import data_agent
 from backend.agents.knowledge_agent import knowledge_agent
 from backend.agents.mcp_agent import mcp_agent
 from backend.agents.reasoning_agent import reasoning_agent
 from backend.agents.web_search_agent import web_search_agent
 from backend.db import get_postgres_db
-from backend.a2a.server import create_a2a_apps
 from backend.registry import create_registry
 from backend.teams.research_team import research_team
 from backend.telemetry import configure_telemetry

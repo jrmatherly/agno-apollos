@@ -9,7 +9,7 @@ Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript,
 Documentation lives at `docs/` — Mintlify site (MDX pages, `docs.json` config). Preview on port 3333 to avoid frontend conflict.
 Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`, `docs/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
 
-Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (OTel, opt-in), `backend/cli.py` (shared Rich CLI).
+Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/registry.py` (component registry for Agent-as-Config), `backend/a2a/` (A2A protocol integration), `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (dual-layer tracing, opt-in), `backend/cli.py` (shared Rich CLI).
 Data: `data/docs/` (knowledge docs), `data/tables/` (F1 metadata), `data/queries/` (SQL patterns), `data/business/` (rules).
 Tests: `tests/` — pytest + requests.
 
@@ -96,7 +96,9 @@ Auth and scheduling tasks:
 - `agno.*` imports are the Agno framework library. Never rename or replace these.
 - New agents in `backend/agents/`, teams in `backend/teams/`, workflows in `backend/workflows/`. Register all in `backend/main.py`.
 - JWT auth is opt-in: empty `JWT_SECRET_KEY` env var = auth disabled. Set a value to enable RBAC.
-- Telemetry is opt-in: empty `OTEL_EXPORTER_OTLP_ENDPOINT` env var = traces not exported.
+- Telemetry is opt-in: `TRACING_ENABLED=true` stores traces in PostgreSQL (Layer 1). `OTLP_ENDPOINTS` exports to Langfuse/Phoenix/etc (Layer 2). Legacy `OTEL_EXPORTER_OTLP_ENDPOINT` supported as fallback.
+- A2A Protocol: `A2A_ENABLED=true` exposes each agent at `/a2a/agents/{id}` via the Agent-to-Agent protocol (a2a-sdk v0.3.x). Set `A2A_BASE_URL` for production AgentCard URLs.
+- Agent-as-Config: Central Registry in `backend/registry.py` maps tools/functions by name for save/load persistence via Agno Registry.
 - `DOCUMENTS_DIR` env var controls the knowledge agent file browsing directory (default: `data/docs`).
 - ruff line-length: 120
 
