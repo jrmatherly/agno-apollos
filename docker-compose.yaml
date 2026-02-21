@@ -130,6 +130,35 @@ services:
           path: ./frontend/pnpm-lock.yaml
 
   ###############################################################
+  # Apollos AI - Microsoft 365 MCP Server (opt-in)
+  ###############################################################
+  apollos-m365-mcp:
+    image: node:24-alpine
+    container_name: apollos-m365-mcp
+    command: >-
+      npx -y @softeria/ms-365-mcp-server@0.41.0
+      --http 9000
+      --read-only
+      --org-mode
+      --preset personal,work
+    environment:
+      - MS365_MCP_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - MS365_MCP_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
+      - MS365_MCP_TENANT_ID=${AZURE_TENANT_ID:-}
+    ports:
+      - "${M365_MCP_PORT:-9000}:9000"
+    profiles:
+      - m365
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9000/mcp"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - apollos
+
+  ###############################################################
   # Apollos AI - Documentation
   ###############################################################
   apollos-docs:

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, LargeBinary, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -74,3 +74,19 @@ class AuthDeniedToken(AuthBase):
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class M365Connection(AuthBase):
+    """Tracks M365 connection state + encrypted MSAL cache per user."""
+
+    __tablename__ = "auth_m365_connections"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("auth_users.id"), unique=True, nullable=False
+    )
+    connected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_refreshed: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    scopes: Mapped[str | None] = mapped_column(Text, nullable=True)  # space-separated scope names
+    cache_state: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)  # Fernet-encrypted MSAL cache
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

@@ -29,6 +29,8 @@ dependencies = [
   "a2a-sdk[all]>=0.3.23",
   "pyjwt[crypto]>=2.10",
   "slowapi>=0.1.9",
+  "msal>=1.32,<2",
+  "cryptography>=44",
 ]
 
 [dependency-groups]
@@ -62,5 +64,5 @@ plugins = ["pydantic.mypy"]
 exclude = [".venv*", "tests/"]
 
 [[tool.mypy.overrides]]
-module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*", "requests.*", "ddgs.*", "fastmcp.*", "a2a.*", "starlette.*", "slowapi.*"]
+module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*", "requests.*", "ddgs.*", "fastmcp.*", "a2a.*", "starlette.*", "slowapi.*", "msal.*", "cryptography.*"]
 ignore_missing_imports = true
