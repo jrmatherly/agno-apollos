@@ -102,8 +102,9 @@ Auth and scheduling tasks:
 - **Azure audience**: `AZURE_AUDIENCE` is set as `api://clientId` but middleware accepts both `api://clientId` and bare GUID — Azure issues the bare GUID when SPA client and API resource share one app registration (single-app setup), even with `accessTokenAcceptedVersion: 2`.
 - `JWT_SECRET_KEY` is retained for backward compat but superseded by Entra ID when Azure vars are set.
 - Auth architecture: `EntraJWTMiddleware` on `base_app` (FastAPI), passed to `AgentOS(base_app=base_app)`. No `authorization=True` on AgentOS.
-- `backend/auth/` package: config, middleware, jwks_cache, scope_mapper, models, database, graph, sync_service, dependencies, routes, security_headers, __init__
+- `backend/auth/` package: config, middleware, jwks_cache, scope_mapper, models, database, graph, sync_service, dependencies, routes, security_headers, m365_token_service, m365_routes, m365_middleware, __init__
 - New auth API routes: `GET /auth/health`, `GET /auth/me`, `POST /auth/sync`, `GET /auth/teams`, `GET /auth/users`
+- M365 integration is opt-in: `M365_ENABLED=true` registers the M365 agent and mounts `/m365/` API routes. Requires Entra ID auth (Azure vars must be set). OBO token exchange in `backend/auth/m365_token_service.py`. MCP tools in `backend/tools/m365.py`. Frontend settings at `frontend/src/app/settings/m365/page.tsx`. Docker service `apollos-m365-mcp` uses `profiles: [m365]`.
 - Telemetry is opt-in: `TRACING_ENABLED=true` stores traces in PostgreSQL (Layer 1). `OTLP_ENDPOINTS` exports to Langfuse/Phoenix/etc (Layer 2). Legacy `OTEL_EXPORTER_OTLP_ENDPOINT` supported as fallback.
 - A2A Protocol: `A2A_ENABLED=true` exposes each agent at `/a2a/agents/{id}` via the Agent-to-Agent protocol (a2a-sdk v0.3.x). Set `A2A_BASE_URL` for production AgentCard URLs.
 - Agent-as-Config: Central Registry in `backend/registry.py` maps tools/functions by name for save/load persistence via Agno Registry.

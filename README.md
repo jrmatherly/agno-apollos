@@ -13,6 +13,7 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 | Web Search Agent | Web Research | Searches the web using DuckDuckGo, learns search patterns and source reliability. |
 | Reasoning Agent | Chain-of-Thought | Self-learning reasoning patterns with configurable depth. |
 | Data Analyst | SQL Analysis | Read-only PostgreSQL queries with dual knowledge system, personalized per-user experience. |
+| M365 Agent | MCP Tool Use | Read-only access to OneDrive, SharePoint, Outlook, Calendar, and Teams via Microsoft Graph. Opt-in (`M365_ENABLED=true`). |
 
 ### Teams
 
@@ -319,6 +320,10 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `FRONTEND_URL` | No | `http://localhost:3000` | CORS allowed origin |
 | `JWT_SECRET_KEY` | No | - | Legacy HS256 auth. Superseded by Entra ID when Azure vars are set. |
 | `DOCUMENTS_DIR` | No | `data/docs` | Knowledge agent file browsing directory |
+| `M365_ENABLED` | No | `false` | Enable Microsoft 365 integration (opt-in) |
+| `M365_MCP_URL` | No | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL |
+| `M365_MCP_PORT` | No | `9000` | Host port for MCP server |
+| `M365_CACHE_KEY` | No | (derived) | Fernet key for token cache encryption |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | - | OTel trace export endpoint (empty = disabled) |
 | `NEXT_PUBLIC_OS_SECURITY_KEY` | No | - | Pre-fill auth token in the frontend UI |
 

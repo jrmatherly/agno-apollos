@@ -49,6 +49,7 @@
           "configuration/security",
           "configuration/telemetry",
           "configuration/a2a",
+          "configuration/m365",
           "configuration/docker"
         ]
       },

@@ -1,0 +1,131 @@
+---
+title: "Microsoft 365"
+description: "Access OneDrive, SharePoint, Outlook, Calendar, and Teams through a self-hosted MCP server with per-user token isolation."
+---
+
+The Microsoft 365 integration gives agents read-only access to a user's M365 resources through a self-hosted [Softeria ms-365-mcp-server](https://github.com/Softeria/ms-365-mcp-server). Each user connects their own account via the Settings UI. No Microsoft 365 Agents Frontier program enrollment required.
+
+Enable it with a single env var:
+
+```bash
+# .env
+M365_ENABLED=true
+```
+
+## Prerequisites
+
+Before enabling M365, configure your Azure app registration with Graph delegated permissions:
+
+1. Azure Portal > App Registrations > Apollos AI app > API Permissions
+2. Add Microsoft Graph delegated permissions:
+
+| Permission | Access |
+|-----------|--------|
+| `Mail.Read` | Read email |
+| `Calendars.Read` | Read calendar events |
+| `Files.Read.All` | Read OneDrive and SharePoint files |
+| `Sites.Read.All` | Read SharePoint sites |
+| `Chat.Read` | Read Teams chats |
+| `Team.ReadBasic.All` | Read Teams info |
+| `User.Read` | Read user profile |
+| `offline_access` | Refresh tokens |
+
+3. Grant admin consent for your organization
+
+These are standard Microsoft Graph delegated permissions available to any Entra ID tenant.
+
+## Architecture
+
+```
+User (Browser) → MSAL.js auth → Apollos JWT
+    ↓
+FastAPI Backend (EntraJWTMiddleware validates JWT)
+    ↓
+OBOTokenService (per-user MSAL ConfidentialClientApplication)
+    ↓ OBO exchange: Apollos JWT → Graph token
+    ↓ MSAL cache → encrypted → PostgreSQL
+contextvars (per-request Graph token)
+    ↓ header_provider injects Authorization header
+Agno Agent (MCPTools, transport="streamable-http")
+    ↓
+apollos-m365-mcp (Docker, --read-only)
+    ↓
+Microsoft Graph API
+```
+
+## Security
+
+Read-only access is enforced at three layers:
+
+| Layer | Mechanism |
+|-------|-----------|
+| **Scopes** | Graph permissions are read-only (`Mail.Read`, not `Mail.ReadWrite`) |
+| **MCP server** | Softeria runs with `--read-only` flag |
+| **Tool hooks** | `m365_write_guard` blocks `m365_send`, `m365_create`, `m365_update`, `m365_delete` tool calls |
+
+Additional security properties:
+- Per-user MSAL cache isolation (no cross-user token leakage)
+- Token cache encrypted at rest in PostgreSQL (Fernet)
+- Users must explicitly connect via Settings > Microsoft 365
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `M365_ENABLED` | `false` | Enable M365 integration |
+| `M365_MCP_URL` | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL |
+| `M365_MCP_PORT` | `9000` | Host port for MCP server |
+| `M365_CACHE_KEY` | (derived from `AZURE_CLIENT_SECRET`) | Fernet key for token cache encryption |
+
+## Docker
+
+The Softeria MCP server runs as an opt-in Docker service using the `m365` profile:
+
+```bash
+# Start with M365 service
+docker compose --profile m365 up -d
+
+# Or use mise
+M365_ENABLED=true mise run docker:up
+```
+
+```yaml
+# docker-compose.yaml
+apollos-m365-mcp:
+  image: node:24-alpine
+  command: >-
+    npx -y @softeria/ms-365-mcp-server@0.41.0
+    --http 9000
+    --read-only
+    --org-mode
+    --preset personal,work
+  environment:
+    - MS365_MCP_CLIENT_ID=${AZURE_CLIENT_ID:-}
+    - MS365_MCP_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
+    - MS365_MCP_TENANT_ID=${AZURE_TENANT_ID:-}
+  profiles:
+    - m365
+```
+
+## Implementation
+
+| File | Purpose |
+|------|---------|
+| `backend/auth/m365_token_service.py` | OBO token exchange with per-user MSAL cache |
+| `backend/auth/m365_routes.py` | `/m365/status`, `/m365/connect`, `/m365/disconnect` API routes |
+| `backend/auth/m365_middleware.py` | Per-request Graph token propagation via contextvars |
+| `backend/auth/models.py` | `M365Connection` model (encrypted cache in PostgreSQL) |
+| `backend/tools/m365.py` | MCPTools factory with `header_provider` |
+| `backend/tools/hooks.py` | `audit_hook` and `m365_write_guard` |
+| `backend/agents/m365_agent.py` | Dedicated M365 agent with read-only instructions |
+| `frontend/src/app/settings/m365/page.tsx` | Settings UI for connect/disconnect |
+
+## Token cache encryption
+
+For production, generate a dedicated Fernet key:
+
+```bash
+python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Set `M365_CACHE_KEY` in your `.env`. If unset, the service derives a key from `AZURE_CLIENT_SECRET` (acceptable for development only).
