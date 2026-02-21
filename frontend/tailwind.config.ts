@@ -13,7 +13,7 @@ export default {
       colors: {
         primary: '#FAFAFA',
         primaryAccent: '#18181B',
-        brand: '#FF4017',
+        brand: '#2483a3',
         background: {
           DEFAULT: '#111113',
           secondary: '#27272A'
@@ -23,14 +23,14 @@ export default {
         accent: '#27272A',
         muted: '#A1A1AA',
         destructive: '#E53935',
-        positive: '#22C55E'
+        positive: '#34D399'
       },
       fontFamily: {
         geist: 'var(--font-geist-sans)',
         dmmono: 'var(--font-dm-mono)'
       },
       borderRadius: {
-        xl: '10px'
+        xl: '14px'
       }
     }
   },
