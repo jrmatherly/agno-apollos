@@ -8,10 +8,13 @@ Run:
     python -m backend.main
 """
 
+import logging
 import warnings
 from os import getenv
 from pathlib import Path
 
+from agno.agent import Agent
+from agno.agent.remote import RemoteAgent
 from agno.os import AgentOS
 from fastapi import FastAPI
 from slowapi import _rate_limit_exceeded_handler
@@ -69,11 +72,26 @@ base_app.add_middleware(SecurityHeadersMiddleware)
 base_app.add_middleware(EntraJWTMiddleware, config=auth_config, jwks_cache=jwks_cache)
 base_app.include_router(auth_router)  # /auth/health, /auth/me, /auth/sync, etc.
 
-# M365 integration routes (opt-in via M365_ENABLED env var)
+# M365 integration (opt-in via M365_ENABLED env var)
 if getenv("M365_ENABLED", "").lower() in ("true", "1", "yes"):
+    from backend.auth.m365_middleware import M365TokenMiddleware
     from backend.auth.m365_routes import m365_router
 
+    # Middleware order: LIFO — add after EntraJWT so it runs after auth is complete
+    base_app.add_middleware(M365TokenMiddleware)
     base_app.include_router(m365_router)
+
+# ---------------------------------------------------------------------------
+# Agent list (M365 agent opt-in via M365_ENABLED)
+# ---------------------------------------------------------------------------
+log = logging.getLogger(__name__)
+_agents: list[Agent | RemoteAgent] = [knowledge_agent, mcp_agent, web_search_agent, data_agent, reasoning_agent]
+
+if getenv("M365_ENABLED", "").lower() in ("true", "1", "yes"):
+    from backend.agents.m365_agent import m365_agent
+
+    _agents.append(m365_agent)
+    log.info("M365 agent registered")
 
 # ---------------------------------------------------------------------------
 # Create Apollos AI
@@ -83,7 +101,7 @@ agent_os = AgentOS(
     tracing=True,
     scheduler=True,
     db=get_postgres_db(),
-    agents=[knowledge_agent, mcp_agent, web_search_agent, data_agent, reasoning_agent],
+    agents=_agents,
     teams=[research_team],
     workflows=[research_workflow],
     config=str(Path(__file__).parent / "config.yaml"),

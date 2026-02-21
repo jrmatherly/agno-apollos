@@ -57,6 +57,9 @@ services:
       - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
       - AZURE_AUDIENCE=${AZURE_AUDIENCE:-}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      # Microsoft 365 Integration
+      - M365_ENABLED=${M365_ENABLED:-false}
+      - M365_MCP_URL=${M365_MCP_URL:-http://apollos-m365-mcp:9000/mcp}
       # Observability
       - TRACING_ENABLED=${TRACING_ENABLED:-}
       - OTLP_ENDPOINTS=${OTLP_ENDPOINTS:-}

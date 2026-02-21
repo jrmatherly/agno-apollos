@@ -30,6 +30,7 @@ from backend.models import get_model
 from backend.tools import approved_ops, awareness, save_discovery, search
 from backend.tools.approved_ops import add_knowledge_source
 from backend.tools.awareness import list_knowledge_sources
+from backend.tools.m365 import m365_mcp_tools
 from backend.tools.save_discovery import save_intent_discovery
 from backend.tools.search import search_content
 
@@ -167,6 +168,7 @@ knowledge_agent = Agent(
         list_knowledge_sources,
         add_knowledge_source,
         save_intent_discovery,
+        *m365_mcp_tools(),
     ],
     search_knowledge=True,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
