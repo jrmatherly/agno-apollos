@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 #MISE description="Start stack in watch mode (hot-reload)"
+#USAGE flag "--m365" help="Include the M365 MCP server"
 set -e
 
-docker compose watch
+PROFILE_FLAGS=""
+if [ "${usage_m365:-false}" = "true" ]; then
+  PROFILE_FLAGS="--profile m365"
+fi
+
+docker compose ${PROFILE_FLAGS} watch

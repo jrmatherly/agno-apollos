@@ -2,11 +2,17 @@
 #MISE description="Tail logs from all services"
 #USAGE flag "-f --follow" help="Follow log output" default="true"
 #USAGE flag "--prod" help="Use production compose file"
+#USAGE flag "--m365" help="Include the M365 MCP server"
 #USAGE arg "[service]" help="Service name (apollos-backend, apollos-db)"
 
-COMPOSE_CMD="docker compose"
+PROFILE_FLAGS=""
+if [ "${usage_m365:-false}" = "true" ]; then
+  PROFILE_FLAGS="--profile m365"
+fi
+
+COMPOSE_CMD="docker compose ${PROFILE_FLAGS}"
 if [ "${usage_prod:-false}" = "true" ]; then
-  COMPOSE_CMD="docker compose -f docker-compose.prod.yaml"
+  COMPOSE_CMD="docker compose -f docker-compose.prod.yaml ${PROFILE_FLAGS}"
 fi
 
 if [ -n "${usage_service:-}" ]; then

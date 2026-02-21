@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 #MISE description="Stop all services"
 #USAGE flag "--prod" help="Use production compose file"
+#USAGE flag "--m365" help="Include the M365 MCP server"
 set -e
 
+PROFILE_FLAGS=""
+if [ "${usage_m365:-false}" = "true" ]; then
+  PROFILE_FLAGS="--profile m365"
+fi
+
 if [ "${usage_prod:-false}" = "true" ]; then
-  docker compose -f docker-compose.prod.yaml down
+  docker compose -f docker-compose.prod.yaml ${PROFILE_FLAGS} down
 else
-  docker compose down
+  docker compose ${PROFILE_FLAGS} down
 fi

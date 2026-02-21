@@ -24,7 +24,7 @@ from agno.learn import (
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
 from backend.tools.hooks import audit_hook, m365_write_guard
-from backend.tools.m365 import m365_mcp_tools
+from backend.tools.m365 import m365_tools_factory
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -81,7 +81,7 @@ m365_agent = Agent(
     ),
     model=get_model(),
     db=agent_db,
-    tools=m365_mcp_tools(),
+    tools=m365_tools_factory,
     instructions=instructions,
     tool_hooks=[audit_hook, m365_write_guard],
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],

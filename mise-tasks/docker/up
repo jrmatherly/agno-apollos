@@ -2,11 +2,15 @@
 #MISE description="Start the full stack (build + detach)"
 #USAGE flag "--prod" help="Use production compose file (pre-built GHCR images)"
 #USAGE flag "--docs" help="Include the docs service"
+#USAGE flag "--m365" help="Include the M365 MCP server"
 set -e
 
 PROFILE_FLAGS=""
 if [ "${usage_docs:-false}" = "true" ]; then
   PROFILE_FLAGS="--profile docs"
+fi
+if [ "${usage_m365:-false}" = "true" ]; then
+  PROFILE_FLAGS="${PROFILE_FLAGS} --profile m365"
 fi
 
 if [ "${usage_prod:-false}" = "true" ]; then
@@ -21,4 +25,7 @@ fi
 
 if [ "${usage_docs:-false}" = "true" ]; then
   echo "Docs running at http://localhost:3333"
+fi
+if [ "${usage_m365:-false}" = "true" ]; then
+  echo "M365 MCP server running at http://localhost:${M365_MCP_PORT:-9000}"
 fi

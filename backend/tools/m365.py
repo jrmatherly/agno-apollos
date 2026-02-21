@@ -80,3 +80,12 @@ def m365_mcp_tools() -> list[MCPTools]:
             tool_name_prefix="m365",
         )
     ]
+
+
+def m365_tools_factory() -> list[MCPTools]:
+    """Callable tools factory for deferred MCP connection.
+
+    Agno calls this per-run instead of at startup, avoiding the 401 that
+    occurs when AgentOS ``mcp_lifespan`` connects before any user token exists.
+    """
+    return m365_mcp_tools()
