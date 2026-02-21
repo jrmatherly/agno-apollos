@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from agno.exceptions import StopAgentRun
 
 from backend.tools.hooks import audit_hook, m365_write_guard
 
@@ -23,7 +24,7 @@ def test_write_guard_blocks_write_operations():
     ctx = MagicMock()
 
     for name in ("m365_send_mail", "m365_create_event", "m365_update_item", "m365_delete_file", "m365_upload_file"):
-        with pytest.raises(Exception, match="not permitted"):
+        with pytest.raises(StopAgentRun, match="not permitted"):
             m365_write_guard(name, mock_fn, {}, ctx)
 
     mock_fn.assert_not_called()

@@ -88,23 +88,23 @@ class OBOTokenService:
         self._user_locks: dict[str, threading.Lock] = {}
 
     def _get_lock(self, user_oid: str) -> threading.Lock:
-        """Get or create per-user lock. Thread-safe."""
-        if user_oid not in self._user_locks:
-            self._user_locks[user_oid] = threading.Lock()
-        return self._user_locks[user_oid]
+        """Get or create per-user lock. Uses setdefault for atomic creation."""
+        return self._user_locks.setdefault(user_oid, threading.Lock())
 
     def _get_or_create_app(self, user_oid: str, cache_state: str | None = None) -> msal.ConfidentialClientApplication:
         """Get or create per-user MSAL app with isolated token cache."""
-        if user_oid not in self._user_apps:
-            cache = msal.SerializableTokenCache()
-            if cache_state:
-                cache.deserialize(cache_state)
-            self._user_apps[user_oid] = msal.ConfidentialClientApplication(
-                client_id=self._client_id,
-                client_credential=self._client_secret,
-                authority=self._authority,
-                token_cache=cache,
-            )
+        if user_oid in self._user_apps:
+            return self._user_apps[user_oid]
+        cache = msal.SerializableTokenCache()
+        if cache_state:
+            cache.deserialize(cache_state)
+        app = msal.ConfidentialClientApplication(
+            client_id=self._client_id,
+            client_credential=self._client_secret,
+            authority=self._authority,
+            token_cache=cache,
+        )
+        self._user_apps.setdefault(user_oid, app)
         return self._user_apps[user_oid]
 
     def connect(self, user_oid: str, user_jwt: str) -> dict[str, Any]:

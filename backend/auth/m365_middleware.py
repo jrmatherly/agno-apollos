@@ -7,6 +7,7 @@ Runs after EntraJWTMiddleware (which sets request.state.token).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -31,8 +32,8 @@ class M365TokenMiddleware(BaseHTTPMiddleware):
                 from backend.auth.m365_token_service import get_obo_service
 
                 service = get_obo_service()
-                # get_graph_token uses acquire_token_silent (cache hit = ~0ms)
-                graph_token = service.get_graph_token(user_oid)
+                # acquire_token_silent: cache hit ~0ms, refresh ~200ms -- run in thread to avoid blocking
+                graph_token = await asyncio.to_thread(service.get_graph_token, user_oid)
                 if graph_token:
                     set_graph_token(graph_token)
 

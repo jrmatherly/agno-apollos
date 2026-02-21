@@ -73,6 +73,11 @@ export default function M365SettingsPage() {
               <div className="flex items-center gap-2">
                 <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
                 <span className="text-sm font-medium">Connected</span>
+                {status.account && (
+                  <span className="text-muted-foreground text-xs">
+                    ({status.account})
+                  </span>
+                )}
               </div>
               {status.scopes && status.scopes.length > 0 && (
                 <div>
@@ -105,10 +110,16 @@ export default function M365SettingsPage() {
                 <span className="bg-muted-foreground inline-block h-2 w-2 rounded-full" />
                 <span className="text-sm font-medium">Not connected</span>
               </div>
-              <p className="text-muted-foreground text-sm">
-                Connecting grants read-only access to your Microsoft 365
-                resources. No data will be modified.
-              </p>
+              {status?.needs_reconnect ? (
+                <p className="text-muted-foreground text-sm">
+                  Your previous session expired. Reconnect to restore access.
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Connecting grants read-only access to your Microsoft 365
+                  resources. No data will be modified.
+                </p>
+              )}
               <Button onClick={handleConnect} disabled={actionLoading}>
                 {actionLoading ? 'Connecting…' : 'Connect Microsoft 365'}
               </Button>

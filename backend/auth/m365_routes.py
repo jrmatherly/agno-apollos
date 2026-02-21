@@ -72,6 +72,7 @@ async def m365_connect(request: Request) -> dict:  # type: ignore[return]
 
 
 @m365_router.post("/disconnect")
+@limiter.limit("10/minute")
 async def m365_disconnect(request: Request) -> dict:  # type: ignore[return]
     """Clears M365 connection."""
     if not getattr(request.state, "authenticated", False):
