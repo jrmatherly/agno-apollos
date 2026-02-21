@@ -26,7 +26,9 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `backend/agents/` - Agent definitions (knowledge, mcp, web_search, reasoning, data)
 - `backend/teams/research_team.py` - Multi-agent research team (coordinate mode)
 - `backend/workflows/research_workflow.py` - Quality-gated research pipeline (Loop + Condition)
-- `backend/tools/` - Custom tools (search, awareness, approved_ops with @approval, introspect schema, save validated query, save_discovery for FAQ-building)
+- `backend/tools/` - Custom tools (search, awareness, approved_ops with @approval, introspect schema, save validated query, save_discovery for FAQ-building, m365 MCP tools, tool hooks)
+- `backend/tools/m365.py` - MCPTools factory with contextvars header_provider for per-request Graph token
+- `backend/tools/hooks.py` - Tool hooks: audit_hook (logging), m365_write_guard (StopAgentRun on write ops)
 - `backend/context/` - Context modules (11-table semantic_model, intent_routing, business_rules, source_registry)
 - `backend/knowledge/loaders.py` - PDF/CSV document loaders from `data/docs/`
 - `backend/evals/` - LLM-based eval harness (Rich CLI, TestCase/GradeResult dataclasses, string matching + LLM grading + golden SQL comparison + source citation checking)
@@ -36,8 +38,11 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `tests/` - Integration tests (health, agents, teams, schedules)
 - `frontend/src/store.ts` - Zustand state (endpoint default: localhost:8000)
 - `frontend/src/api/` - Browser-side API client (fetch, Bearer token auth)
-- `docker-compose.yaml` - Dev compose (3 core services + optional docs behind `docs` profile)
-- `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
+- `backend/agents/m365_agent.py` - Read-only M365 agent (opt-in via M365_ENABLED)
+- `frontend/src/app/settings/` - Settings hub + M365 connect/disconnect page
+- `frontend/src/api/m365.ts` - M365 API client (status, connect, disconnect)
+- `docker-compose.yaml` - Dev compose (3 core services + optional docs behind `docs` profile + optional `apollos-m365-mcp` behind `m365` profile)
+- `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure + M365 service)
 
 ## Agents
 
@@ -46,6 +51,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 3. **Web Search Agent** (`web-search-agent`): Web research via DuckDuckGo, full LearningMachine, learns search patterns and source reliability
 4. **Reasoning Agent** (`reasoning-agent`): Chain-of-thought reasoning (2-6 steps), full LearningMachine, learns effective reasoning approaches
 5. **Data Analyst** (`data-agent`): Read-only PostgreSQL queries (Dash pattern) with dual knowledge system (curated `data_knowledge` + dynamic `data_learnings`), full LearningMachine, runtime schema introspection, validated query saving, F1 dataset support, and insight-focused instructions
+6. **M365 Agent** (`m365-agent`): Read-only Microsoft 365 access (OneDrive, SharePoint, Outlook, Calendar, Teams) via Softeria MCP server, OBO token exchange, per-user MSAL isolation, three-layer read-only enforcement (Graph scopes + `--read-only` flag + `m365_write_guard` hook), opt-in via `M365_ENABLED=true`
 
 ## Teams
 
@@ -123,6 +129,9 @@ Run `mise tasks` for full list. Key tasks:
 - `security_headers.py` — `SecurityHeadersMiddleware` (CSP, X-Frame-Options, etc.)
 - `routes.py` — `/auth/health`, `/auth/me`, `/auth/sync`, `/auth/teams`, `/auth/users`; slowapi rate limits
 - `dependencies.py` — FastAPI `Depends` helpers for scope enforcement
+- `m365_token_service.py` — OBO token exchange with per-user MSAL cache (Fernet-encrypted to PostgreSQL)
+- `m365_routes.py` — `/m365/status`, `/m365/connect`, `/m365/disconnect`; `warm_m365_cache()` at startup
+- `m365_middleware.py` — `M365TokenMiddleware`: per-request Graph token propagation via contextvars
 
 ### Frontend auth package: `frontend/src/auth/`
 
@@ -170,6 +179,10 @@ Frontend (build-time): `NEXT_PUBLIC_AZURE_CLIENT_ID`, `NEXT_PUBLIC_AZURE_TENANT_
 - `OTEL_EXPORTER_OTLP_ENDPOINT` (legacy single-endpoint fallback; prefer `OTLP_ENDPOINTS`)
 - `A2A_ENABLED` (set to `true` to expose agents via A2A protocol at `/a2a/agents/{id}`)
 - `A2A_BASE_URL` (base URL for AgentCard discovery, default: http://localhost:8000)
+- `M365_ENABLED` (set to `true` to enable M365 integration; requires Azure auth vars; registers M365 agent + `/m365/` routes)
+- `M365_MCP_URL` (Softeria MCP server URL, default: http://apollos-m365-mcp:9000/mcp)
+- `M365_MCP_PORT` (host port for MCP server, default: 9000)
+- `M365_CACHE_KEY` (Fernet key for token cache encryption; derives from AZURE_CLIENT_SECRET if unset)
 - `NEXT_PUBLIC_DEFAULT_ENDPOINT` (default endpoint shown in frontend UI, default: http://localhost:8000)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
 
@@ -178,7 +191,7 @@ Frontend (build-time): `NEXT_PUBLIC_AZURE_CLIENT_ID`, `NEXT_PUBLIC_AZURE_TENANT_
 - Mintlify site in `docs/` (MDX pages, `docs.json` config)
 - Preview on port 3333 (`mise run docs:dev`) to avoid frontend port conflict
 - Style guide at `docs/CLAUDE.md` (excluded from Mintlify build via `.mintignore`)
-- Sections: Getting started, Agents, Teams, Workflows, Configuration (environment, security, telemetry, A2A, Docker), Reference, Contributing
+- Sections: Getting started, Agents, Teams, Workflows, Configuration (environment, security, telemetry, A2A, M365, Docker), Reference, Contributing
 
 ## Security & CI/CD
 
