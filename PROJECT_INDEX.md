@@ -22,7 +22,8 @@ apollos-ai/
 │   │   ├── mcp_agent.py         # MCP tool-use agent (external services via MCP)
 │   │   ├── web_search_agent.py  # Web research agent (DuckDuckGo)
 │   │   ├── reasoning_agent.py   # Chain-of-thought reasoning agent
-│   │   └── data_agent.py        # Data analyst agent (read-only PostgreSQL)
+│   │   ├── data_agent.py        # Data analyst agent (read-only PostgreSQL)
+│   │   └── m365_agent.py        # M365 agent (read-only Graph via MCP, opt-in)
 │   ├── teams/               # Multi-agent team definitions
 │   │   ├── __init__.py
 │   │   └── research_team.py     # Coordinate-mode research team
@@ -36,7 +37,9 @@ apollos-ai/
 │   │   ├── approved_ops.py      # Approval-gated tools (@tool + @approval)
 │   │   ├── introspect.py        # Runtime schema introspection (SQLAlchemy inspect)
 │   │   ├── save_query.py        # Save validated SQL queries to knowledge base
-│   │   └── save_discovery.py    # Save intent-to-location mappings for FAQ-building
+│   │   ├── save_discovery.py    # Save intent-to-location mappings for FAQ-building
+│   │   ├── m365.py              # M365 MCP tools factory (contextvars header_provider)
+│   │   └── hooks.py             # Tool hooks: audit_hook, m365_write_guard
 │   ├── context/             # Context modules for agents
 │   │   ├── __init__.py
 │   │   ├── semantic_model.py    # 11-table semantic model (Agno + F1) for data agent
@@ -82,11 +85,13 @@ apollos-ai/
 │   ├── postcss.config.mjs   # PostCSS config
 │   ├── src/                 # App source code
 │   │   ├── app/             # Next.js App Router pages (layout.tsx, page.tsx)
+│   │   │   └── settings/    # Settings pages (hub + M365 connect/disconnect)
 │   │   ├── components/      # React components
 │   │   │   ├── chat/        # Chat UI (ChatArea, Sidebar, Messages, Multimedia)
 │   │   │   └── ui/          # shadcn/ui primitives (button, dialog, select, etc.)
 │   │   ├── api/             # API client (browser-side fetch to backend)
 │   │   │   ├── os.ts        # AgentOS API functions (agents, teams, sessions, runs)
+│   │   │   ├── m365.ts      # M365 API client (status, connect, disconnect)
 │   │   │   └── routes.ts    # Route constants
 │   │   ├── hooks/           # React hooks
 │   │   │   ├── useAIResponseStream.tsx  # SSE stream handler
@@ -169,7 +174,7 @@ apollos-ai/
 │   ├── agents/              # Agent documentation (overview + per-agent pages + creating guide)
 │   ├── teams/               # Team documentation (overview)
 │   ├── workflows/           # Workflow documentation (overview)
-│   ├── configuration/       # Environment, security, telemetry, A2A, Docker config
+│   ├── configuration/       # Environment, security, telemetry, A2A, M365, Docker config
 │   ├── reference/           # Architecture and mise-tasks reference
 │   ├── logo/                # Apollos AI logo assets
 │   ├── images/              # Documentation images
@@ -185,7 +190,13 @@ apollos-ai/
 │   ├── test_health.py       # Health and agent list tests
 │   ├── test_agents.py       # Agent run request tests
 │   ├── test_teams.py        # Team list and run tests
-│   └── test_schedules.py    # Scheduler endpoint tests
+│   ├── test_schedules.py    # Scheduler endpoint tests
+│   ├── test_m365_token_service.py  # OBO token service tests (7)
+│   ├── test_m365_model.py          # M365Connection model tests (4)
+│   ├── test_m365_tools.py          # MCP tools layer tests (5)
+│   ├── test_m365_middleware.py     # Token middleware tests (4)
+│   ├── test_m365_hooks.py          # Tool hook tests (3)
+│   └── test_m365_integration.py   # M365 integration tests (3, skip when disabled)
 ├── example.env              # Template for .env (LiteLLM, model, DB, auth, telemetry, frontend config)
 └── README.md                # Setup guide, agent docs, common tasks
 ```
@@ -270,6 +281,35 @@ Uses **pnpm** for package management:
 - **Purpose**: Self-learning data analyst with dual knowledge system (Dash pattern)
 - **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, dual knowledge (curated + learnings), business rules context, insight-focused instructions
 - **Tools**: PostgresTools (show_tables, describe_table, summarize_table, inspect_query), `introspect_schema`, `save_validated_query`
+
+### backend/agents/m365_agent.py
+- **Exports**: `m365_agent` (Agent instance)
+- **Purpose**: Read-only M365 agent accessing OneDrive, SharePoint, Outlook, Calendar, Teams via Softeria MCP server
+- **Features**: Guardrails, LearningMachine, tool_hooks (audit_hook + m365_write_guard), MCPTools with header_provider
+- **Activation**: Conditional import in `backend/main.py` when `M365_ENABLED=true`
+
+### backend/tools/m365.py
+- **Exports**: `m365_mcp_tools()` factory, `set_graph_token()`, `clear_graph_token()`, `_graph_token_var` (ContextVar)
+- **Purpose**: MCPTools factory with contextvars-based header_provider for per-request Graph token injection
+- **Pattern**: Returns `[]` when `M365_ENABLED` is unset; returns `[MCPTools(...)]` when enabled
+
+### backend/tools/hooks.py
+- **Exports**: `audit_hook`, `m365_write_guard`
+- **Purpose**: Tool hooks for M365 integration — audit logging and write operation blocking
+- **Key pattern**: `m365_write_guard` raises `StopAgentRun` for `m365_send/create/update/delete/upload/move` prefixes
+
+### backend/auth/m365_token_service.py
+- **Exports**: `OBOTokenService`, `get_obo_service()`, `encrypt_cache()`, `decrypt_cache()`
+- **Purpose**: OBO token exchange with per-user MSAL ConfidentialClientApplication isolation
+- **Persistence**: Fernet-encrypted SerializableTokenCache in PostgreSQL
+
+### backend/auth/m365_routes.py
+- **Exports**: `m365_router`, `warm_m365_cache()`
+- **Purpose**: API routes (`/m365/status`, `/m365/connect`, `/m365/disconnect`) + startup cache warming
+
+### backend/auth/m365_middleware.py
+- **Exports**: `M365TokenMiddleware`
+- **Purpose**: Per-request Graph token propagation from MSAL cache into contextvars
 
 ### backend/context/semantic_model.py
 - **Exports**: `SEMANTIC_MODEL` (dict), `SEMANTIC_MODEL_STR` (formatted markdown)
@@ -464,6 +504,10 @@ Uses **pnpm** for package management:
 | `A2A_ENABLED` | No | — | Set to `true` to expose agents via A2A protocol endpoints |
 | `A2A_BASE_URL` | No | `http://localhost:8000` | Base URL used in AgentCard discovery documents |
 | `DOCUMENTS_DIR` | No | `./data/docs` | Knowledge agent file browsing directory |
+| `M365_ENABLED` | No | `false` | Enable Microsoft 365 integration (opt-in) |
+| `M365_MCP_URL` | No | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL |
+| `M365_MCP_PORT` | No | `9000` | Host port for MCP server |
+| `M365_CACHE_KEY` | No | (derived) | Fernet key for token cache encryption |
 | `WAIT_FOR_DB` | No | — | Container waits for DB readiness |
 | `PRINT_ENV_ON_LOAD` | No | — | Print env vars on container start |
 

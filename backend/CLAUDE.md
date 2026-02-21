@@ -30,6 +30,27 @@ Known gotchas:
 - `enable_session_summaries` is on Agent (not AgentOS); `enable_mcp_server` is on AgentOS
 - `show_tool_calls` is NOT a valid Agent parameter
 
+## M365 Integration (backend/auth/ + backend/tools/)
+
+Opt-in via `M365_ENABLED=true`. Requires Entra ID auth (all 4 Azure vars must be set).
+
+Key patterns:
+- OBO token exchange: `OBOTokenService.connect()` is SYNC — call via `asyncio.to_thread()` from async handlers
+- Per-user MSAL isolation: each user gets own `ConfidentialClientApplication` with `SerializableTokenCache`
+- Token propagation: `M365TokenMiddleware` → `contextvars` → sync `header_provider` callback in MCPTools
+- `dict.setdefault()` for thread-safe lazy init of per-user locks and MSAL apps (not check-then-act)
+- Three-layer read-only: Graph scopes (`Mail.Read` not `ReadWrite`) + Softeria `--read-only` + `m365_write_guard` tool hook
+- `m365_write_guard` raises `StopAgentRun` (from `agno.exceptions`) — not generic `Exception`
+- Docker service `apollos-m365-mcp` uses `profiles: [m365]` — started with `docker compose --profile m365 up`
+
+Key files:
+- `backend/auth/m365_token_service.py` — OBO exchange, Fernet encryption, per-user MSAL cache
+- `backend/auth/m365_routes.py` — `/m365/status`, `/m365/connect`, `/m365/disconnect`
+- `backend/auth/m365_middleware.py` — Per-request Graph token via contextvars
+- `backend/tools/m365.py` — MCPTools factory with `header_provider`
+- `backend/tools/hooks.py` — `audit_hook` and `m365_write_guard`
+- `backend/agents/m365_agent.py` — Dedicated M365 agent (read-only instructions)
+
 ## Entra ID Auth Package (backend/auth/)
 
 Located at `backend/auth/`. Handles Microsoft Entra ID JWT validation, RBAC scope mapping,
