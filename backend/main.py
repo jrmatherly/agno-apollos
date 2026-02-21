@@ -69,6 +69,12 @@ base_app.add_middleware(SecurityHeadersMiddleware)
 base_app.add_middleware(EntraJWTMiddleware, config=auth_config, jwks_cache=jwks_cache)
 base_app.include_router(auth_router)  # /auth/health, /auth/me, /auth/sync, etc.
 
+# M365 integration routes (opt-in via M365_ENABLED env var)
+if getenv("M365_ENABLED", "").lower() in ("true", "1", "yes"):
+    from backend.auth.m365_routes import m365_router
+
+    base_app.include_router(m365_router)
+
 # ---------------------------------------------------------------------------
 # Create Apollos AI
 # ---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+from os import getenv
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
@@ -32,6 +33,12 @@ async def auth_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await create_auth_tables()
         jwks_task = asyncio.create_task(jwks_cache.run())
         sync_task = asyncio.create_task(sync_service.run_background_sync())
+
+        # Restore M365 token caches from DB (opt-in)
+        if getenv("M365_ENABLED", "").lower() in ("true", "1", "yes"):
+            from backend.auth.m365_routes import warm_m365_cache
+
+            await warm_m365_cache()
 
     yield
 
