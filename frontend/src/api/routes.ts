@@ -13,5 +13,9 @@ export const APIRoutes = {
   TeamRun: (agentOSUrl: string, teamId: string) =>
     `${agentOSUrl}/teams/${teamId}/runs`,
   DeleteTeamSession: (agentOSUrl: string, teamId: string, sessionId: string) =>
-    `${agentOSUrl}/teams/${teamId}/sessions/${sessionId}`
+    `${agentOSUrl}/teams/${teamId}/sessions/${sessionId}`,
+
+  M365Status: (agentOSUrl: string) => `${agentOSUrl}/m365/status`,
+  M365Connect: (agentOSUrl: string) => `${agentOSUrl}/m365/connect`,
+  M365Disconnect: (agentOSUrl: string) => `${agentOSUrl}/m365/disconnect`
 }

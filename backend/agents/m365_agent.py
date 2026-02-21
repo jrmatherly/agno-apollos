@@ -23,6 +23,7 @@ from agno.learn import (
 
 from backend.db import create_knowledge, get_postgres_db
 from backend.models import get_model
+from backend.tools.hooks import audit_hook, m365_write_guard
 from backend.tools.m365 import m365_mcp_tools
 
 # ---------------------------------------------------------------------------
@@ -82,6 +83,7 @@ m365_agent = Agent(
     db=agent_db,
     tools=m365_mcp_tools(),
     instructions=instructions,
+    tool_hooks=[audit_hook, m365_write_guard],
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     learning=LearningMachine(
         learned_knowledge=LearnedKnowledgeConfig(
