@@ -35,13 +35,15 @@ Known gotchas:
 Opt-in via `M365_ENABLED=true`. Requires Entra ID auth (all 4 Azure vars must be set).
 
 Key patterns:
+- **Callable tools factory**: M365 agent uses `tools=m365_tools_factory` (a callable), NOT `tools=m365_mcp_tools()` (a list). AgentOS `mcp_lifespan` eagerly connects all MCPTools in static lists at startup — causes 401 since no user token exists at boot. Callable factories are resolved per-run. Never spread `*m365_mcp_tools()` into other agents' static tool lists.
 - OBO token exchange: `OBOTokenService.connect()` is SYNC — call via `asyncio.to_thread()` from async handlers
 - Per-user MSAL isolation: each user gets own `ConfidentialClientApplication` with `SerializableTokenCache`
 - Token propagation: `M365TokenMiddleware` → `contextvars` → sync `header_provider` callback in MCPTools
 - `dict.setdefault()` for thread-safe lazy init of per-user locks and MSAL apps (not check-then-act)
 - Three-layer read-only: Graph scopes (`Mail.Read` not `ReadWrite`) + Softeria `--read-only` + `m365_write_guard` tool hook
 - `m365_write_guard` raises `StopAgentRun` (from `agno.exceptions`) — not generic `Exception`
-- Docker service `apollos-m365-mcp` uses `profiles: [m365]` — started with `docker compose --profile m365 up`
+- Docker service `apollos-m365-mcp` uses `profiles: [m365]` — started with `mise run docker:up --m365`
+- Docker healthcheck: use root `/` (public), not `/mcp` (requires auth)
 
 Key files:
 - `backend/auth/m365_token_service.py` — OBO exchange, Fernet encryption, per-user MSAL cache

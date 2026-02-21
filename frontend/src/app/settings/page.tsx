@@ -7,6 +7,12 @@ export default function SettingsPage() {
   return (
     <AuthGuard>
       <div className="mx-auto max-w-2xl px-6 py-12">
+        <Link
+          href="/"
+          className="text-muted-foreground hover:text-foreground mb-6 inline-block text-sm"
+        >
+          &larr; Back to Chat
+        </Link>
         <h1 className="mb-8 text-2xl font-semibold">Settings</h1>
         <nav className="space-y-2">
           <Link

@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { useQueryState } from 'nuqs'
 import { truncateText } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
+import Link from 'next/link'
 
 const DEFAULT_ENDPOINT =
   process.env.NEXT_PUBLIC_DEFAULT_ENDPOINT || 'http://localhost:8000'
@@ -317,6 +318,13 @@ const Sidebar = ({
             )}
           </>
         )}
+        <Link
+          href="/settings"
+          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium uppercase text-muted transition-colors hover:bg-accent hover:text-primary"
+        >
+          <Icon type="settings" size="xs" />
+          Settings
+        </Link>
       </motion.div>
     </motion.aside>
   )

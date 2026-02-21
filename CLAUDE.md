@@ -22,10 +22,10 @@ Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 - `mise run lint` - lint (ruff check)
 - `mise run typecheck` - type check (mypy)
 - `mise run validate` - all checks (format-check + lint + typecheck)
-- `mise run dev` - docker compose watch (hot-reload)
-- `mise run docker:up` - start full stack (add `--prod` for GHCR images, `--docs` to include docs service)
-- `mise run docker:down` - stop stack (add `--prod` for production compose file)
-- `mise run docker:logs` - tail logs (add `--prod` for production compose file)
+- `mise run dev` - docker compose watch (hot-reload, add `--m365` to include M365 MCP server)
+- `mise run docker:up` - start full stack (add `--prod` for GHCR images, `--docs` to include docs service, `--m365` for M365 MCP server)
+- `mise run docker:down` - stop stack (add `--prod` for production compose file, `--m365` to include M365 service)
+- `mise run docker:logs` - tail logs (add `--prod` for production compose file, `--m365` to include M365 service)
 - `mise run docker:build` - build backend, frontend, and docs images locally (add `--platform amd64` or `arm64`)
 - `mise run db` - start database only
 - `mise run load-docs` - load knowledge base documents
