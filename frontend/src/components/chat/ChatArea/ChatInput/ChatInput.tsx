@@ -50,7 +50,7 @@ const ChatInput = () => {
             handleSubmit()
           }
         }}
-        className="w-full border border-accent bg-primaryAccent px-4 text-sm text-primary focus:border-accent"
+        className="w-full border border-accent bg-primaryAccent px-4 text-sm text-primary shadow-[0_0_15px_rgba(36,131,163,0.35)] focus:border-brand/50 focus:shadow-[0_0_20px_rgba(36,131,163,0.5)]"
         disabled={!(selectedAgent || teamId)}
         ref={chatInputRef}
       />

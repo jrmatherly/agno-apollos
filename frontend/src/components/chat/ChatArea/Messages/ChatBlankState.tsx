@@ -131,7 +131,7 @@ const ChatBlankState = () => {
               </Link>
             </span>
             <span className="flex items-center font-[600]">
-              Agent UI, built with
+              Apollos AI, built with
             </span>
             <span className="inline-flex translate-y-[5px] scale-125 items-center">
               <div className="relative ml-2 h-[40px] w-[90px]">

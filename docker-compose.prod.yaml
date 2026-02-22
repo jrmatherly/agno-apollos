@@ -102,12 +102,17 @@ services:
       npx -y @softeria/ms-365-mcp-server@0.41.0
       --http 9000
       --read-only
+      --enable-auth-tools
+      --enable-dynamic-registration
       --org-mode
       --preset personal,work
     environment:
       - MS365_MCP_CLIENT_ID=${AZURE_CLIENT_ID:-}
       - MS365_MCP_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
       - MS365_MCP_TENANT_ID=${AZURE_TENANT_ID:-}
+      - MS365_MCP_OUTPUT_FORMAT=toon
+      - MS365_MCP_CLOUD_TYPE=global
+      - LOG_LEVEL=info
     ports:
       - "${M365_MCP_PORT:-9000}:9000"
     profiles:

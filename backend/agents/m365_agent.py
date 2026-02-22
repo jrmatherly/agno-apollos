@@ -82,6 +82,7 @@ m365_agent = Agent(
     model=get_model(),
     db=agent_db,
     tools=m365_tools_factory,
+    cache_callables=False,
     instructions=instructions,
     tool_hooks=[audit_hook, m365_write_guard],
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],

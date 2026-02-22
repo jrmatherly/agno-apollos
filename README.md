@@ -6,25 +6,25 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 
 ### Agents
 
-| Agent | Pattern | Description |
-|-------|---------|-------------|
-| Knowledge Agent | Agentic RAG | Answers questions from a knowledge base with file browsing, FAQ-building, source citations, and per-user learning. |
-| MCP Agent | MCP Tool Use | Connects to external services via MCP, learns tool usage patterns. |
-| Web Search Agent | Web Research | Searches the web using DuckDuckGo, learns search patterns and source reliability. |
-| Reasoning Agent | Chain-of-Thought | Self-learning reasoning patterns with configurable depth. |
-| Data Analyst | SQL Analysis | Read-only PostgreSQL queries with dual knowledge system, personalized per-user experience. |
-| M365 Agent | MCP Tool Use | Read-only access to OneDrive, SharePoint, Outlook, Calendar, and Teams via Microsoft Graph. Opt-in (`M365_ENABLED=true`). |
+| Agent            | Pattern          | Description                                                                                                               |
+| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Knowledge Agent  | Agentic RAG      | Answers questions from a knowledge base with file browsing, FAQ-building, source citations, and per-user learning.        |
+| MCP Agent        | MCP Tool Use     | Connects to external services via MCP, learns tool usage patterns.                                                        |
+| Web Search Agent | Web Research     | Searches the web using DuckDuckGo, learns search patterns and source reliability.                                         |
+| Reasoning Agent  | Chain-of-Thought | Self-learning reasoning patterns with configurable depth.                                                                 |
+| Data Analyst     | SQL Analysis     | Read-only PostgreSQL queries with dual knowledge system, personalized per-user experience.                                |
+| M365 Agent       | MCP Tool Use     | Read-only access to OneDrive, SharePoint, Outlook, Calendar, and Teams via Microsoft Graph. Opt-in (`M365_ENABLED=true`). |
 
 ### Teams
 
-| Team | Mode | Description |
-|------|------|-------------|
+| Team          | Mode       | Description                                             |
+| ------------- | ---------- | ------------------------------------------------------- |
 | Research Team | Coordinate | Multi-agent research combining web search and analysis. |
 
 ### Workflows
 
-| Workflow | Steps | Description |
-|----------|-------|-------------|
+| Workflow          | Steps                            | Description                                                          |
+| ----------------- | -------------------------------- | -------------------------------------------------------------------- |
 | Research Workflow | Search → Quality Loop → Analysis | Iterative research with quality gates and conditional deep analysis. |
 
 ## Prerequisites
@@ -161,7 +161,7 @@ my_agent = Agent(
 )
 ```
 
-2. Register in `backend/main.py`:
+1. Register in `backend/main.py`:
 
 ```python
 from backend.agents.my_agent import my_agent
@@ -173,7 +173,7 @@ agent_os = AgentOS(
 )
 ```
 
-3. Restart: `docker compose restart`
+1. Restart: `docker compose restart`
 
 ### Add tools to an agent
 
@@ -212,6 +212,7 @@ from agno.models.anthropic import Claude
 
 model=Claude(id="claude-sonnet-4-5")
 ```
+
 1. Add dependency: `uv add anthropic`
 
 ---
@@ -220,40 +221,40 @@ model=Claude(id="claude-sonnet-4-5")
 
 This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and development tasks. Run `mise tasks` to see all available tasks.
 
-| Task | Description |
-|------|-------------|
-| `mise run setup` | Install all dependencies (`--ci` for locked mode) |
-| `mise run format` | Format code (`--check` for CI check-only mode) |
-| `mise run lint` | Lint code (ruff check) |
-| `mise run typecheck` | Type-check code (mypy) |
-| `mise run validate` | Run all checks (format-check, lint, typecheck) |
-| `mise run dev` | Start stack in watch mode (hot-reload) |
-| `mise run docker:up` | Start full stack (`--prod` for GHCR images, `--docs` to include docs) |
-| `mise run docker:down` | Stop all services (`--prod` for production) |
-| `mise run docker:logs` | Tail logs (`--prod` for production) |
-| `mise run docker:build` | Build all images locally (`--platform amd64\|arm64`) |
-| `mise run db` | Start only the database service |
-| `mise run load-docs` | Load knowledge base documents |
-| `mise run ci` | Run full CI pipeline |
-| `mise run clean` | Clean build artifacts and caches |
-| `mise run release` | Create a GitHub release (interactive version prompt) |
-| `mise run frontend:setup` | Install frontend dependencies (`--ci` for frozen lockfile) |
-| `mise run frontend:dev` | Start frontend dev server (port 3000) |
-| `mise run frontend:build` | Build frontend for production |
-| `mise run frontend:lint` | Lint frontend code (ESLint) |
-| `mise run frontend:format` | Check frontend formatting (Prettier) |
-| `mise run frontend:typecheck` | Type-check frontend code (TypeScript) |
-| `mise run frontend:validate` | Run all frontend checks |
-| `mise run docs:dev` | Preview docs site locally (port 3333) |
-| `mise run docs:validate` | Validate docs build and check broken links |
-| `mise run docs:docker` | Start docs in Docker (`--prod` for GHCR image) |
-| `mise run test` | Run integration tests (requires running backend) |
-| `mise run evals:run` | Run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `-s` source checking, `--direct`) |
-| `mise run agent:cli` | Run agent via CLI (`-- <module> [-q question]`) |
-| `mise run load-sample-data` | Load F1 sample data into PostgreSQL |
-| `mise run load-knowledge` | Populate vector DB with curated knowledge (`--recreate` to rebuild) |
-| `mise run auth:generate-token` | Generate dev JWT tokens for RBAC testing |
-| `mise run schedules:setup` | Initialize scheduler tables |
+| Task                           | Description                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `mise run setup`               | Install all dependencies (`--ci` for locked mode)                                                |
+| `mise run format`              | Format code (`--check` for CI check-only mode)                                                   |
+| `mise run lint`                | Lint code (ruff check)                                                                           |
+| `mise run typecheck`           | Type-check code (mypy)                                                                           |
+| `mise run validate`            | Run all checks (format-check, lint, typecheck)                                                   |
+| `mise run dev`                 | Start stack in watch mode (hot-reload)                                                           |
+| `mise run docker:up`           | Start full stack (`--prod` for GHCR images, `--docs` to include docs)                            |
+| `mise run docker:down`         | Stop all services (`--prod` for production)                                                      |
+| `mise run docker:logs`         | Tail logs (`--prod` for production)                                                              |
+| `mise run docker:build`        | Build all images locally (`--platform amd64\|arm64`)                                             |
+| `mise run db`                  | Start only the database service                                                                  |
+| `mise run load-docs`           | Load knowledge base documents                                                                    |
+| `mise run ci`                  | Run full CI pipeline                                                                             |
+| `mise run clean`               | Clean build artifacts and caches                                                                 |
+| `mise run release`             | Create a GitHub release (interactive version prompt)                                             |
+| `mise run frontend:setup`      | Install frontend dependencies (`--ci` for frozen lockfile)                                       |
+| `mise run frontend:dev`        | Start frontend dev server (port 3000)                                                            |
+| `mise run frontend:build`      | Build frontend for production                                                                    |
+| `mise run frontend:lint`       | Lint frontend code (ESLint)                                                                      |
+| `mise run frontend:format`     | Check frontend formatting (Prettier)                                                             |
+| `mise run frontend:typecheck`  | Type-check frontend code (TypeScript)                                                            |
+| `mise run frontend:validate`   | Run all frontend checks                                                                          |
+| `mise run docs:dev`            | Preview docs site locally (port 3333)                                                            |
+| `mise run docs:validate`       | Validate docs build and check broken links                                                       |
+| `mise run docs:docker`         | Start docs in Docker (`--prod` for GHCR image)                                                   |
+| `mise run test`                | Run integration tests (requires running backend)                                                 |
+| `mise run evals:run`           | Run eval suite (`-c` category, `-v` verbose, `-g` LLM grading, `-s` source checking, `--direct`) |
+| `mise run agent:cli`           | Run agent via CLI (`-- <module> [-q question]`)                                                  |
+| `mise run load-sample-data`    | Load F1 sample data into PostgreSQL                                                              |
+| `mise run load-knowledge`      | Populate vector DB with curated knowledge (`--recreate` to rebuild)                              |
+| `mise run auth:generate-token` | Generate dev JWT tokens for RBAC testing                                                         |
+| `mise run schedules:setup`     | Initialize scheduler tables                                                                      |
 
 ### CLI Testing
 
@@ -288,6 +289,7 @@ uv run python -m backend.main
 ### Using Docker Compose Watch
 
 For automatic hot-reload with dependency rebuild:
+
 ```sh
 mise run dev
 ```
@@ -296,36 +298,36 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `LITELLM_API_KEY` | Yes | - | LiteLLM Proxy API key |
-| `LITELLM_BASE_URL` | No | `http://localhost:4000/v1` | LiteLLM Proxy URL |
-| `MODEL_ID` | No | `gpt-5-mini` | LLM model ID |
-| `EMBEDDING_MODEL_ID` | No | `text-embedding-3-small` | Embedding model ID |
-| `EMBEDDING_DIMENSIONS` | No | `1536` | Embedding vector dimensions |
-| `DB_HOST` | No | `apollos-db` | Database host (use Docker service name) |
-| `DB_PORT` | No | `5432` | Database port |
-| `DB_USER` | No | `ai` | Database user |
-| `DB_PASS` | No | `ai` | Database password |
-| `DB_DATABASE` | No | `ai` | Database name |
-| `RUNTIME_ENV` | No | `dev` | Set to `dev` for auto-reload, `prd` for production |
-| `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
-| `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by `docker-compose.prod.yaml`) |
-| `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
-| `AZURE_TENANT_ID` | No | - | Entra ID tenant ID. All 4 required to enable auth. |
-| `AZURE_CLIENT_ID` | No | - | Entra ID application (client) ID |
-| `AZURE_CLIENT_SECRET` | No | - | Client secret for Microsoft Graph API access |
-| `AZURE_AUDIENCE` | No | - | Token audience (`api://{AZURE_CLIENT_ID}`). Both `api://` and bare GUID forms accepted. |
-| `AUTH_DEBUG` | No | `True` (dev) | Log diagnostic 401 details: missing tokens, expired tokens, audience mismatches. |
-| `FRONTEND_URL` | No | `http://localhost:3000` | CORS allowed origin |
-| `JWT_SECRET_KEY` | No | - | Legacy HS256 auth. Superseded by Entra ID when Azure vars are set. |
-| `DOCUMENTS_DIR` | No | `data/docs` | Knowledge agent file browsing directory |
-| `M365_ENABLED` | No | `false` | Enable Microsoft 365 integration (opt-in) |
-| `M365_MCP_URL` | No | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL |
-| `M365_MCP_PORT` | No | `9000` | Host port for MCP server |
-| `M365_CACHE_KEY` | No | (derived) | Fernet key for token cache encryption |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | - | OTel trace export endpoint (empty = disabled) |
-| `NEXT_PUBLIC_OS_SECURITY_KEY` | No | - | Pre-fill auth token in the frontend UI |
+| Variable                       | Required | Default                            | Description                                                                             |
+| ------------------------------ | -------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
+| `LITELLM_API_KEY`              | Yes      | -                                  | LiteLLM Proxy API key                                                                   |
+| `LITELLM_BASE_URL`             | No       | `http://localhost:4000/v1`         | LiteLLM Proxy URL                                                                       |
+| `MODEL_ID`                     | No       | `gpt-5-mini`                       | LLM model ID                                                                            |
+| `EMBEDDING_MODEL_ID`           | No       | `text-embedding-3-small`           | Embedding model ID                                                                      |
+| `EMBEDDING_DIMENSIONS`         | No       | `1536`                             | Embedding vector dimensions                                                             |
+| `DB_HOST`                      | No       | `apollos-db`                       | Database host (use Docker service name)                                                 |
+| `DB_PORT`                      | No       | `5432`                             | Database port                                                                           |
+| `DB_USER`                      | No       | `ai`                               | Database user                                                                           |
+| `DB_PASS`                      | No       | `ai`                               | Database password                                                                       |
+| `DB_DATABASE`                  | No       | `ai`                               | Database name                                                                           |
+| `RUNTIME_ENV`                  | No       | `dev`                              | Set to `dev` for auto-reload, `prd` for production                                      |
+| `IMAGE_TAG`                    | No       | `latest`                           | Docker image tag for backend and frontend                                               |
+| `GHCR_OWNER`                   | No       | `jrmatherly`                       | GHCR image owner (used by `docker-compose.prod.yaml`)                                   |
+| `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No       | `http://localhost:8000`            | Default AgentOS endpoint shown in the UI                                                |
+| `AZURE_TENANT_ID`              | No       | -                                  | Entra ID tenant ID. All 4 required to enable auth.                                      |
+| `AZURE_CLIENT_ID`              | No       | -                                  | Entra ID application (client) ID                                                        |
+| `AZURE_CLIENT_SECRET`          | No       | -                                  | Client secret for Microsoft Graph API access                                            |
+| `AZURE_AUDIENCE`               | No       | -                                  | Token audience (`api://{AZURE_CLIENT_ID}`). Both `api://` and bare GUID forms accepted. |
+| `AUTH_DEBUG`                   | No       | `True` (dev)                       | Log diagnostic 401 details: missing tokens, expired tokens, audience mismatches.        |
+| `FRONTEND_URL`                 | No       | `http://localhost:3000`            | CORS allowed origin                                                                     |
+| `JWT_SECRET_KEY`               | No       | -                                  | Legacy HS256 auth. Superseded by Entra ID when Azure vars are set.                      |
+| `DOCUMENTS_DIR`                | No       | `data/docs`                        | Knowledge agent file browsing directory                                                 |
+| `M365_ENABLED`                 | No       | `false`                            | Enable Microsoft 365 integration (opt-in)                                               |
+| `M365_MCP_URL`                 | No       | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL                                                                 |
+| `M365_MCP_PORT`                | No       | `9000`                             | Host port for MCP server                                                                |
+| `M365_CACHE_KEY`               | No       | (derived)                          | Fernet key for token cache encryption                                                   |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`  | No       | -                                  | OTel trace export endpoint (empty = disabled)                                           |
+| `NEXT_PUBLIC_OS_SECURITY_KEY`  | No       | -                                  | Pre-fill auth token in the frontend UI                                                  |
 
 ## Learn More
 

@@ -67,18 +67,16 @@ registry = create_registry()
 base_app = FastAPI()
 base_app.state.limiter = limiter
 base_app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
-# Middleware order matters (LIFO): SecurityHeaders registered first → runs after JWT on response
+# Middleware order (LIFO): SecurityHeaders first → runs after JWT on response
 base_app.add_middleware(SecurityHeadersMiddleware)
 base_app.add_middleware(EntraJWTMiddleware, config=auth_config, jwks_cache=jwks_cache)
 base_app.include_router(auth_router)  # /auth/health, /auth/me, /auth/sync, etc.
 
-# M365 integration (opt-in via M365_ENABLED env var)
+# M365 routes (opt-in via M365_ENABLED) — no middleware needed, token resolved
+# directly in MCPTools header_provider via run_context.user_id + OBOTokenService
 if getenv("M365_ENABLED", "").lower() in ("true", "1", "yes"):
-    from backend.auth.m365_middleware import M365TokenMiddleware
     from backend.auth.m365_routes import m365_router
 
-    # Middleware order: LIFO — add after EntraJWT so it runs after auth is complete
-    base_app.add_middleware(M365TokenMiddleware)
     base_app.include_router(m365_router)
 
 # ---------------------------------------------------------------------------

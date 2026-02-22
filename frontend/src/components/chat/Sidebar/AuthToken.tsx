@@ -57,13 +57,11 @@ const AuthToken = ({
 
   const displayValue = authToken
     ? `${'*'.repeat(Math.min(authToken.length, 20))}${authToken.length > 20 ? '...' : ''}`
-    : 'NO TOKEN SET'
+    : 'No Token Set'
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <div className="text-xs font-medium uppercase text-primary">
-        Auth Token
-      </div>
+      <div className="text-xs font-medium text-primary">Auth Token</div>
       {isEditing ? (
         <div className="flex w-full items-center gap-1">
           <input
@@ -87,7 +85,7 @@ const AuthToken = ({
       ) : (
         <div className="flex w-full items-center gap-1">
           <motion.div
-            className="relative flex h-9 w-full cursor-pointer items-center justify-between rounded-xl border border-primary/15 bg-accent p-3 uppercase"
+            className="relative flex h-9 w-full cursor-pointer items-center justify-between rounded-xl border border-primary/15 bg-accent p-3"
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
             onClick={() => setIsEditing(true)}
@@ -104,7 +102,7 @@ const AuthToken = ({
                   transition={{ duration: 0.2 }}
                 >
                   <p className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-primary">
-                    <Icon type="edit" size="xxs" /> EDIT TOKEN
+                    <Icon type="edit" size="xxs" /> Edit Token
                   </p>
                 </motion.div>
               ) : (

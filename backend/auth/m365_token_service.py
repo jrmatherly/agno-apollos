@@ -31,7 +31,6 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 GRAPH_SCOPES: list[str] = [
     "https://graph.microsoft.com/.default",
-    "offline_access",
 ]
 
 # ---------------------------------------------------------------------------
@@ -118,12 +117,11 @@ class OBOTokenService:
             {"connected": False, "error": "..."} on failure
         """
         app = self._get_or_create_app(user_oid)
-        scopes = [s for s in GRAPH_SCOPES if s != "offline_access"]
 
         with self._get_lock(user_oid):
             result = app.acquire_token_on_behalf_of(
                 user_assertion=user_jwt,
-                scopes=scopes + ["offline_access"],
+                scopes=GRAPH_SCOPES,
             )
 
         if "access_token" not in result:
@@ -152,10 +150,8 @@ class OBOTokenService:
         if not accounts:
             return None
 
-        scopes = [s for s in GRAPH_SCOPES if s != "offline_access"]
-
         with self._get_lock(user_oid):
-            result = app.acquire_token_silent(scopes=scopes, account=accounts[0])
+            result = app.acquire_token_silent(scopes=GRAPH_SCOPES, account=accounts[0])
 
         if result and "access_token" in result:
             return result["access_token"]

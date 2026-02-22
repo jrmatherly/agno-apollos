@@ -207,12 +207,12 @@ apollos-ai/
 
 Uses **uv native project management** (not pip-compatibility mode):
 
-| Operation | Command |
-|-----------|---------|
-| Add a dependency | `uv add <package>` |
+| Operation           | Command               |
+| ------------------- | --------------------- |
+| Add a dependency    | `uv add <package>`    |
 | Remove a dependency | `uv remove <package>` |
-| Upgrade all deps | `uv lock --upgrade` |
-| Sync environment | `mise run setup` |
+| Upgrade all deps    | `uv lock --upgrade`   |
+| Sync environment    | `mise run setup`      |
 
 **Lockfile**: `uv.lock` (cross-platform TOML, auto-managed, committed to git)
 **Dev deps**: Defined in `[dependency-groups]` (PEP 735)
@@ -221,128 +221,148 @@ Uses **uv native project management** (not pip-compatibility mode):
 
 Uses **pnpm** for package management:
 
-| Operation | Command |
-|-----------|---------|
-| Install deps | `mise run frontend:setup` |
-| Add a dependency | `cd frontend && pnpm add <package>` |
-| Remove a dependency | `cd frontend && pnpm remove <package>` |
-| Build for production | `mise run frontend:build` |
+| Operation            | Command                                |
+| -------------------- | -------------------------------------- |
+| Install deps         | `mise run frontend:setup`              |
+| Add a dependency     | `cd frontend && pnpm add <package>`    |
+| Remove a dependency  | `cd frontend && pnpm remove <package>` |
+| Build for production | `mise run frontend:build`              |
 
 **Lockfile**: `frontend/pnpm-lock.yaml` (committed to git)
 **Dev deps**: Defined in `devDependencies` in `frontend/package.json`
 
 ## Entry Points
 
-| Entry Point | Path | Command | Description |
-|-------------|------|---------|-------------|
-| API Server | `backend/main.py` | `mise run docker:up` | Starts Apollos AI FastAPI server on :8000 |
-| Frontend UI | `frontend/` | `mise run frontend:dev` | Starts Next.js dev server on :3000 |
-| Knowledge Loader | `backend/agents/knowledge_agent.py` | `mise run load-docs` | Loads default docs into vector DB |
-| Full Stack | `docker-compose.yaml` | `mise run docker:up` | Core services (DB + backend + frontend) |
-| Docs Site | `docs/Dockerfile` | `mise run docs:docker` | Documentation on :3333 |
-| Watch Mode | `docker-compose.yaml` | `mise run dev` | Auto-sync code + rebuild on dep changes |
+| Entry Point      | Path                                | Command                 | Description                               |
+| ---------------- | ----------------------------------- | ----------------------- | ----------------------------------------- |
+| API Server       | `backend/main.py`                   | `mise run docker:up`    | Starts Apollos AI FastAPI server on :8000 |
+| Frontend UI      | `frontend/`                         | `mise run frontend:dev` | Starts Next.js dev server on :3000        |
+| Knowledge Loader | `backend/agents/knowledge_agent.py` | `mise run load-docs`    | Loads default docs into vector DB         |
+| Full Stack       | `docker-compose.yaml`               | `mise run docker:up`    | Core services (DB + backend + frontend)   |
+| Docs Site        | `docs/Dockerfile`                   | `mise run docs:docker`  | Documentation on :3333                    |
+| Watch Mode       | `docker-compose.yaml`               | `mise run dev`          | Auto-sync code + rebuild on dep changes   |
 
 ## Core Modules
 
 ### backend/models.py
+
 - **Exports**: `get_model()` factory function
 - **Purpose**: Shared model factory — all agents use this instead of inline `LiteLLMOpenAI`
 - **Config**: `MODEL_ID`, `LITELLM_BASE_URL`, `LITELLM_API_KEY` env vars
 
 ### backend/cli.py
+
 - **Exports**: `run_agent_cli()` function
 - **Purpose**: Shared Rich CLI module for running agents directly from the command line
 - **Features**: Single-question mode (`-q`), interactive prompt loop, session persistence (`-s`), user linking (`-u`), markdown rendering (`-m`), reasoning display (`--show-reasoning`), configurable exit commands, streaming toggle
 
 ### backend/agents/knowledge_agent.py
+
 - **Exports**: `knowledge_agent` (Agent instance), `knowledge_learnings` (Knowledge), `load_default_documents()` function
 - **Purpose**: RAG agent using pgvector hybrid search over ingested documents
 - **Features**: Agentic memory, intent routing, confidence signaling with citation patterns, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, structured source registry, custom tools (FileTools, search_content, list_knowledge_sources, add_knowledge_source, save_intent_discovery)
 - **Knowledge source**: Loads from `docs.agno.com` + PDF/CSV files from `data/docs/` + common search patterns from `backend/knowledge/patterns/`
 
 ### backend/agents/mcp_agent.py
+
 - **Exports**: `mcp_agent` (Agent instance), `mcp_learnings` (Knowledge)
 - **Purpose**: Tool-use agent connecting to external services via MCP protocol
 - **MCP endpoint**: `https://docs.agno.com/mcp`
 - **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries
 
 ### backend/agents/web_search_agent.py
+
 - **Exports**: `web_search_agent` (Agent instance), `web_search_learnings` (Knowledge)
 - **Purpose**: Web research agent using DuckDuckGo search + news
 - **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, source citations
 
 ### backend/agents/reasoning_agent.py
+
 - **Exports**: `reasoning_agent` (Agent instance), `reasoning_learnings` (Knowledge)
 - **Purpose**: Chain-of-thought reasoning with configurable step depth (2-6 steps)
 - **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, `reasoning=True`
 
 ### backend/agents/data_agent.py
+
 - **Exports**: `data_agent` (Agent instance), `data_knowledge` (Knowledge), `data_learnings` (Knowledge)
 - **Purpose**: Self-learning data analyst with dual knowledge system (Dash pattern)
 - **Features**: Agentic memory, full LearningMachine (learned_knowledge, user_profile, user_memory, session_context), guardrails, session summaries, dual knowledge (curated + learnings), business rules context, insight-focused instructions
 - **Tools**: PostgresTools (show_tables, describe_table, summarize_table, inspect_query), `introspect_schema`, `save_validated_query`
 
 ### backend/agents/m365_agent.py
+
 - **Exports**: `m365_agent` (Agent instance)
 - **Purpose**: Read-only M365 agent accessing OneDrive, SharePoint, Outlook, Calendar, Teams via Softeria MCP server
 - **Features**: Guardrails, LearningMachine, tool_hooks (audit_hook + m365_write_guard), MCPTools with header_provider
 - **Activation**: Conditional import in `backend/main.py` when `M365_ENABLED=true`
 
 ### backend/tools/m365.py
+
 - **Exports**: `m365_mcp_tools()` factory, `set_graph_token()`, `clear_graph_token()`, `_graph_token_var` (ContextVar)
 - **Purpose**: MCPTools factory with contextvars-based header_provider for per-request Graph token injection
 - **Pattern**: Returns `[]` when `M365_ENABLED` is unset; returns `[MCPTools(...)]` when enabled
 
 ### backend/tools/hooks.py
+
 - **Exports**: `audit_hook`, `m365_write_guard`
 - **Purpose**: Tool hooks for M365 integration — audit logging and write operation blocking
 - **Key pattern**: `m365_write_guard` raises `StopAgentRun` for `m365_send/create/update/delete/upload/move` prefixes
 
 ### backend/auth/m365_token_service.py
+
 - **Exports**: `OBOTokenService`, `get_obo_service()`, `encrypt_cache()`, `decrypt_cache()`
 - **Purpose**: OBO token exchange with per-user MSAL ConfidentialClientApplication isolation
 - **Persistence**: Fernet-encrypted SerializableTokenCache in PostgreSQL
 
 ### backend/auth/m365_routes.py
+
 - **Exports**: `m365_router`, `warm_m365_cache()`
 - **Purpose**: API routes (`/m365/status`, `/m365/connect`, `/m365/disconnect`) + startup cache warming
 
 ### backend/auth/m365_middleware.py
+
 - **Exports**: `M365TokenMiddleware`
 - **Purpose**: Per-request Graph token propagation from MSAL cache into contextvars
 
 ### backend/context/semantic_model.py
+
 - **Exports**: `SEMANTIC_MODEL` (dict), `SEMANTIC_MODEL_STR` (formatted markdown)
 - **Purpose**: 11-table database schema context injected into data agent instructions (Dash pattern)
 - **Tables**: 6 Agno tables (`agno_agent_sessions`, `agno_agent_runs`, `agno_memories`, `agno_team_sessions`, `agno_workflow_sessions`, `agno_approvals`) + 5 F1 tables (`drivers_championship`, `constructors_championship`, `race_wins`, `race_results`, `fastest_laps`)
 
 ### backend/teams/research_team.py
+
 - **Exports**: `research_team` (Team instance)
 - **Purpose**: Multi-agent research team (coordinate mode) with web_researcher + analyst members
 - **Features**: Shared history, agentic memory, ReasoningTools, safety parameters (max_iterations=5, num_history_runs=5, add_datetime_to_context)
 
 ### backend/workflows/research_workflow.py
+
 - **Exports**: `research_workflow` (Workflow instance)
 - **Purpose**: Quality-gated research pipeline with iterative refinement and conditional analysis
 - **Steps**: Initial Research (web_search_agent) → Quality Refinement Loop (quality_reviewer + gap filling, max 3 iterations) → Complexity-based Condition (deep analysis vs basic synthesis via reasoning_agent)
 - **Primitives**: Uses Agno `Loop` (with `end_condition` callback) and `Condition` (with `evaluator` function)
 
 ### backend/registry.py
+
 - **Exports**: `create_registry()` factory function
 - **Purpose**: Central component registry for Agent-as-Config persistence — maps tools/functions/models/dbs by name so agents can be saved to and loaded from PostgreSQL
 - **Contents**: Web search, Postgres, MCP, reasoning tools; custom functions (search, knowledge ops, data tools); default model and database
 
 ### backend/a2a/executor.py
+
 - **Exports**: `AgnoAgentExecutor` class
 - **Purpose**: Wraps Agno `Agent` instances for A2A protocol message handling
 - **Key pattern**: `Agent.run()` is synchronous; uses `asyncio.to_thread()` to avoid blocking the async event loop. `event_queue.enqueue_event()` requires `await`.
 
 ### backend/a2a/server.py
+
 - **Exports**: `create_a2a_apps()` factory function, `AGENT_METADATA` dict
 - **Purpose**: Builds `AgentCard` discovery documents and `A2AStarletteApplication` instances for each registered agent
 - **Mount pattern**: Returns `list[tuple[str, ASGIApp]]` for mounting on the FastAPI app at `/a2a/agents/{id}`
 
 ### backend/auth/
+
 - **Exports** (`__init__.py`): `EntraJWTMiddleware`, `auth_lifespan`, `auth_router`
 - **Purpose**: Microsoft Entra ID JWT authentication, RBAC scope mapping, user/team sync, and auth API routes
 - **Key files**:
@@ -359,6 +379,7 @@ Uses **pnpm** for package management:
   - `security_headers.py` — `SecurityHeadersMiddleware` (CSP, X-Frame-Options, etc.)
 
 ### backend/main.py
+
 - **Exports**: `agent_os` (AgentOS), `app` (FastAPI app)
 - **Purpose**: Creates and configures Apollos AI with all agents, teams, workflows, tracing, scheduler, A2A endpoints
 - **Config**: Reads `backend/config.yaml` for UI quick-prompts
@@ -367,26 +388,31 @@ Uses **pnpm** for package management:
 - **Dev mode**: Auto-reload when `RUNTIME_ENV=dev`
 
 ### backend/db/session.py
+
 - **Exports**: `get_postgres_db()`, `create_knowledge()`
 - **Purpose**: Factory functions for PostgresDb and Knowledge (pgvector hybrid search)
 - **Embedder**: `OpenAIEmbedder` routed through LiteLLM Proxy (configurable via env vars)
 - **Search type**: Hybrid (vector + keyword)
 
 ### backend/db/url.py
+
 - **Exports**: `db_url` (connection string)
 - **Purpose**: Builds `postgresql+psycopg://` URL from env vars with URL-encoded password
 
 ### frontend/src/store.ts
+
 - **Exports**: Zustand store (endpoint, auth token, agent selection)
 - **Purpose**: Client-side state management for API connection settings
 - **Default endpoint**: `http://localhost:8000`
 
 ### frontend/src/api/
+
 - **Purpose**: Browser-side API client for AgentOS
 - **Pattern**: All API calls use dynamic `agentOSUrl` from Zustand store, no hardcoded URLs
 - **Auth**: Bearer token from store, included in all requests
 
 ### frontend/src/auth/
+
 - **Purpose**: MSAL.js v5 authentication integration for Microsoft Entra ID
 - **Key files**:
   - `msalConfig.ts` — `PublicClientApplication` singleton (null when unconfigured; SSR-safe)
@@ -399,117 +425,117 @@ Uses **pnpm** for package management:
 
 ## Configuration
 
-| File | Purpose |
-|------|---------|
-| `mise.toml` | Mise config: tools (Python 3.12, uv, Node 24, pnpm), env vars, settings |
-| `mise-tasks/` | File-based mise tasks (25 dev workflow commands) |
-| `pyproject.toml` | Backend metadata, dependencies, [dependency-groups], ruff/mypy config |
-| `uv.lock` | Backend lockfile (auto-managed, committed to git) |
-| `frontend/package.json` | Frontend metadata, dependencies, scripts |
-| `frontend/pnpm-lock.yaml` | Frontend lockfile (committed to git) |
-| `.python-version` | Pins Python 3.12 for uv, pyenv, and CI |
-| `docker-compose.yaml` | Dev: 3 core services + optional docs (local builds, hot-reload, debug) |
+| File                       | Purpose                                                                  |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `mise.toml`                | Mise config: tools (Python 3.12, uv, Node 24, pnpm), env vars, settings  |
+| `mise-tasks/`              | File-based mise tasks (25 dev workflow commands)                         |
+| `pyproject.toml`           | Backend metadata, dependencies, [dependency-groups], ruff/mypy config    |
+| `uv.lock`                  | Backend lockfile (auto-managed, committed to git)                        |
+| `frontend/package.json`    | Frontend metadata, dependencies, scripts                                 |
+| `frontend/pnpm-lock.yaml`  | Frontend lockfile (committed to git)                                     |
+| `.python-version`          | Pins Python 3.12 for uv, pyenv, and CI                                   |
+| `docker-compose.yaml`      | Dev: 3 core services + optional docs (local builds, hot-reload, debug)   |
 | `docker-compose.prod.yaml` | Prod: 3 core services + optional docs (GHCR images, no reload, no debug) |
-| `backend/config.yaml` | Agent quick-prompts for the Agno web UI |
-| `example.env` | Template: LiteLLM, model, DB, runtime, Docker, frontend config |
-| `backend/Dockerfile` | Backend: two-layer cached build, `uv sync --locked` |
-| `frontend/Dockerfile` | Frontend: multi-stage standalone build, node:24-alpine |
-| `docs/Dockerfile` | Docs: node:24-alpine, Mintlify CLI (`mint dev`) |
+| `backend/config.yaml`      | Agent quick-prompts for the Agno web UI                                  |
+| `example.env`              | Template: LiteLLM, model, DB, runtime, Docker, frontend config           |
+| `backend/Dockerfile`       | Backend: two-layer cached build, `uv sync --locked`                      |
+| `frontend/Dockerfile`      | Frontend: multi-stage standalone build, node:24-alpine                   |
+| `docs/Dockerfile`          | Docs: node:24-alpine, Mintlify CLI (`mint dev`)                          |
 
 ## CI/CD
 
-| Workflow | Trigger | Steps |
-|----------|---------|-------|
-| `codeql.yml` | Push to main, PR, weekly Mon 6am UTC | CodeQL security scanning: Python, JavaScript/TypeScript, Actions (security-extended suite) |
-| `validate.yml` | Push to main, PR | Parallel jobs: backend (format, lint, typecheck via mise) + frontend (validate via mise) |
-| `docker-images.yml` | Release published | Parallel jobs: build + push apollos-backend and apollos-frontend images to GHCR |
-| `docs-image.yml` | Push to main (docs/**) | Build + push apollos-docs image to GHCR |
+| Workflow            | Trigger                              | Steps                                                                                      |
+| ------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `codeql.yml`        | Push to main, PR, weekly Mon 6am UTC | CodeQL security scanning: Python, JavaScript/TypeScript, Actions (security-extended suite) |
+| `validate.yml`      | Push to main, PR                     | Parallel jobs: backend (format, lint, typecheck via mise) + frontend (validate via mise)   |
+| `docker-images.yml` | Release published                    | Parallel jobs: build + push apollos-backend and apollos-frontend images to GHCR            |
+| `docs-image.yml`    | Push to main (docs/\*\*)             | Build + push apollos-docs image to GHCR                                                    |
 
 ## Key Dependencies
 
 ### Backend
 
-| Package | Purpose |
-|---------|---------|
-| `agno` | Core agent framework (Agent, AgentOS, Knowledge, tools) |
-| `fastapi[standard]` | HTTP API framework with uvicorn |
-| `openai` | OpenAI API client (used by embedder via LiteLLM Proxy) |
-| `pgvector` | Vector similarity search extension for PostgreSQL |
-| `psycopg[binary]` | PostgreSQL adapter (async-capable) |
-| `sqlalchemy` | ORM / database toolkit |
-| `mcp` | Model Context Protocol client |
-| `opentelemetry-api/sdk` | Distributed tracing |
-| `opentelemetry-exporter-otlp-proto-http` | OTLP HTTP trace exporter |
-| `openinference-instrumentation-agno` | Agno-specific OTel instrumentation |
-| `litellm` | Multi-provider LLM routing (external proxy, no [proxy] extra) |
-| `a2a-sdk` | Agent-to-Agent protocol SDK (A2AStarletteApplication, AgentCard, AgentExecutor) |
-| `ddgs` | Web search backend for web_search_agent |
-| `fastmcp` | MCP server for AgentOS |
-| `pypdf` | PDF document reader for knowledge loaders |
-| `aiofiles` | Async file I/O for document loading |
-| `pandas` | DataFrame loading for F1 sample data scripts |
-| `rich` | Rich CLI output for eval runner |
+| Package                                  | Purpose                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------- |
+| `agno`                                   | Core agent framework (Agent, AgentOS, Knowledge, tools)                         |
+| `fastapi[standard]`                      | HTTP API framework with uvicorn                                                 |
+| `openai`                                 | OpenAI API client (used by embedder via LiteLLM Proxy)                          |
+| `pgvector`                               | Vector similarity search extension for PostgreSQL                               |
+| `psycopg[binary]`                        | PostgreSQL adapter (async-capable)                                              |
+| `sqlalchemy`                             | ORM / database toolkit                                                          |
+| `mcp`                                    | Model Context Protocol client                                                   |
+| `opentelemetry-api/sdk`                  | Distributed tracing                                                             |
+| `opentelemetry-exporter-otlp-proto-http` | OTLP HTTP trace exporter                                                        |
+| `openinference-instrumentation-agno`     | Agno-specific OTel instrumentation                                              |
+| `litellm`                                | Multi-provider LLM routing (external proxy, no [proxy] extra)                   |
+| `a2a-sdk`                                | Agent-to-Agent protocol SDK (A2AStarletteApplication, AgentCard, AgentExecutor) |
+| `ddgs`                                   | Web search backend for web_search_agent                                         |
+| `fastmcp`                                | MCP server for AgentOS                                                          |
+| `pypdf`                                  | PDF document reader for knowledge loaders                                       |
+| `aiofiles`                               | Async file I/O for document loading                                             |
+| `pandas`                                 | DataFrame loading for F1 sample data scripts                                    |
+| `rich`                                   | Rich CLI output for eval runner                                                 |
 
 **Dev deps** (`[dependency-groups]`): `mypy`, `pandas-stubs`, `ruff`, `pytest`, `requests`
 
 ### Frontend
 
-| Package | Purpose |
-|---------|---------|
-| `next` (15.5.10) | React framework (App Router) |
-| `react` / `react-dom` (18) | UI library |
-| `tailwindcss` | Utility-first CSS |
-| `zustand` | State management |
-| `framer-motion` | Animations |
-| `@radix-ui/*` | Accessible UI primitives (shadcn/ui base) |
-| `react-markdown` | Markdown rendering |
-| `nuqs` | URL query state sync |
+| Package                    | Purpose                                   |
+| -------------------------- | ----------------------------------------- |
+| `next` (15.5.10)           | React framework (App Router)              |
+| `react` / `react-dom` (18) | UI library                                |
+| `tailwindcss`              | Utility-first CSS                         |
+| `zustand`                  | State management                          |
+| `framer-motion`            | Animations                                |
+| `@radix-ui/*`              | Accessible UI primitives (shadcn/ui base) |
+| `react-markdown`           | Markdown rendering                        |
+| `nuqs`                     | URL query state sync                      |
 
 **Dev deps**: `typescript`, `eslint`, `prettier`, `@types/node`, `@types/react`
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `LITELLM_API_KEY` | Yes | — | LiteLLM Proxy API key |
-| `LITELLM_BASE_URL` | No | `http://localhost:4000/v1` | LiteLLM Proxy URL |
-| `MODEL_ID` | No | `gpt-5-mini` | LLM model ID |
-| `EMBEDDING_MODEL_ID` | No | `text-embedding-3-small` | Embedding model ID |
-| `EMBEDDING_DIMENSIONS` | No | `1536` | Embedding vector dimensions |
-| `DB_HOST` | No | `localhost` | PostgreSQL host |
-| `DB_PORT` | No | `5432` | PostgreSQL port |
-| `DB_USER` | No | `ai` | PostgreSQL user |
-| `DB_PASS` | No | `ai` | PostgreSQL password |
-| `DB_DATABASE` | No | `ai` | PostgreSQL database name |
-| `DB_DRIVER` | No | `postgresql+psycopg` | SQLAlchemy DB driver |
-| `RUNTIME_ENV` | No | `dev` | Set to `dev` for auto-reload |
-| `IMAGE_TAG` | No | `latest` | Docker image tag for backend and frontend |
-| `GHCR_OWNER` | No | `jrmatherly` | GHCR image owner (used by docker-compose.prod.yaml) |
-| `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No | `http://localhost:8000` | Default AgentOS endpoint shown in the UI |
-| `NEXT_PUBLIC_OS_SECURITY_KEY` | No | — | Pre-fill auth token in the frontend UI |
-| `JWT_SECRET_KEY` | No | — | Legacy HS256 auth (deprecated; superseded by Entra ID when Azure vars are set) |
-| `AZURE_TENANT_ID` | No | — | Entra ID Directory (tenant) ID; all 4 AZURE_* required to enable auth |
-| `AZURE_CLIENT_ID` | No | — | Entra ID Application (client) ID |
-| `AZURE_CLIENT_SECRET` | No | — | Client secret for Microsoft Graph API access |
-| `AZURE_AUDIENCE` | No | — | Token audience; set to `api://{AZURE_CLIENT_ID}`. Both `api://` and bare GUID forms accepted. |
-| `AUTH_DEBUG` | No | `True` (dev) `False` (prod) | Log diagnostic 401 details: missing tokens, expired tokens, audience mismatches. |
-| `FRONTEND_URL` | No | `http://localhost:3000` | CORS allowed origin for API responses |
-| `NEXT_PUBLIC_AZURE_CLIENT_ID` | No | — | Frontend MSAL client ID (build-time; empty = manual token entry) |
-| `NEXT_PUBLIC_AZURE_TENANT_ID` | No | — | Frontend MSAL tenant ID (build-time) |
-| `NEXT_PUBLIC_REDIRECT_URI` | No | `http://localhost:3000` | MSAL redirect URI after login (build-time) |
-| `TRACING_ENABLED` | No | — | Set to `true` to store traces in PostgreSQL via Agno (Layer 1) |
-| `OTLP_ENDPOINTS` | No | — | Comma-separated OTLP endpoint URLs for multi-export (Layer 2) |
-| `OTLP_AUTH_HEADERS` | No | — | Comma-separated auth headers parallel to `OTLP_ENDPOINTS` |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | Legacy single-endpoint fallback (use `OTLP_ENDPOINTS` for new setups) |
-| `A2A_ENABLED` | No | — | Set to `true` to expose agents via A2A protocol endpoints |
-| `A2A_BASE_URL` | No | `http://localhost:8000` | Base URL used in AgentCard discovery documents |
-| `DOCUMENTS_DIR` | No | `./data/docs` | Knowledge agent file browsing directory |
-| `M365_ENABLED` | No | `false` | Enable Microsoft 365 integration (opt-in) |
-| `M365_MCP_URL` | No | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL |
-| `M365_MCP_PORT` | No | `9000` | Host port for MCP server |
-| `M365_CACHE_KEY` | No | (derived) | Fernet key for token cache encryption |
-| `WAIT_FOR_DB` | No | — | Container waits for DB readiness |
-| `PRINT_ENV_ON_LOAD` | No | — | Print env vars on container start |
+| Variable                       | Required | Default                            | Description                                                                                   |
+| ------------------------------ | -------- | ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| `LITELLM_API_KEY`              | Yes      | —                                  | LiteLLM Proxy API key                                                                         |
+| `LITELLM_BASE_URL`             | No       | `http://localhost:4000/v1`         | LiteLLM Proxy URL                                                                             |
+| `MODEL_ID`                     | No       | `gpt-5-mini`                       | LLM model ID                                                                                  |
+| `EMBEDDING_MODEL_ID`           | No       | `text-embedding-3-small`           | Embedding model ID                                                                            |
+| `EMBEDDING_DIMENSIONS`         | No       | `1536`                             | Embedding vector dimensions                                                                   |
+| `DB_HOST`                      | No       | `localhost`                        | PostgreSQL host                                                                               |
+| `DB_PORT`                      | No       | `5432`                             | PostgreSQL port                                                                               |
+| `DB_USER`                      | No       | `ai`                               | PostgreSQL user                                                                               |
+| `DB_PASS`                      | No       | `ai`                               | PostgreSQL password                                                                           |
+| `DB_DATABASE`                  | No       | `ai`                               | PostgreSQL database name                                                                      |
+| `DB_DRIVER`                    | No       | `postgresql+psycopg`               | SQLAlchemy DB driver                                                                          |
+| `RUNTIME_ENV`                  | No       | `dev`                              | Set to `dev` for auto-reload                                                                  |
+| `IMAGE_TAG`                    | No       | `latest`                           | Docker image tag for backend and frontend                                                     |
+| `GHCR_OWNER`                   | No       | `jrmatherly`                       | GHCR image owner (used by docker-compose.prod.yaml)                                           |
+| `NEXT_PUBLIC_DEFAULT_ENDPOINT` | No       | `http://localhost:8000`            | Default AgentOS endpoint shown in the UI                                                      |
+| `NEXT_PUBLIC_OS_SECURITY_KEY`  | No       | —                                  | Pre-fill auth token in the frontend UI                                                        |
+| `JWT_SECRET_KEY`               | No       | —                                  | Legacy HS256 auth (deprecated; superseded by Entra ID when Azure vars are set)                |
+| `AZURE_TENANT_ID`              | No       | —                                  | Entra ID Directory (tenant) ID; all 4 AZURE\_\* required to enable auth                       |
+| `AZURE_CLIENT_ID`              | No       | —                                  | Entra ID Application (client) ID                                                              |
+| `AZURE_CLIENT_SECRET`          | No       | —                                  | Client secret for Microsoft Graph API access                                                  |
+| `AZURE_AUDIENCE`               | No       | —                                  | Token audience; set to `api://{AZURE_CLIENT_ID}`. Both `api://` and bare GUID forms accepted. |
+| `AUTH_DEBUG`                   | No       | `True` (dev) `False` (prod)        | Log diagnostic 401 details: missing tokens, expired tokens, audience mismatches.              |
+| `FRONTEND_URL`                 | No       | `http://localhost:3000`            | CORS allowed origin for API responses                                                         |
+| `NEXT_PUBLIC_AZURE_CLIENT_ID`  | No       | —                                  | Frontend MSAL client ID (build-time; empty = manual token entry)                              |
+| `NEXT_PUBLIC_AZURE_TENANT_ID`  | No       | —                                  | Frontend MSAL tenant ID (build-time)                                                          |
+| `NEXT_PUBLIC_REDIRECT_URI`     | No       | `http://localhost:3000`            | MSAL redirect URI after login (build-time)                                                    |
+| `TRACING_ENABLED`              | No       | —                                  | Set to `true` to store traces in PostgreSQL via Agno (Layer 1)                                |
+| `OTLP_ENDPOINTS`               | No       | —                                  | Comma-separated OTLP endpoint URLs for multi-export (Layer 2)                                 |
+| `OTLP_AUTH_HEADERS`            | No       | —                                  | Comma-separated auth headers parallel to `OTLP_ENDPOINTS`                                     |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`  | No       | —                                  | Legacy single-endpoint fallback (use `OTLP_ENDPOINTS` for new setups)                         |
+| `A2A_ENABLED`                  | No       | —                                  | Set to `true` to expose agents via A2A protocol endpoints                                     |
+| `A2A_BASE_URL`                 | No       | `http://localhost:8000`            | Base URL used in AgentCard discovery documents                                                |
+| `DOCUMENTS_DIR`                | No       | `./data/docs`                      | Knowledge agent file browsing directory                                                       |
+| `M365_ENABLED`                 | No       | `false`                            | Enable Microsoft 365 integration (opt-in)                                                     |
+| `M365_MCP_URL`                 | No       | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL                                                                       |
+| `M365_MCP_PORT`                | No       | `9000`                             | Host port for MCP server                                                                      |
+| `M365_CACHE_KEY`               | No       | (derived)                          | Fernet key for token cache encryption                                                         |
+| `WAIT_FOR_DB`                  | No       | —                                  | Container waits for DB readiness                                                              |
+| `PRINT_ENV_ON_LOAD`            | No       | —                                  | Print env vars on container start                                                             |
 
 ## Quick Start
 

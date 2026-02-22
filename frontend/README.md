@@ -70,28 +70,28 @@ NEXT_PUBLIC_OS_SECURITY_KEY=your_auth_token_here
 
 ## Development
 
-| Task | Command |
-|------|---------|
-| Install deps | `mise run frontend:setup` |
-| Dev server | `mise run frontend:dev` |
-| Production build | `mise run frontend:build` |
-| Lint (ESLint) | `mise run frontend:lint` |
-| Format (Prettier) | `mise run frontend:format` |
+| Task                    | Command                       |
+| ----------------------- | ----------------------------- |
+| Install deps            | `mise run frontend:setup`     |
+| Dev server              | `mise run frontend:dev`       |
+| Production build        | `mise run frontend:build`     |
+| Lint (ESLint)           | `mise run frontend:lint`      |
+| Format (Prettier)       | `mise run frontend:format`    |
 | Type-check (TypeScript) | `mise run frontend:typecheck` |
-| All checks | `mise run frontend:validate` |
+| All checks              | `mise run frontend:validate`  |
 
 ## Stack
 
-| Technology | Purpose |
-|------------|---------|
-| Next.js 15 | App Router, React framework |
-| React 18 | UI library |
-| TypeScript 5 | Type safety |
-| Tailwind CSS | Utility-first styling |
-| shadcn/ui | Component library |
-| Zustand | State management |
-| Framer Motion | Animations |
-| pnpm | Package manager |
+| Technology    | Purpose                     |
+| ------------- | --------------------------- |
+| Next.js 15    | App Router, React framework |
+| React 18      | UI library                  |
+| TypeScript 5  | Type safety                 |
+| Tailwind CSS  | Utility-first styling       |
+| shadcn/ui     | Component library           |
+| Zustand       | State management            |
+| Framer Motion | Animations                  |
+| pnpm          | Package manager             |
 
 ## License
 

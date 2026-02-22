@@ -29,7 +29,11 @@
   "common_gotchas": [
     {
       "issue": "UUID comparison",
-      "tables_affected": ["agno_agent_sessions", "agno_agent_runs", "agno_memories"],
+      "tables_affected": [
+        "agno_agent_sessions",
+        "agno_agent_runs",
+        "agno_memories"
+      ],
       "solution": "IDs are UUID type — use string comparison or ::uuid cast, never integer cast"
     },
     {

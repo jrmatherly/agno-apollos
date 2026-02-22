@@ -10,21 +10,21 @@ import Icon from '@/components/ui/icon'
 import { getProviderIcon } from '@/lib/modelProvider'
 import Sessions from './Sessions'
 import AuthToken from './AuthToken'
-import { AuthUserButton, isMsalConfigured } from '@/auth'
+import { isMsalConfigured } from '@/auth'
+import { UserMenu } from './UserMenu'
 import { isValidUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useQueryState } from 'nuqs'
 import { truncateText } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import Link from 'next/link'
 
 const DEFAULT_ENDPOINT =
   process.env.NEXT_PUBLIC_DEFAULT_ENDPOINT || 'http://localhost:8000'
-const ENDPOINT_PLACEHOLDER = 'NO ENDPOINT ADDED'
+const ENDPOINT_PLACEHOLDER = 'No Endpoint Added'
 const SidebarHeader = () => (
   <div className="flex items-center gap-2">
     <Icon type="agno" size="xs" />
-    <span className="text-xs font-medium uppercase text-white">Agent UI</span>
+    <span className="text-xs font-medium text-white">Apollos AI</span>
   </div>
 )
 
@@ -39,15 +39,15 @@ const NewChatButton = ({
     onClick={onClick}
     disabled={disabled}
     size="lg"
-    className="h-9 w-full rounded-xl bg-primary text-xs font-medium text-background hover:bg-primary/80"
+    className="h-9 w-full rounded-xl border border-primary/30 bg-transparent text-xs font-medium text-primary hover:border-brand/40 hover:bg-brand/10"
   >
-    <Icon type="plus-icon" size="xs" className="text-background" />
-    <span className="uppercase">New Chat</span>
+    <Icon type="plus-icon" size="xs" className="text-primary" />
+    <span>New Chat</span>
   </Button>
 )
 
 const ModelDisplay = ({ model }: { model: string }) => (
-  <div className="flex h-9 w-full items-center gap-3 rounded-xl border border-primary/15 bg-accent p-3 text-xs font-medium uppercase text-muted">
+  <div className="flex h-9 w-full items-center gap-3 rounded-xl border border-primary/15 bg-accent p-3 text-xs font-medium text-muted">
     {(() => {
       const icon = getProviderIcon(model)
       return icon ? <Icon type={icon} className="shrink-0" size="xs" /> : null
@@ -120,7 +120,7 @@ const Endpoint = () => {
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <div className="text-xs font-medium uppercase text-primary">AgentOS</div>
+      <div className="text-xs font-medium text-primary">AgentOS</div>
       {isEditing ? (
         <div className="flex w-full items-center gap-1">
           <input
@@ -143,7 +143,7 @@ const Endpoint = () => {
       ) : (
         <div className="flex w-full items-center gap-1">
           <motion.div
-            className="relative flex h-9 w-full cursor-pointer items-center justify-between rounded-xl border border-primary/15 bg-accent p-3 uppercase"
+            className="relative flex h-9 w-full cursor-pointer items-center justify-between rounded-xl border border-primary/15 bg-accent p-3"
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
             onClick={() => setIsEditing(true)}
@@ -160,7 +160,7 @@ const Endpoint = () => {
                   transition={{ duration: 0.2 }}
                 >
                   <p className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-primary">
-                    <Icon type="edit" size="xxs" /> EDIT AGENTOS
+                    <Icon type="edit" size="xxs" /> Edit AgentOS
                   </p>
                 </motion.div>
               ) : (
@@ -243,7 +243,7 @@ const Sidebar = ({
 
   return (
     <motion.aside
-      className="relative flex h-screen shrink-0 grow-0 flex-col overflow-hidden px-2 py-3 font-dmmono"
+      className="relative my-1.5 ml-1.5 flex shrink-0 grow-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-border bg-background/60 px-2 py-3 font-geist backdrop-blur-lg"
       initial={{ width: '16rem' }}
       animate={{ width: isCollapsed ? '2.5rem' : '16rem' }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -262,7 +262,7 @@ const Sidebar = ({
         />
       </motion.button>
       <motion.div
-        className="w-60 space-y-5"
+        className="flex w-60 flex-1 flex-col gap-5"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -20 : 0 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
@@ -278,11 +278,6 @@ const Sidebar = ({
         {isMounted && (
           <>
             <Endpoint />
-            {isMsalConfigured ? (
-              <AuthUserButton />
-            ) : (
-              <AuthToken hasEnvToken={hasEnvToken} envToken={envToken} />
-            )}
             {isEndpointActive && (
               <>
                 <motion.div
@@ -291,9 +286,7 @@ const Sidebar = ({
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, ease: 'easeInOut' }}
                 >
-                  <div className="text-xs font-medium uppercase text-primary">
-                    Mode
-                  </div>
+                  <div className="text-xs font-medium text-primary">Mode</div>
                   {isEndpointLoading ? (
                     <div className="flex w-full flex-col gap-2">
                       {Array.from({ length: 3 }).map((_, index) => (
@@ -316,15 +309,15 @@ const Sidebar = ({
                 <Sessions />
               </>
             )}
+            {!isMsalConfigured && (
+              <AuthToken hasEnvToken={hasEnvToken} envToken={envToken} />
+            )}
           </>
         )}
-        <Link
-          href="/settings"
-          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium uppercase text-muted transition-colors hover:bg-accent hover:text-primary"
-        >
-          <Icon type="settings" size="xs" />
-          Settings
-        </Link>
+
+        <div className="mt-auto">
+          <UserMenu />
+        </div>
       </motion.div>
     </motion.aside>
   )

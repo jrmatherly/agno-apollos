@@ -4,15 +4,15 @@ M365 MCP Tools Layer
 Factory for Agno MCPTools connecting to the self-hosted Softeria ms-365-mcp-server.
 
 Key design decisions:
-- header_provider is SYNC (confirmed: agno/tools/mcp/mcp.py)
-- contextvars propagates per-user Graph token from FastAPI request to header_provider
+- header_provider is SYNC (confirmed: agno/tools/mcp/mcp.py calls without await)
+- header_provider reads Graph token directly from OBOTokenService using run_context.user_id
+  — no middleware, no contextvars, no cancel scope issues
 - Single MCPTools instance (one Softeria server) -- tool_name_prefix avoids collisions
 - Server runs with --read-only -- write operations disabled at MCP server level
 """
 
 from __future__ import annotations
 
-import contextvars
 import logging
 from os import getenv
 from typing import TYPE_CHECKING
@@ -24,34 +24,27 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Per-request Graph token (set by middleware, read by header_provider)
-# ---------------------------------------------------------------------------
-_current_graph_token: contextvars.ContextVar[str] = contextvars.ContextVar("current_graph_token", default="")
-
-
-def set_graph_token(token: str) -> None:
-    """Set the current user's Graph token for this request context."""
-    _current_graph_token.set(token)
-
-
-def clear_graph_token() -> None:
-    """Clear the Graph token after the request completes."""
-    _current_graph_token.set("")
+_M365_MCP_URL = getenv("M365_MCP_URL", "http://apollos-m365-mcp:9000/mcp")
 
 
 # ---------------------------------------------------------------------------
-# header_provider -- SYNC, called by Agno without await
+# header_provider -- SYNC, called by Agno per-request with run_context
 # ---------------------------------------------------------------------------
 def m365_header_provider(run_context: RunContext, **_: object) -> dict[str, str]:
     """
     Injects the user's Graph access token as Authorization header.
 
     SYNC -- required by Agno (header_provider called without await).
-    Reads from contextvars -- zero I/O, zero network.
+    Gets token directly from OBOTokenService via run_context.user_id.
     Returns {} if no token available (agent will prompt user to connect M365).
     """
-    token = _current_graph_token.get()
+    user_id = getattr(run_context, "user_id", None) if run_context else None
+    if not user_id:
+        return {}
+
+    from backend.auth.m365_token_service import get_obo_service
+
+    token = get_obo_service().get_graph_token(user_id)
     if not token:
         return {}
     return {"Authorization": f"Bearer {token}"}
@@ -60,14 +53,14 @@ def m365_header_provider(run_context: RunContext, **_: object) -> dict[str, str]
 # ---------------------------------------------------------------------------
 # MCP tools factory
 # ---------------------------------------------------------------------------
-_M365_MCP_URL = getenv("M365_MCP_URL", "http://apollos-m365-mcp:9000/mcp")
+def m365_tools_factory() -> list[MCPTools]:
+    """Callable tools factory for deferred MCP connection.
 
+    Agno calls this per-run instead of at startup, avoiding the 401 that
+    occurs when AgentOS ``mcp_lifespan`` connects before any user token exists.
 
-def m365_mcp_tools() -> list[MCPTools]:
-    """
-    Returns MCPTools for the self-hosted Softeria ms-365-mcp-server.
-
-    Returns [] if M365_ENABLED is not true (safe to call unconditionally).
+    Always returns the MCPTools list -- the header_provider handles per-user
+    token resolution at call time, returning {} when no token is available.
     """
     if getenv("M365_ENABLED", "").lower() not in ("true", "1", "yes"):
         return []
@@ -78,14 +71,6 @@ def m365_mcp_tools() -> list[MCPTools]:
             transport="streamable-http",
             header_provider=m365_header_provider,
             tool_name_prefix="m365",
+            refresh_connection=True,
         )
     ]
-
-
-def m365_tools_factory() -> list[MCPTools]:
-    """Callable tools factory for deferred MCP connection.
-
-    Agno calls this per-run instead of at startup, avoiding the 401 that
-    occurs when AgentOS ``mcp_lifespan`` connects before any user token exists.
-    """
-    return m365_mcp_tools()
