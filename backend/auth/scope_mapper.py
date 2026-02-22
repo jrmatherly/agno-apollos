@@ -38,6 +38,10 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "approvals:read",
         "approvals:write",
         "approvals:delete",
+        "mcp:servers:read",
+        "mcp:servers:write",
+        "mcp:servers:delete",
+        "mcp:tools:call",
     ],
     "TeamLead": [
         "agents:run",
@@ -49,12 +53,16 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "memories:read",
         "memories:write",
         "memories:delete",
+        "mcp:servers:read",
+        "mcp:tools:call",
     ],
     "Developer": [
         "agents:run",
         "agents:read",
         "sessions:read",
         "sessions:write",
+        "mcp:servers:read",
+        "mcp:tools:call",
     ],
     "DevOps": [
         "system:read",
@@ -82,11 +90,23 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "agents:read",
         "sessions:read",
         "sessions:write",
+        "mcp:servers:read",
+        "mcp:tools:call",
     ],
 }
 
 # Cache the default mappings once (they don't change)
 _ROUTE_SCOPE_MAP: dict[str, list[str]] = get_default_scope_mappings()
+
+# MCP Gateway route scopes (added on top of Agno defaults)
+_ROUTE_SCOPE_MAP.update(
+    {
+        "GET /mcp/servers": ["mcp:servers:read"],
+        "GET /mcp/servers/*": ["mcp:servers:read"],
+        "POST /mcp/servers": ["mcp:servers:write"],
+        "DELETE /mcp/servers/*": ["mcp:servers:delete"],
+    }
+)
 
 
 def roles_to_scopes(roles: list[str]) -> list[str]:
@@ -120,7 +140,7 @@ def get_required_scopes(method: str, path: str) -> list[str] | None:
         if all(pp == rp or pp == "*" for pp, rp in zip(p_parts, parts)):
             return required
 
-    return []  # Unknown route — allow any authenticated user
+    return ["agent_os:admin"]  # Unknown route — default-deny, require admin
 
 
 # Re-export agno scope functions for use in middleware

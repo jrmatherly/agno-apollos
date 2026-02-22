@@ -68,6 +68,14 @@ apollos-ai/
 │   │   ├── __init__.py
 │   │   ├── executor.py          # AgnoAgentExecutor — wraps Agno agents for A2A message handling
 │   │   └── server.py            # AgentCard builder + A2AStarletteApplication mount helpers
+│   ├── mcp/                 # MCP Gateway integration (ContextForge)
+│   │   ├── __init__.py
+│   │   ├── config.py             # MCP_GATEWAY_ENABLED flag, lazy singleton, get_gateway_tools_factory()
+│   │   ├── gateway_client.py     # GatewayClient: JWT generation (jti+exp), gateway CRUD
+│   │   ├── tools_factory.py      # Gateway-aware header_provider + tools factory
+│   │   ├── routes.py             # Proxy routes: /mcp/servers (list, get, register, delete)
+│   │   ├── schemas.py            # Pydantic models (MCPServerInfo, MCPServerRegister, MCPServerResponse)
+│   │   └── validation.py         # BYOMCP URL validation (HTTPS-only, no private IPs)
 │   ├── maintenance.py       # Scheduled maintenance: memory optimization (MemoryManager) + usage warnings
 │   └── db/                  # Database layer
 │       ├── __init__.py      # Re-exports: get_postgres_db, get_eval_db, create_knowledge, db_url
@@ -85,13 +93,14 @@ apollos-ai/
 │   ├── postcss.config.mjs   # PostCSS config
 │   ├── src/                 # App source code
 │   │   ├── app/             # Next.js App Router pages (layout.tsx, page.tsx)
-│   │   │   └── settings/    # Settings pages (hub + M365 connect/disconnect)
+│   │   │   └── settings/    # Settings pages (hub + M365 + MCP Integrations)
 │   │   ├── components/      # React components
 │   │   │   ├── chat/        # Chat UI (ChatArea, Sidebar, Messages, Multimedia)
 │   │   │   └── ui/          # shadcn/ui primitives (button, dialog, select, etc.)
 │   │   ├── api/             # API client (browser-side fetch to backend)
 │   │   │   ├── os.ts        # AgentOS API functions (agents, teams, sessions, runs)
 │   │   │   ├── m365.ts      # M365 API client (status, connect, disconnect)
+│   │   │   ├── mcp.ts       # MCP Gateway API client (list, delete servers)
 │   │   │   └── routes.ts    # Route constants
 │   │   ├── hooks/           # React hooks
 │   │   │   ├── useAIResponseStream.tsx  # SSE stream handler
@@ -129,10 +138,13 @@ apollos-ai/
 │   ├── schedules/           # Scheduler tasks
 │   │   └── setup            # Initialize scheduler tables
 │   ├── docker/              # Docker-specific tasks
-│   │   ├── up               # Start full stack (--prod for GHCR images)
-│   │   ├── down             # Stop all services (--prod for production)
-│   │   ├── logs             # Tail logs (--prod for production)
+│   │   ├── up               # Start full stack (--prod, --docs, --m365, --gateway)
+│   │   ├── down             # Stop all services (--prod, --m365, --gateway)
+│   │   ├── logs             # Tail logs (--prod, --m365, --gateway)
 │   │   └── build            # Build all images locally (--platform amd64|arm64)
+│   ├── gateway/             # MCP Gateway tasks
+│   │   ├── up               # Start gateway (--prod, --m365)
+│   │   └── logs             # Tail gateway logs (--prod)
 │   ├── frontend/            # Frontend-specific tasks
 │   │   ├── setup            # Install frontend deps (pnpm install)
 │   │   ├── dev              # Start frontend dev server (port 3000)
@@ -146,7 +158,8 @@ apollos-ai/
 │       ├── validate         # Validate docs build + check broken links
 │       └── docker           # Start docs in Docker (--prod for GHCR image)
 ├── scripts/                 # Container-only scripts
-│   └── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
+│   ├── entrypoint.sh        # Container entrypoint — DB wait, banner, exec command
+│   └── init-contextforge-db.sh  # Creates contextforge database on first PostgreSQL init
 ├── .vscode/                 # VS Code settings
 │   ├── settings.json        # Format-on-save, ruff for Python, prettier for TS
 │   └── extensions.json      # Recommended extensions for contributors
@@ -361,6 +374,35 @@ Uses **pnpm** for package management:
 - **Purpose**: Builds `AgentCard` discovery documents and `A2AStarletteApplication` instances for each registered agent
 - **Mount pattern**: Returns `list[tuple[str, ASGIApp]]` for mounting on the FastAPI app at `/a2a/agents/{id}`
 
+### backend/mcp/config.py
+
+- **Exports**: `MCP_GATEWAY_ENABLED`, `get_gateway_client()`, `get_gateway_tools_factory()`
+- **Purpose**: Centralized gateway config — lazy singleton GatewayClient + factory builder
+- **Pattern**: `get_gateway_tools_factory("server-name", needs_user_token=True)` returns callable factory or `None`
+
+### backend/mcp/gateway_client.py
+
+- **Exports**: `GatewayClient` class
+- **Purpose**: ContextForge API client — JWT generation (jti+exp), gateway CRUD (list, register, delete)
+- **Key pattern**: RC1 requires `jti` (uuid4) + `exp` claims in service JWTs
+
+### backend/mcp/tools_factory.py
+
+- **Exports**: `create_gateway_header_provider()`, `create_gateway_tools_factory()`
+- **Purpose**: Gateway-aware MCPTools factory with header_provider for service JWT + optional user token passthrough
+- **Pattern**: Matches M365 `header_provider` convention (sync callable)
+
+### backend/mcp/routes.py
+
+- **Exports**: `mcp_router` (APIRouter)
+- **Purpose**: Proxy routes to ContextForge gateway — GET/POST `/mcp/servers`, GET/DELETE `/mcp/servers/{id}`
+- **Security**: Auth-gated, rate-limited, URL validation on registration
+
+### backend/mcp/validation.py
+
+- **Exports**: `validate_mcp_server_url()`, `URLValidationError`
+- **Purpose**: BYOMCP URL validation — HTTPS-only for external servers, blocks private IPs and cloud metadata
+
 ### backend/auth/
 
 - **Exports** (`__init__.py`): `EntraJWTMiddleware`, `auth_lifespan`, `auth_router`
@@ -434,8 +476,8 @@ Uses **pnpm** for package management:
 | `frontend/package.json`    | Frontend metadata, dependencies, scripts                                 |
 | `frontend/pnpm-lock.yaml`  | Frontend lockfile (committed to git)                                     |
 | `.python-version`          | Pins Python 3.12 for uv, pyenv, and CI                                   |
-| `docker-compose.yaml`      | Dev: 3 core services + optional docs (local builds, hot-reload, debug)   |
-| `docker-compose.prod.yaml` | Prod: 3 core services + optional docs (GHCR images, no reload, no debug) |
+| `docker-compose.yaml`      | Dev: 3 core + optional docs/m365/gateway (local builds, hot-reload)      |
+| `docker-compose.prod.yaml` | Prod: 3 core + optional docs/m365/gateway (GHCR images, no reload)       |
 | `backend/config.yaml`      | Agent quick-prompts for the Agno web UI                                  |
 | `example.env`              | Template: LiteLLM, model, DB, runtime, Docker, frontend config           |
 | `backend/Dockerfile`       | Backend: two-layer cached build, `uv sync --locked`                      |
@@ -534,6 +576,9 @@ Uses **pnpm** for package management:
 | `M365_MCP_URL`                 | No       | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL                                                                       |
 | `M365_MCP_PORT`                | No       | `9000`                             | Host port for MCP server                                                                      |
 | `M365_CACHE_KEY`               | No       | (derived)                          | Fernet key for token cache encryption                                                         |
+| `MCP_GATEWAY_ENABLED`          | No       | `false`                            | Enable MCP Gateway integration (opt-in via ContextForge)                                      |
+| `MCP_GATEWAY_URL`              | No       | `http://apollos-mcp-gateway:4444` | ContextForge gateway URL                                                                      |
+| `MCP_GATEWAY_JWT_SECRET`       | No       | —                                  | Shared JWT secret for gateway service auth                                                    |
 | `WAIT_FOR_DB`                  | No       | —                                  | Container waits for DB readiness                                                              |
 | `PRINT_ENV_ON_LOAD`            | No       | —                                  | Print env vars on container start                                                             |
 

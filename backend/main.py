@@ -32,6 +32,7 @@ from backend.auth.jwks_cache import jwks_cache
 from backend.auth.routes import limiter
 from backend.auth.security_headers import SecurityHeadersMiddleware
 from backend.db import get_postgres_db
+from backend.mcp.config import MCP_GATEWAY_ENABLED
 from backend.registry import create_registry
 from backend.teams.coordinator_team import coordinator_team
 from backend.teams.research_team import research_team
@@ -91,6 +92,12 @@ if getenv("M365_ENABLED", "").lower() in ("true", "1", "yes"):
 
     _agents.append(m365_agent)
     log.info("M365 agent registered")
+
+if MCP_GATEWAY_ENABLED:
+    from backend.mcp.routes import mcp_router
+
+    base_app.include_router(mcp_router)
+    log.info("MCP Gateway integration enabled (ContextForge at %s)", getenv("MCP_GATEWAY_URL", ""))
 
 # ---------------------------------------------------------------------------
 # Create Apollos AI

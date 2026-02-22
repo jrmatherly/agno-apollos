@@ -22,6 +22,7 @@ from agno.learn import (
 )
 
 from backend.db import create_knowledge, get_postgres_db
+from backend.mcp.config import get_gateway_tools_factory
 from backend.models import get_model
 from backend.tools.hooks import audit_hook, m365_write_guard
 from backend.tools.m365 import m365_tools_factory
@@ -70,6 +71,11 @@ DO NOT save user preferences to shared learnings -- those are handled automatica
 """
 
 # ---------------------------------------------------------------------------
+# Tools — gateway routing when MCP_GATEWAY_ENABLED, otherwise direct M365
+# ---------------------------------------------------------------------------
+_tools_factory = get_gateway_tools_factory("m365", needs_user_token=True) or m365_tools_factory
+
+# ---------------------------------------------------------------------------
 # Agent
 # ---------------------------------------------------------------------------
 m365_agent = Agent(
@@ -81,7 +87,7 @@ m365_agent = Agent(
     ),
     model=get_model(),
     db=agent_db,
-    tools=m365_tools_factory,
+    tools=_tools_factory,
     cache_callables=False,
     instructions=instructions,
     tool_hooks=[audit_hook, m365_write_guard],

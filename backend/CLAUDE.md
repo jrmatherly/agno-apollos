@@ -55,6 +55,28 @@ Key files:
 - `backend/tools/hooks.py` — `audit_hook` and `m365_write_guard`
 - `backend/agents/m365_agent.py` — Dedicated M365 agent (read-only instructions)
 
+## MCP Gateway Integration (backend/mcp/)
+
+Opt-in via `MCP_GATEWAY_ENABLED=true`. Routes MCP traffic through IBM ContextForge gateway.
+
+Key patterns:
+
+- **Gateway-aware tools factory**: Uses `get_gateway_tools_factory("server-name")` from `backend/mcp/config.py`. Returns a callable factory or `None` (disabled). Agents fall back to direct connection: `get_gateway_tools_factory("m365", needs_user_token=True) or m365_tools_factory`.
+- **header_provider pattern**: Gateway factories use `header_provider` (sync callable), NOT `server_params`. Matches the established M365 convention. Agno calls `header_provider(run_context=...)` per-run.
+- **Service JWT (RC1)**: ContextForge RC1 requires `jti` + `exp` claims in JWTs. `GatewayClient.create_service_token()` generates compliant tokens via PyJWT.
+- **Header passthrough**: `X-Upstream-Authorization` forwards per-user tokens through the gateway. Requires `ENABLE_HEADER_PASSTHROUGH=true` in gateway config (defaults to `false`).
+- **BYOMCP validation**: `backend/mcp/validation.py` enforces HTTPS-only for external servers, blocks private IPs and cloud metadata endpoints.
+- **RBAC scopes**: `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call`. Route mappings in `scope_mapper.py`.
+
+Key files:
+
+- `backend/mcp/config.py` — `MCP_GATEWAY_ENABLED` flag, lazy singleton `GatewayClient`, `get_gateway_tools_factory()`
+- `backend/mcp/gateway_client.py` — ContextForge API client (JWT generation, gateway list/register)
+- `backend/mcp/tools_factory.py` — `create_gateway_header_provider()`, `create_gateway_tools_factory()`
+- `backend/mcp/routes.py` — Proxy routes at `/mcp/servers` (list, get, register, delete)
+- `backend/mcp/schemas.py` — Pydantic models for proxy responses
+- `backend/mcp/validation.py` — BYOMCP URL validation (HTTPS, no private IPs)
+
 ## Entra ID Auth Package (backend/auth/)
 
 Located at `backend/auth/`. Handles Microsoft Entra ID JWT validation, RBAC scope mapping,

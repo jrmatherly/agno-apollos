@@ -83,6 +83,18 @@ M365_MCP_PORT = "9000"
 # Agent-as-judge quality evaluation (set to true to enable; adds LLM call per agent run)
 AGENT_JUDGE_ENABLED = ""
 
+# MCP Gateway (IBM ContextForge)
+MCP_GATEWAY_ENABLED = "false"
+MCP_GATEWAY_URL = "http://apollos-mcp-gateway:4444"
+MCP_GATEWAY_JWT_SECRET = "dev-gateway-secret"
+MCP_GATEWAY_ADMIN_EMAIL = "admin@localhost"
+MCP_GATEWAY_ADMIN_PASSWORD = "changeme"
+MCP_GATEWAY_PORT = "4444"
+MCP_GATEWAY_ENTRA_CLIENT_ID = ""
+MCP_GATEWAY_ENTRA_CLIENT_SECRET = ""
+MCP_GATEWAY_ADMIN_GROUPS = "[]"
+MCP_GATEWAY_ROLE_MAPPINGS = "{}"
+
 [[env]]
 _.file = ".env"
 
@@ -117,10 +129,13 @@ experimental = true
 # agent:cli           Run an agent via CLI (-- <module> [-q question])
 # hooks:install       Install git pre-commit hook (auto-format + validate)
 #
-# docker:up [--prod] [--docs]           Start full stack (--prod for GHCR, --docs for docs service)
-# docker:down [--prod]                  Stop all services (--prod targets production compose file)
-# docker:logs [--prod]                  Tail logs from all services
-# docker:build [--platform amd64|arm64] Build Docker images (default: native arch)
+# docker:up [--prod] [--docs] [--gateway] Start full stack (--prod for GHCR, --docs for docs, --gateway for MCP)
+# docker:down [--prod] [--gateway]        Stop all services (--prod targets production compose file)
+# docker:logs [--prod] [--gateway]        Tail logs from all services
+# docker:build [--platform amd64|arm64]   Build Docker images (default: native arch)
+#
+# gateway:up [--prod] [--m365]  Start MCP Gateway (ContextForge)
+# gateway:logs [--prod]         Tail MCP Gateway logs
 #
 # frontend:dev          Start frontend dev server (Next.js, port 3000)
 # frontend:build        Build frontend for production

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#MISE description="Start the MCP Gateway (ContextForge)"
+#USAGE flag "--prod" help="Use production compose file (pre-built GHCR images)"
+#USAGE flag "--m365" help="Include the M365 MCP server"
+set -e
+
+PROFILE_FLAGS="--profile gateway"
+if [ "${usage_m365:-false}" = "true" ]; then
+  PROFILE_FLAGS="${PROFILE_FLAGS} --profile m365"
+fi
+
+if [ "${usage_prod:-false}" = "true" ]; then
+  docker compose -f docker-compose.prod.yaml ${PROFILE_FLAGS} up -d
+else
+  docker compose ${PROFILE_FLAGS} up -d
+fi
+
+echo ""
+echo "MCP Gateway running at http://localhost:${MCP_GATEWAY_PORT:-4444}"
+echo "Admin UI: http://localhost:${MCP_GATEWAY_PORT:-4444}/admin"
+if [ "${usage_m365:-false}" = "true" ]; then
+  echo "M365 MCP server running at http://localhost:${M365_MCP_PORT:-9000}"
+fi

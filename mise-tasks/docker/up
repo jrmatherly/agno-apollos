@@ -3,6 +3,7 @@
 #USAGE flag "--prod" help="Use production compose file (pre-built GHCR images)"
 #USAGE flag "--docs" help="Include the docs service"
 #USAGE flag "--m365" help="Include the M365 MCP server"
+#USAGE flag "--gateway" help="Include the MCP Gateway (ContextForge)"
 set -e
 
 PROFILE_FLAGS=""
@@ -11,6 +12,9 @@ if [ "${usage_docs:-false}" = "true" ]; then
 fi
 if [ "${usage_m365:-false}" = "true" ]; then
   PROFILE_FLAGS="${PROFILE_FLAGS} --profile m365"
+fi
+if [ "${usage_gateway:-false}" = "true" ]; then
+  PROFILE_FLAGS="${PROFILE_FLAGS} --profile gateway"
 fi
 
 if [ "${usage_prod:-false}" = "true" ]; then
@@ -28,4 +32,7 @@ if [ "${usage_docs:-false}" = "true" ]; then
 fi
 if [ "${usage_m365:-false}" = "true" ]; then
   echo "M365 MCP server running at http://localhost:${M365_MCP_PORT:-9000}"
+fi
+if [ "${usage_gateway:-false}" = "true" ]; then
+  echo "MCP Gateway running at http://localhost:${MCP_GATEWAY_PORT:-4444}"
 fi

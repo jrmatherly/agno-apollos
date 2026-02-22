@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#MISE description="Tail MCP Gateway logs"
+#USAGE flag "--prod" help="Use production compose file"
+set -e
+
+if [ "${usage_prod:-false}" = "true" ]; then
+  docker compose -f docker-compose.prod.yaml logs -f apollos-mcp-gateway
+else
+  docker compose logs -f apollos-mcp-gateway
+fi
