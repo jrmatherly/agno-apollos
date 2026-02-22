@@ -228,10 +228,10 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run lint`                | Lint code (ruff check)                                                                           |
 | `mise run typecheck`           | Type-check code (mypy)                                                                           |
 | `mise run validate`            | Run all checks (format-check, lint, typecheck)                                                   |
-| `mise run dev`                 | Start stack in watch mode (hot-reload)                                                           |
-| `mise run docker:up`           | Start full stack (`--prod` for GHCR images, `--docs` to include docs)                            |
-| `mise run docker:down`         | Stop all services (`--prod` for production)                                                      |
-| `mise run docker:logs`         | Tail logs (`--prod` for production)                                                              |
+| `mise run dev`                 | Start stack in watch mode (hot-reload, `--m365`, `--gateway`)                                    |
+| `mise run docker:up`           | Start full stack (`--prod` for GHCR images, `--docs`, `--m365`, `--gateway`)                     |
+| `mise run docker:down`         | Stop all services (`--prod`, `--m365`, `--gateway`)                                              |
+| `mise run docker:logs`         | Tail logs (`--prod`, `--m365`, `--gateway`)                                                      |
 | `mise run docker:build`        | Build all images locally (`--platform amd64\|arm64`)                                             |
 | `mise run db`                  | Start only the database service                                                                  |
 | `mise run load-docs`           | Load knowledge base documents                                                                    |
@@ -254,6 +254,8 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run load-sample-data`    | Load F1 sample data into PostgreSQL                                                              |
 | `mise run load-knowledge`      | Populate vector DB with curated knowledge (`--recreate` to rebuild)                              |
 | `mise run auth:generate-token` | Generate dev JWT tokens for RBAC testing                                                         |
+| `mise run gateway:up`          | Start MCP Gateway (`--prod`, `--m365`)                                                           |
+| `mise run gateway:logs`        | Tail MCP Gateway logs (`--prod`)                                                                 |
 | `mise run schedules:setup`     | Initialize scheduler tables                                                                      |
 
 ### CLI Testing
@@ -326,6 +328,9 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `M365_MCP_URL`                 | No       | `http://apollos-m365-mcp:9000/mcp` | Softeria MCP server URL                                                                 |
 | `M365_MCP_PORT`                | No       | `9000`                             | Host port for MCP server                                                                |
 | `M365_CACHE_KEY`               | No       | (derived)                          | Fernet key for token cache encryption                                                   |
+| `MCP_GATEWAY_ENABLED`          | No       | `false`                            | Enable MCP Gateway integration (opt-in)                                                 |
+| `MCP_GATEWAY_URL`              | No       | `http://apollos-mcp-gateway:4444` | ContextForge gateway URL                                                                |
+| `MCP_GATEWAY_JWT_SECRET`       | No       | -                                  | Shared JWT secret for gateway auth                                                      |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`  | No       | -                                  | OTel trace export endpoint (empty = disabled)                                           |
 | `NEXT_PUBLIC_OS_SECURITY_KEY`  | No       | -                                  | Pre-fill auth token in the frontend UI                                                  |
 

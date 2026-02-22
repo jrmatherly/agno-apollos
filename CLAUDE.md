@@ -9,7 +9,7 @@ Frontend lives at `frontend/` — Next.js 15 (App Router), React 18, TypeScript,
 Documentation lives at `docs/` — Mintlify site (MDX pages, `docs.json` config). Preview on port 3333 to avoid frontend conflict.
 Dockerfiles live with their code: `backend/Dockerfile`, `frontend/Dockerfile`, `docs/Dockerfile`. Build context for backend is root `.` (needs pyproject.toml, uv.lock, scripts/).
 
-Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/registry.py` (component registry for Agent-as-Config), `backend/a2a/` (A2A protocol integration), `backend/auth/` (Entra ID JWT middleware, RBAC scope mapping, user/team sync, auth API routes), `backend/maintenance.py` (memory optimization + usage warnings), `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (dual-layer tracing, opt-in), `backend/cli.py` (shared Rich CLI).
+Backend packages: `backend/agents/`, `backend/teams/`, `backend/workflows/`, `backend/tools/`, `backend/context/`, `backend/knowledge/`, `backend/evals/`, `backend/scripts/`, `backend/registry.py` (component registry for Agent-as-Config), `backend/a2a/` (A2A protocol integration), `backend/auth/` (Entra ID JWT middleware, RBAC scope mapping, user/team sync, auth API routes), `backend/mcp/` (ContextForge MCP Gateway client, tools factories, proxy routes, URL validation), `backend/maintenance.py` (memory optimization + usage warnings), `backend/models.py` (shared `get_model()`), `backend/telemetry.py` (dual-layer tracing, opt-in), `backend/cli.py` (shared Rich CLI).
 Data: `data/docs/` (knowledge docs), `data/tables/` (F1 metadata), `data/queries/` (SQL patterns), `data/business/` (rules).
 Tests: `tests/` — pytest + requests.
 
@@ -22,10 +22,12 @@ Task runner: `mise run <task>` (or `mise <task>` if no conflict).
 - `mise run lint` - lint (ruff check)
 - `mise run typecheck` - type check (mypy)
 - `mise run validate` - all checks (format-check + lint + typecheck)
-- `mise run dev` - docker compose watch (hot-reload, add `--m365` to include M365 MCP server)
-- `mise run docker:up` - start full stack (add `--prod` for GHCR images, `--docs` to include docs service, `--m365` for M365 MCP server)
-- `mise run docker:down` - stop stack (add `--prod` for production compose file, `--m365` to include M365 service)
-- `mise run docker:logs` - tail logs (add `--prod` for production compose file, `--m365` to include M365 service)
+- `mise run dev` - docker compose watch (hot-reload, add `--m365` to include M365 MCP server, `--gateway` for MCP Gateway)
+- `mise run docker:up` - start full stack (add `--prod` for GHCR images, `--docs` to include docs service, `--m365` for M365 MCP server, `--gateway` for MCP Gateway)
+- `mise run docker:down` - stop stack (add `--prod` for production compose file, `--m365` to include M365 service, `--gateway` for MCP Gateway)
+- `mise run docker:logs` - tail logs (add `--prod` for production compose file, `--m365` to include M365 service, `--gateway` for MCP Gateway)
+- `mise run gateway:up` - start MCP Gateway (add `--prod` for GHCR, `--m365` to include M365 server)
+- `mise run gateway:logs` - tail MCP Gateway logs
 - `mise run docker:build` - build backend, frontend, and docs images locally (add `--platform amd64` or `arm64`)
 - `mise run db` - start database only
 - `mise run load-docs` - load knowledge base documents
@@ -105,6 +107,7 @@ Auth and scheduling tasks:
 - `backend/auth/` package: config, middleware, jwks_cache, scope_mapper, models, database, graph, sync_service, dependencies, routes, security_headers, m365_token_service, m365_routes, m365_middleware, **init**
 - New auth API routes: `GET /auth/health`, `GET /auth/me`, `POST /auth/sync`, `GET /auth/teams`, `GET /auth/users`
 - M365 integration is opt-in: `M365_ENABLED=true` registers the M365 agent and mounts `/m365/` API routes. Requires Entra ID auth (Azure vars must be set). OBO token exchange in `backend/auth/m365_token_service.py`. MCP tools in `backend/tools/m365.py`. Frontend settings at `frontend/src/app/settings/m365/page.tsx`. Docker service `apollos-m365-mcp` uses `profiles: [m365]`.
+- MCP Gateway is opt-in: `MCP_GATEWAY_ENABLED=true` routes MCP traffic through IBM ContextForge. Gateway client in `backend/mcp/gateway_client.py`. Tools factories in `backend/mcp/tools_factory.py`. Proxy routes at `/mcp/servers`. Docker service `apollos-mcp-gateway` uses `profiles: [gateway]`. RBAC scopes: `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call`.
 - Telemetry is opt-in: `TRACING_ENABLED=true` stores traces in PostgreSQL (Layer 1). `OTLP_ENDPOINTS` exports to Langfuse/Phoenix/etc (Layer 2). Legacy `OTEL_EXPORTER_OTLP_ENDPOINT` supported as fallback.
 - A2A Protocol: `A2A_ENABLED=true` exposes each agent at `/a2a/agents/{id}` via the Agent-to-Agent protocol (a2a-sdk v0.3.x). Set `A2A_BASE_URL` for production AgentCard URLs.
 - Agent-as-Config: Central Registry in `backend/registry.py` maps tools/functions by name for save/load persistence via Agno Registry.
@@ -125,7 +128,7 @@ Auth and scheduling tasks:
 
 - Two compose files: `docker-compose.yaml` (dev, builds locally) and `docker-compose.prod.yaml` (prod, pulls GHCR images)
 - Docker compose env vars use `${VAR:-default}` substitution — never hardcode values. Defaults must match `mise.toml` and `example.env`.
-- Core services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000), optional `apollos-docs` (:3333, behind `docs` profile)
+- Core services: `apollos-db` (:5432), `apollos-backend` (:8000), `apollos-frontend` (:3000), optional `apollos-docs` (:3333, behind `docs` profile), optional `apollos-mcp-gateway` (:4444, behind `gateway` profile)
 - Base images: `agnohq/python:3.12` and `agnohq/pgvector:18`. Frontend and docs use `node:24-alpine`.
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root `.`, not `backend/`)
 - Docker images publish to GHCR (`ghcr.io/<owner>/apollos-backend`, `ghcr.io/<owner>/apollos-frontend`, `ghcr.io/<owner>/apollos-docs`)

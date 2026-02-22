@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
+from backend.auth.m365_middleware import M365TokenMiddleware
 from starlette.applications import Starlette
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -9,7 +10,6 @@ from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Route
 from starlette.testclient import TestClient
 
-from backend.auth.m365_middleware import M365TokenMiddleware
 from backend.tools.m365 import _current_graph_token
 
 

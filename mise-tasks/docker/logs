@@ -3,11 +3,15 @@
 #USAGE flag "-f --follow" help="Follow log output" default="true"
 #USAGE flag "--prod" help="Use production compose file"
 #USAGE flag "--m365" help="Include the M365 MCP server"
+#USAGE flag "--gateway" help="Include the MCP Gateway (ContextForge)"
 #USAGE arg "[service]" help="Service name (apollos-backend, apollos-db)"
 
 PROFILE_FLAGS=""
 if [ "${usage_m365:-false}" = "true" ]; then
   PROFILE_FLAGS="--profile m365"
+fi
+if [ "${usage_gateway:-false}" = "true" ]; then
+  PROFILE_FLAGS="${PROFILE_FLAGS} --profile gateway"
 fi
 
 COMPOSE_CMD="docker compose ${PROFILE_FLAGS}"

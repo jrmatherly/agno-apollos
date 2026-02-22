@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 #MISE description="Start stack in watch mode (hot-reload)"
 #USAGE flag "--m365" help="Include the M365 MCP server"
+#USAGE flag "--gateway" help="Include the MCP Gateway (ContextForge)"
 set -e
 
 PROFILE_FLAGS=""
 if [ "${usage_m365:-false}" = "true" ]; then
   PROFILE_FLAGS="--profile m365"
+fi
+if [ "${usage_gateway:-false}" = "true" ]; then
+  PROFILE_FLAGS="${PROFILE_FLAGS} --profile gateway"
 fi
 
 docker compose ${PROFILE_FLAGS} watch

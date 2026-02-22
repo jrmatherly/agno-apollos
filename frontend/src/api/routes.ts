@@ -17,5 +17,9 @@ export const APIRoutes = {
 
   M365Status: (agentOSUrl: string) => `${agentOSUrl}/m365/status`,
   M365Connect: (agentOSUrl: string) => `${agentOSUrl}/m365/connect`,
-  M365Disconnect: (agentOSUrl: string) => `${agentOSUrl}/m365/disconnect`
+  M365Disconnect: (agentOSUrl: string) => `${agentOSUrl}/m365/disconnect`,
+
+  MCPServers: (agentOSUrl: string) => `${agentOSUrl}/mcp/servers`,
+  MCPServer: (agentOSUrl: string, serverId: string) =>
+    `${agentOSUrl}/mcp/servers/${serverId}`
 }

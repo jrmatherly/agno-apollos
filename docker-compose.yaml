@@ -12,6 +12,7 @@ services:
       POSTGRES_DB: ${DB_DATABASE:-ai}
     volumes:
       - pgdata:/var/lib/postgresql
+      - ./scripts/init-contextforge-db.sh:/docker-entrypoint-initdb.d/init-contextforge-db.sh:ro
     ports:
       - "5432:5432"
     networks:
@@ -77,6 +78,10 @@ services:
       - AGENT_JUDGE_ENABLED=${AGENT_JUDGE_ENABLED:-false}
       # Knowledge agent
       - DOCUMENTS_DIR=${DOCUMENTS_DIR:-/app/data/docs}
+      # MCP Gateway (ContextForge)
+      - MCP_GATEWAY_ENABLED=${MCP_GATEWAY_ENABLED:-false}
+      - MCP_GATEWAY_URL=${MCP_GATEWAY_URL:-http://apollos-mcp-gateway:4444}
+      - MCP_GATEWAY_JWT_SECRET=${MCP_GATEWAY_JWT_SECRET:-dev-gateway-secret}
     depends_on:
       - apollos-db
     networks:
@@ -136,6 +141,65 @@ services:
           path: ./frontend/package.json
         - action: rebuild
           path: ./frontend/pnpm-lock.yaml
+
+  ###############################################################
+  # Apollos AI - MCP Gateway (IBM ContextForge, opt-in)
+  ###############################################################
+  apollos-mcp-gateway:
+    image: ghcr.io/ibm/mcp-context-forge:1.0.0-RC1
+    container_name: apollos-mcp-gateway
+    depends_on:
+      apollos-db:
+        condition: service_healthy
+    environment:
+      # Database (shares PostgreSQL instance, separate database)
+      DATABASE_URL: postgresql+psycopg://${DB_USER:-ai}:${DB_PASS:-ai}@apollos-db:5432/contextforge
+      # Cache — database backend (no Redis needed for single-node)
+      CACHE_TYPE: database
+      # JWT (gateway's own tokens — RC1 requires jti + exp)
+      JWT_SECRET_KEY: ${MCP_GATEWAY_JWT_SECRET:-dev-gateway-secret}
+      JWT_ALGORITHM: HS256
+      REQUIRE_JTI: "true"
+      REQUIRE_TOKEN_EXPIRATION: "true"
+      AUTH_REQUIRED: "true"
+      # Admin
+      PLATFORM_ADMIN_EMAIL: ${MCP_GATEWAY_ADMIN_EMAIL:-admin@localhost}
+      PLATFORM_ADMIN_PASSWORD: ${MCP_GATEWAY_ADMIN_PASSWORD:-changeme}
+      MCPGATEWAY_UI_ENABLED: "true"
+      MCPGATEWAY_ADMIN_API_ENABLED: "true"
+      # Header passthrough (defaults to false — must be explicitly enabled)
+      ENABLE_HEADER_PASSTHROUGH: "true"
+      DEFAULT_PASSTHROUGH_HEADERS: '["X-Tenant-Id"]'
+      # Entra ID SSO (opt-in)
+      SSO_ENABLED: ${SSO_ENABLED:-false}
+      SSO_ENTRA_ENABLED: ${SSO_ENTRA_ENABLED:-false}
+      SSO_ENTRA_CLIENT_ID: ${MCP_GATEWAY_ENTRA_CLIENT_ID:-}
+      SSO_ENTRA_CLIENT_SECRET: ${MCP_GATEWAY_ENTRA_CLIENT_SECRET:-}
+      SSO_ENTRA_TENANT_ID: ${AZURE_TENANT_ID:-}
+      SSO_AUTO_CREATE_USERS: "true"
+      SSO_ENTRA_ADMIN_GROUPS: ${MCP_GATEWAY_ADMIN_GROUPS:-[]}
+      SSO_ENTRA_ROLE_MAPPINGS: ${MCP_GATEWAY_ROLE_MAPPINGS:-{}}
+      SSO_ENTRA_DEFAULT_ROLE: viewer
+      SSO_ENTRA_SYNC_ROLES_ON_LOGIN: "true"
+      # SSRF protection (RC1 defaults — allow internal for dev)
+      SSRF_PROTECTION_ENABLED: "true"
+      SSRF_ALLOW_LOCALHOST: "true"
+      SSRF_ALLOW_PRIVATE_NETWORKS: "true"
+      # Server
+      HOST: "0.0.0.0"
+      PORT: "4444"
+    ports:
+      - "${MCP_GATEWAY_PORT:-4444}:4444"
+    profiles:
+      - gateway
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4444/version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - apollos
 
   ###############################################################
   # Apollos AI - Microsoft 365 MCP Server (opt-in)

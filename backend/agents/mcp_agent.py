@@ -21,6 +21,7 @@ from agno.learn import (
 from agno.tools.mcp import MCPTools
 
 from backend.db import create_knowledge, get_postgres_db
+from backend.mcp.config import MCP_GATEWAY_ENABLED, get_gateway_tools_factory
 from backend.models import get_model
 
 # ---------------------------------------------------------------------------
@@ -64,6 +65,12 @@ DO NOT save user preferences to shared learnings — those are handled automatic
 """
 
 # ---------------------------------------------------------------------------
+# Tools — gateway routing when MCP_GATEWAY_ENABLED, otherwise Agno docs
+# ---------------------------------------------------------------------------
+_default_tools: list[MCPTools] = [MCPTools(url="https://docs.agno.com/mcp")]
+_tools = get_gateway_tools_factory("agno-docs") or _default_tools
+
+# ---------------------------------------------------------------------------
 # Create Agent
 # ---------------------------------------------------------------------------
 mcp_agent = Agent(
@@ -71,7 +78,8 @@ mcp_agent = Agent(
     name="MCP Agent",
     model=get_model(),
     db=agent_db,
-    tools=[MCPTools(url="https://docs.agno.com/mcp")],
+    tools=_tools,
+    cache_callables=not MCP_GATEWAY_ENABLED,  # Disable caching when using per-run gateway factories
     instructions=instructions,
     pre_hooks=[PIIDetectionGuardrail(mask_pii=False), PromptInjectionGuardrail()],
     learning=LearningMachine(

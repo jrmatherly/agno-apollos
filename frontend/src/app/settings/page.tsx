@@ -25,6 +25,16 @@ export default function SettingsPage() {
               Outlook, Calendar, and Teams.
             </p>
           </Link>
+          <Link
+            href="/settings/integrations"
+            className="block rounded-lg border border-border p-4 transition-colors hover:bg-muted"
+          >
+            <h2 className="font-medium">MCP Integrations</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              View MCP servers registered through the ContextForge gateway for
+              tool discovery and agent access.
+            </p>
+          </Link>
         </nav>
       </div>
     </AuthGuard>

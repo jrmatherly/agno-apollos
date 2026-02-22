@@ -15,6 +15,7 @@ from agno.tools.reasoning import ReasoningTools
 
 from backend.agents.data_agent import data_agent
 from backend.agents.knowledge_agent import knowledge_agent
+from backend.agents.mcp_agent import mcp_agent
 from backend.agents.reasoning_agent import reasoning_agent
 from backend.agents.web_search_agent import web_search_agent
 from backend.db import get_postgres_db
@@ -30,7 +31,7 @@ team_db = get_postgres_db()
 # Members — callable factory defers MCPTools resolution to per-run
 # ---------------------------------------------------------------------------
 def _get_members():
-    members = [knowledge_agent, data_agent, web_search_agent, reasoning_agent]
+    members = [knowledge_agent, mcp_agent, data_agent, web_search_agent, reasoning_agent]
     if getenv("M365_ENABLED", "").lower() in ("true", "1", "yes"):
         from backend.agents.m365_agent import m365_agent
 
@@ -49,6 +50,8 @@ to the single best specialist.
 
 - **Knowledge Agent**: Questions about documents, policies, internal knowledge base,
   file browsing, or anything requiring the curated knowledge base.
+- **MCP Agent**: Questions about connected tools and integrations, API documentation,
+  or tasks requiring external MCP-connected services.
 - **Data Agent**: SQL queries, data analysis, table lookups, charts, metrics,
   or questions about structured data.
 - **Web Search Agent**: Current events, external information, web lookups,
