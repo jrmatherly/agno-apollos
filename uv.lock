@@ -238,7 +238,7 @@ wheels = [
 
 [[package]]
 name = "apollosai"
-version = "1.0.14"
+version = "1.0.15"
 source = { editable = "." }
 dependencies = [
     { name = "a2a-sdk", extra = ["all"] },
