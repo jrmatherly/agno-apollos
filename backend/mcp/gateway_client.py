@@ -52,8 +52,12 @@ class GatewayClient:
     # ── Gateways ──────────────────────────────────────────────────────
 
     async def list_gateways(self) -> list[dict]:
-        """List all registered upstream MCP servers."""
-        resp = await self._http.get("/gateways", headers=self._auth_headers())
+        """List all registered upstream MCP servers.
+
+        Passes limit=0 to fetch all items. ContextForge defaults to 50-item
+        limit when no limit is specified, causing silent data truncation.
+        """
+        resp = await self._http.get("/gateways", headers=self._auth_headers(), params={"limit": "0"})
         resp.raise_for_status()
         return resp.json()
 
@@ -138,8 +142,11 @@ class GatewayClient:
     async def list_tools(
         self, *, gateway_id: str | None = None, tags: list[str] | None = None, include_inactive: bool = False
     ) -> list[dict]:
-        """List tools, optionally filtered by gateway or tags."""
-        params: dict[str, str] = {}
+        """List tools, optionally filtered by gateway or tags.
+
+        Passes limit=0 to fetch all items (ContextForge defaults to 50).
+        """
+        params: dict[str, str] = {"limit": "0"}
         if gateway_id:
             params["gateway_id"] = gateway_id
         if tags:
@@ -205,8 +212,11 @@ class GatewayClient:
     # ── Virtual Servers (ContextForge 'servers') ──────────────────────
 
     async def list_virtual_servers(self, *, include_inactive: bool = False) -> list[dict]:
-        """List virtual servers (ContextForge 'servers' — tool/resource/prompt compositions)."""
-        params: dict[str, str] = {}
+        """List virtual servers (ContextForge 'servers' — tool/resource/prompt compositions).
+
+        Passes limit=0 to fetch all items (ContextForge defaults to 50).
+        """
+        params: dict[str, str] = {"limit": "0"}
         if include_inactive:
             params["include_inactive"] = "true"
         resp = await self._http.get("/servers", headers=self._auth_headers(), params=params)
@@ -278,7 +288,8 @@ class GatewayClient:
     # ── Resources ─────────────────────────────────────────────────────
 
     async def list_resources(self, *, include_inactive: bool = False) -> list[dict]:
-        params: dict[str, str] = {}
+        """List resources. Passes limit=0 to fetch all items (ContextForge defaults to 50)."""
+        params: dict[str, str] = {"limit": "0"}
         if include_inactive:
             params["include_inactive"] = "true"
         resp = await self._http.get("/resources", headers=self._auth_headers(), params=params)
@@ -344,7 +355,8 @@ class GatewayClient:
     # ── Prompts ───────────────────────────────────────────────────────
 
     async def list_prompts(self, *, include_inactive: bool = False) -> list[dict]:
-        params: dict[str, str] = {}
+        """List prompts. Passes limit=0 to fetch all items (ContextForge defaults to 50)."""
+        params: dict[str, str] = {"limit": "0"}
         if include_inactive:
             params["include_inactive"] = "true"
         resp = await self._http.get("/prompts", headers=self._auth_headers(), params=params)
@@ -394,8 +406,11 @@ class GatewayClient:
     # ── Tags (read-only) ──────────────────────────────────────────────
 
     async def list_tags(self, *, entity_types: str | None = None) -> list[dict]:
-        """List tags. Returns [{name, stats: {tools, resources, ...}, entities: [...]}]."""
-        params: dict[str, str] = {}
+        """List tags. Returns [{name, stats: {tools, resources, ...}, entities: [...]}].
+
+        Passes limit=0 to fetch all items (ContextForge defaults to 50).
+        """
+        params: dict[str, str] = {"limit": "0"}
         if entity_types:
             params["entity_types"] = entity_types
         resp = await self._http.get("/tags", headers=self._auth_headers(), params=params)

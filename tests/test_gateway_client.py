@@ -97,6 +97,55 @@ class TestGatewayMutations:
 # ── Tool Methods ──────────────────────────────────────────────────────
 
 
+class TestListPagination:
+    """All list methods must pass limit=0 to avoid ContextForge's 50-item default truncation."""
+
+    def test_list_gateways_passes_limit_zero(self, client):
+        with patch.object(client._http, "get", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = MagicMock(status_code=200, json=lambda: [], raise_for_status=lambda: None)
+            _run(client.list_gateways())
+            _, kwargs = mock_get.call_args
+            assert kwargs["params"]["limit"] == "0"
+
+    def test_list_tools_passes_limit_zero(self, client):
+        with patch.object(client._http, "get", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = MagicMock(status_code=200, json=lambda: [], raise_for_status=lambda: None)
+            _run(client.list_tools())
+            _, kwargs = mock_get.call_args
+            assert kwargs["params"]["limit"] == "0"
+
+    def test_list_virtual_servers_passes_limit_zero(self, client):
+        with patch.object(client._http, "get", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = MagicMock(status_code=200, json=lambda: [], raise_for_status=lambda: None)
+            _run(client.list_virtual_servers())
+            _, kwargs = mock_get.call_args
+            assert kwargs["params"]["limit"] == "0"
+
+    def test_list_resources_passes_limit_zero(self, client):
+        with patch.object(client._http, "get", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = MagicMock(status_code=200, json=lambda: [], raise_for_status=lambda: None)
+            _run(client.list_resources())
+            _, kwargs = mock_get.call_args
+            assert kwargs["params"]["limit"] == "0"
+
+    def test_list_prompts_passes_limit_zero(self, client):
+        with patch.object(client._http, "get", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = MagicMock(status_code=200, json=lambda: [], raise_for_status=lambda: None)
+            _run(client.list_prompts())
+            _, kwargs = mock_get.call_args
+            assert kwargs["params"]["limit"] == "0"
+
+    def test_list_tags_passes_limit_zero(self, client):
+        with patch.object(client._http, "get", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = MagicMock(status_code=200, json=lambda: [], raise_for_status=lambda: None)
+            _run(client.list_tags())
+            _, kwargs = mock_get.call_args
+            assert kwargs["params"]["limit"] == "0"
+
+
+# ── Tool Methods ──────────────────────────────────────────────────────
+
+
 class TestToolMethods:
     def test_create_tool_wraps_body(self, client):
         """POST /tools requires body wrapped in 'tool' key (multi-Body endpoint)."""
