@@ -13,6 +13,7 @@ Apollos AI runs as three core Docker services managed by Docker Compose, plus op
 | `apollos-docs` | 3333 | Built from `docs/Dockerfile` | `docs` (opt-in) |
 | `apollos-m365-mcp` | 9000 | `node:24-alpine` (npx) | `m365` (opt-in) |
 | `apollos-mcp-gateway` | 4444 | `ghcr.io/ibm/mcp-context-forge:1.0.0-RC1` | `gateway` (opt-in) |
+| `pgadmin` | 5050 | `dpage/pgadmin4` | `tools` (opt-in) |
 
 ## Two compose files
 
@@ -36,6 +37,7 @@ mise run docker:up --docs                    # docs service
 mise run docker:up --m365                    # M365 MCP server
 mise run docker:up --gateway                 # MCP Gateway (ContextForge)
 mise run docker:up --m365 --gateway --docs   # all optional services
+mise run docker:up --tools                   # pgAdmin database UI
 ```
 
 For hot-reload with automatic rebuilds:
@@ -86,8 +88,8 @@ mise run docker:build --platform arm64
 | Include docs service | `mise run docker:up --docs` |
 | Include M365 MCP server | `mise run docker:up --m365` |
 | Include MCP Gateway | `mise run docker:up --gateway` |
-| Stop all services | `mise run docker:down` |
-| Tail logs | `mise run docker:logs` |
+| Stop all services | `mise run docker:down` (`--prod`, `--m365`, `--gateway`, `--docs`) |
+| Tail logs | `mise run docker:logs` (`--prod`, `--m365`, `--gateway`, `--docs`) |
 | Start database only | `mise run db` |
 | Build images | `mise run docker:build` |
 | Start docs standalone | `mise run docs:docker` |

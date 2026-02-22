@@ -19,9 +19,11 @@ graph TD
         WSA["web_search_agent"]
         RA["reasoning_agent"]
         MCA["mcp_agent"]
+        M365["m365_agent<br/><i>(opt-in)</i>"]
     end
 
     subgraph teams ["Teams"]
+        CT["coordinator_team"]
         RT["research_team"]
     end
 
@@ -35,13 +37,15 @@ graph TD
         TEL["telemetry.py"]
     end
 
-    MAIN --> KA & DA & WSA & RA & MCA
-    MAIN --> RT
+    MAIN --> KA & DA & WSA & RA & MCA & M365
+    MAIN --> CT & RT
     MAIN --> RW
     MAIN --> TEL
 
-    KA & DA & WSA & RA & MCA --> MODELS
-    KA & DA & WSA & RA & MCA --> DB
+    KA & DA & WSA & RA & MCA & M365 --> MODELS
+    KA & DA & WSA & RA & MCA & M365 --> DB
+    CT --> KA & DA & WSA & RA & MCA
+    CT --> MODELS & DB
     RT --> MODELS & DB
     RW --> RA & WSA & MODELS & DB
 ```
@@ -84,6 +88,7 @@ graph LR
 | `web_search_agent` | WebSearchTools (DuckDuckGo) | None | None |
 | `reasoning_agent` | ReasoningTools | None | None |
 | `mcp_agent` | MCPTools | None | None |
+| `m365_agent` | MCPTools (M365 MCP server) | None | None |
 
 ## Tool patterns
 
@@ -162,12 +167,21 @@ Static context injected into agent instructions as formatted strings.
 ```
 app/
 ├── layout.tsx               # Root layout, fonts, providers
-└── page.tsx                 # Home (chat interface)
+├── page.tsx                 # Home (chat interface)
+└── settings/
+    └── m365/page.tsx        # M365 connection settings
+
+auth/                        # MSAL.js v5 integration (Entra ID SSO)
+├── msalConfig.ts            # Entra ID configuration
+├── AuthProvider.tsx          # MSAL provider wrapper
+└── useTokenSync.ts          # Token refresh and sync
 
 components/
 ├── chat/
 │   ├── Sidebar/             # Sessions, entity selector, mode selector
 │   └── ChatArea/            # Messages, input, streaming state
+├── auth/
+│   └── AuthGuard.tsx        # Protected route wrapper
 └── ui/                      # shadcn/ui primitives + custom components
 
 hooks/
@@ -178,7 +192,9 @@ hooks/
 
 api/
 ├── os.ts                    # AgentOS HTTP client
-└── routes.ts                # Endpoint URL builders
+├── routes.ts                # Endpoint URL builders
+├── mcp.ts                   # MCP Gateway API client
+└── m365.ts                  # M365 API client
 
 store.ts                     # Global state (API URL, selected entity, auth)
 ```

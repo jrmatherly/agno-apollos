@@ -83,10 +83,10 @@ The Softeria MCP server runs as an opt-in Docker service using the `m365` profil
 
 ```bash
 # Start with M365 service
-docker compose --profile m365 up -d
+mise run docker:up --m365
 
-# Or use mise
-M365_ENABLED=true mise run docker:up
+# Watch mode with M365
+mise run dev --m365
 ```
 
 ```yaml
@@ -97,6 +97,7 @@ apollos-m365-mcp:
     npx -y @softeria/ms-365-mcp-server@0.41.0
     --http 9000
     --read-only
+    --enable-auth-tools
     --org-mode
     --preset personal,work
   environment:

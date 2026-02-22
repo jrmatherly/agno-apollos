@@ -56,7 +56,7 @@ CI runs both backend and frontend validation as parallel jobs on every push and 
 - Use `mise run <task>` for all operations, never raw commands
 - Backend imports use fully-qualified paths: `from backend.agents.x import y`
 - ruff line-length: 120
-- Model provider: `LiteLLMOpenAI` from `agno.models.litellm`
+- Model provider: use `get_model()` from `backend/models.py`
 - New agents go in `backend/agents/`, registered in `backend/main.py`
 - When adding environment variables, update: `mise.toml`, `example.env`, `docker-compose.yaml`, `docker-compose.prod.yaml`
 

@@ -19,14 +19,14 @@ Authentication is disabled by default. When `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`
 ### Configuration
 
 ```bash
-# .env — backend
+# .env (backend)
 AZURE_TENANT_ID=<Directory (tenant) ID>
 AZURE_CLIENT_ID=<Application (client) ID>
 AZURE_CLIENT_SECRET=<Client secret value>
 AZURE_AUDIENCE=api://<Application (client) ID>
 FRONTEND_URL=http://localhost:3000
 
-# .env — frontend (baked at build time)
+# .env (frontend, baked at build time)
 NEXT_PUBLIC_AZURE_CLIENT_ID=<Application (client) ID>
 NEXT_PUBLIC_AZURE_TENANT_ID=<Directory (tenant) ID>
 NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000
@@ -90,7 +90,7 @@ AUTH_DEBUG=True
 The middleware logs the reason for each 401, including the actual `aud` value on audience mismatches:
 
 ```
-WARNING 401 Invalid audience: GET /agents — token aud='4837d7c1-...', expected AZURE_AUDIENCE=api://4837d7c1-...
+WARNING 401 Invalid audience: GET /agents - token aud='4837d7c1-...', expected AZURE_AUDIENCE=api://4837d7c1-...
 WARNING 401 Missing token: GET /agents (no Authorization: Bearer header)
 WARNING 401 Expired token: GET /teams
 ```

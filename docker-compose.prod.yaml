@@ -140,6 +140,7 @@ services:
       SSRF_ALLOW_PRIVATE_NETWORKS: "false"
       HOST: "0.0.0.0"
       PORT: "4444"
+      PLUGINS_ENABLED: "true"
     ports:
       - "${MCP_GATEWAY_PORT:-4444}:4444"
     profiles:

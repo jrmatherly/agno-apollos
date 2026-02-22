@@ -30,8 +30,8 @@ mise run <task>
 | Task | Description | Flags |
 |------|-------------|-------|
 | `mise run docker:up` | Start full stack | `--prod`, `--docs`, `--m365`, `--gateway` |
-| `mise run docker:down` | Stop all services | `--prod`, `--m365`, `--gateway` |
-| `mise run docker:logs` | Tail logs | `--prod`, `--m365`, `--gateway` |
+| `mise run docker:down` | Stop all services | `--prod`, `--docs`, `--m365`, `--gateway` |
+| `mise run docker:logs` | Tail logs | `--prod`, `--docs`, `--m365`, `--gateway` |
 | `mise run docker:build` | Build images locally | `--platform amd64\|arm64` |
 | `mise run dev` | Docker Compose watch (hot-reload) | `--m365`, `--gateway` |
 | `mise run db` | Start database only | |
@@ -60,10 +60,11 @@ mise run <task>
 
 ## Testing tasks
 
-| Task | Description |
-|------|-------------|
-| `mise run test` | Run integration tests against a running backend |
-| `mise run evals:run` | Run LLM-based evaluation harness |
+| Task | Description | Flags |
+|------|-------------|-------|
+| `mise run test` | Run integration tests against a running backend | |
+| `mise run evals:run` | Run evaluation harness | `-c` category, `-v` verbose, `-g` LLM grading, `-s` source checking, `--direct` mode |
+| `mise run evals:reliability` | Run tool-call reliability evals for all agents and research team | |
 
 <Note>
 Tests require a running backend instance. Start the stack with `mise run docker:up` before running tests.
@@ -90,6 +91,14 @@ Requires `JWT_SECRET_KEY` to be set in `.env`. See [security configuration](/con
 | `mise run load-docs` | Load knowledge base documents into pgvector |
 | `mise run load-sample-data` | Load F1 sample dataset into PostgreSQL |
 | `mise run load-knowledge` | Load table metadata, queries, and business rules into data agent knowledge base |
+
+## Maintenance tasks
+
+| Task | Description |
+|------|-------------|
+| `mise run maintenance:optimize-memories` | Summarize and compress agent memories for all users |
+| `mise run hooks:install` | Install git pre-commit hook (auto-formats + validates) |
+| `mise run agent:cli` | Run agent via CLI (`-- <module> [-q question]`) |
 
 ## Other tasks
 

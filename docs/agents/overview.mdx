@@ -1,9 +1,9 @@
 ---
 title: "Agents overview"
-description: "Five built-in agents with guardrails, learning, and session summaries."
+description: "Six agents with guardrails, learning, and session summaries."
 ---
 
-Apollos AI ships with five agents, a multi-agent team, and a research workflow. Each agent is a standalone Python module that exports an `Agent` instance, registered in `backend/main.py`.
+Apollos AI ships with six agents, two teams, and a research workflow. Each agent is a standalone Python module that exports an `Agent` instance, registered in `backend/main.py`.
 
 ## Agents
 
@@ -14,11 +14,17 @@ Apollos AI ships with five agents, a multi-agent team, and a research workflow. 
 | Web Search Agent | `web-search-agent` | Web Research | `backend/agents/web_search_agent.py` |
 | Reasoning Agent | `reasoning-agent` | Chain-of-Thought | `backend/agents/reasoning_agent.py` |
 | Data Analyst | `data-agent` | SQL Analysis | `backend/agents/data_agent.py` |
+| M365 Agent | `m365-agent` | MCP Tool Use | `backend/agents/m365_agent.py` (opt-in) |
+
+<Note>
+The M365 Agent requires `M365_ENABLED=true` and Entra ID authentication. See [M365 configuration](/configuration/m365).
+</Note>
 
 ## Teams
 
 | Team | ID | Mode | Source |
 |------|----|------|--------|
+| Coordinator | `apollos-coordinator` | Coordinate | `backend/teams/coordinator_team.py` |
 | Research Team | `research-team` | Coordinate | `backend/teams/research_team.py` |
 
 ## Workflows
@@ -53,19 +59,20 @@ from backend.agents.mcp_agent import mcp_agent
 from backend.agents.web_search_agent import web_search_agent
 from backend.agents.reasoning_agent import reasoning_agent
 from backend.agents.data_agent import data_agent
+from backend.teams.coordinator_team import coordinator_team
 from backend.teams.research_team import research_team
 from backend.workflows.research_workflow import research_workflow
 
 agent_os = AgentOS(
     name="Apollos AI",
     agents=[knowledge_agent, mcp_agent, web_search_agent, data_agent, reasoning_agent],
-    teams=[research_team],
+    teams=[coordinator_team, research_team],
     workflows=[research_workflow],
     # ...
 )
 ```
 
-Adding a new agent means creating a module and adding it to this list. See [creating agents](/agents/creating-agents).
+The Coordinator Team is the primary entry point. It routes queries to the best agent based on content. Adding a new agent means creating a module and adding it to this list. See [creating agents](/agents/creating-agents).
 
 <CardGroup cols={3}>
   <Card title="Knowledge Agent" icon="book" href="/agents/knowledge-agent">

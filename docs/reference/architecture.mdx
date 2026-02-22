@@ -36,7 +36,12 @@ FastAPI application using Agno's `AgentOS` as the runtime. Registers agents, tea
 | `backend/mcp/` | MCP Gateway integration (ContextForge client, tools factories, proxy routes) |
 | `backend/teams/` | Multi-agent team definitions |
 | `backend/workflows/` | Multi-step workflow pipelines |
-| `backend/tools/` | Custom tools (search, awareness, approval-gated ops, introspect, save_query, save_discovery) |
+| `backend/tools/` | Custom tools (search, awareness, approval-gated ops, introspect, save_query, save_discovery, m365, hooks) |
+| `backend/auth/` | Entra ID JWT middleware, RBAC scope mapping, user/team sync, M365 token service |
+| `backend/a2a/` | A2A protocol integration (AgnoAgentExecutor, AgentCard builder) |
+| `backend/registry.py` | Component registry for Agent-as-Config persistence |
+| `backend/cli.py` | Shared Rich CLI module for direct agent testing |
+| `backend/maintenance.py` | Memory optimization and usage warnings |
 | `backend/context/` | Agent context providers (semantic model, business rules, intent routing, source registry) |
 | `backend/knowledge/` | Document loaders, source metadata (`sources/`), search patterns (`patterns/`) |
 | `backend/scripts/` | Data loading scripts (sample data, knowledge base) |
@@ -51,9 +56,11 @@ Next.js 15 (App Router) with standalone output. Connects to the backend via brow
 | File | Purpose |
 |------|---------|
 | `frontend/src/store.ts` | Zustand state: endpoint URL, auth token, agent selection |
-| `frontend/src/api/` | Browser-side API client for AgentOS |
+| `frontend/src/api/` | Browser-side API clients (AgentOS, M365, MCP Gateway) |
+| `frontend/src/auth/` | MSAL.js v5 integration (Entra ID SSO, token sync) |
 | `frontend/src/hooks/` | React hooks (AI streaming, chat actions, session loader) |
 | `frontend/src/components/` | React components (shadcn/ui based) |
+| `frontend/src/app/settings/` | Settings pages (M365 connect, MCP integrations) |
 
 ### Database (`apollos-db`)
 
@@ -92,7 +99,24 @@ apollos-ai/
 │   │   ├── mcp_agent.py
 │   │   ├── web_search_agent.py
 │   │   ├── reasoning_agent.py
-│   │   └── data_agent.py
+│   │   ├── data_agent.py
+│   │   └── m365_agent.py    # Opt-in (M365_ENABLED)
+│   ├── teams/               # Multi-agent teams
+│   │   ├── coordinator_team.py  # Primary router
+│   │   └── research_team.py
+│   ├── workflows/           # Multi-step workflows
+│   │   └── research_workflow.py
+│   ├── auth/                # Entra ID authentication
+│   │   ├── config.py        # AuthConfig dataclass
+│   │   ├── middleware.py     # EntraJWTMiddleware
+│   │   ├── scope_mapper.py  # App Roles → Agno scopes
+│   │   ├── routes.py        # /auth/* API endpoints
+│   │   ├── m365_token_service.py  # OBO exchange
+│   │   ├── m365_routes.py   # /m365/* API endpoints
+│   │   └── m365_middleware.py     # Per-request token propagation
+│   ├── a2a/                 # A2A protocol
+│   │   ├── executor.py      # AgnoAgentExecutor
+│   │   └── server.py        # AgentCard + A2AStarletteApplication
 │   ├── mcp/                 # MCP Gateway integration
 │   │   ├── config.py        # Feature flag, gateway client factory
 │   │   ├── gateway_client.py # ContextForge API client
@@ -100,17 +124,15 @@ apollos-ai/
 │   │   ├── routes.py        # Proxy routes (/mcp/servers)
 │   │   ├── schemas.py       # Pydantic models
 │   │   └── validation.py    # BYOMCP URL validation
-│   ├── teams/               # Multi-agent teams
-│   │   └── research_team.py
-│   ├── workflows/           # Multi-step workflows
-│   │   └── research_workflow.py
 │   ├── tools/               # Custom tools
 │   │   ├── search.py
 │   │   ├── awareness.py
 │   │   ├── approved_ops.py
 │   │   ├── introspect.py
 │   │   ├── save_query.py
-│   │   └── save_discovery.py
+│   │   ├── save_discovery.py
+│   │   ├── m365.py          # MCPTools factory for M365
+│   │   └── hooks.py         # Tool hooks (audit, write guard)
 │   ├── context/             # Agent context providers
 │   │   ├── semantic_model.py
 │   │   ├── business_rules.py
