@@ -60,6 +60,14 @@ class GatewayClient:
         """Get the MCP endpoint URL for a registered server."""
         return f"{self._base_url}/servers/{server_id}/mcp"
 
+    async def get_gateway(self, gateway_id: str) -> dict | None:
+        """Get a single registered gateway by ID. Returns None if not found."""
+        resp = await self._http.get(f"/gateways/{gateway_id}", headers=self._auth_headers())
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
     async def register_gateway(self, name: str, url: str) -> dict:
         """Register an upstream MCP server with the gateway."""
         resp = await self._http.post(
@@ -69,6 +77,14 @@ class GatewayClient:
         )
         resp.raise_for_status()
         return resp.json()
+
+    async def delete_gateway(self, gateway_id: str) -> bool:
+        """Delete a registered gateway by ID. Returns False if not found."""
+        resp = await self._http.delete(f"/gateways/{gateway_id}", headers=self._auth_headers())
+        if resp.status_code == 404:
+            return False
+        resp.raise_for_status()
+        return True
 
     async def close(self) -> None:
         await self._http.aclose()

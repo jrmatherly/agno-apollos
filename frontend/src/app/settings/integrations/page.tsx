@@ -6,13 +6,22 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useStore } from '@/store'
-import { listMCPServers, deleteMCPServer, type MCPServerInfo } from '@/api/mcp'
+import {
+  listMCPServers,
+  deleteMCPServer,
+  registerMCPServer,
+  type MCPServerInfo
+} from '@/api/mcp'
 
 export default function IntegrationsPage() {
   const { selectedEndpoint, authToken } = useStore()
   const [servers, setServers] = useState<MCPServerInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newUrl, setNewUrl] = useState('')
+  const [registering, setRegistering] = useState(false)
 
   const fetchServers = useCallback(async () => {
     setLoading(true)
@@ -24,6 +33,26 @@ export default function IntegrationsPage() {
   useEffect(() => {
     fetchServers()
   }, [fetchServers])
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newName.trim() || !newUrl.trim()) return
+    setRegistering(true)
+    const result = await registerMCPServer(
+      selectedEndpoint,
+      newName.trim(),
+      newUrl.trim(),
+      authToken
+    )
+    if (result) {
+      toast.success(`Registered ${result.name}`)
+      setNewName('')
+      setNewUrl('')
+      setShowForm(false)
+      await fetchServers()
+    }
+    setRegistering(false)
+  }
 
   const handleDelete = async (server: MCPServerInfo) => {
     setDeletingId(server.id)
@@ -50,6 +79,78 @@ export default function IntegrationsPage() {
           are available to agents for tool discovery and execution.
         </p>
 
+        {showForm ? (
+          <form
+            onSubmit={handleRegister}
+            className="mb-6 space-y-3 rounded-lg border border-border p-4"
+          >
+            <div>
+              <label
+                htmlFor="mcp-server-name"
+                className="mb-1 block text-xs font-medium"
+              >
+                Server name
+              </label>
+              <input
+                id="mcp-server-name"
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="my-mcp-server"
+                pattern="^[a-z0-9][a-z0-9_-]*$"
+                title="Lowercase letters, numbers, hyphens, and underscores. Must start with a letter or number."
+                maxLength={100}
+                className="placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1"
+                required
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="mcp-server-url"
+                className="mb-1 block text-xs font-medium"
+              >
+                Server URL
+              </label>
+              <input
+                id="mcp-server-url"
+                type="url"
+                value={newUrl}
+                onChange={(e) => setNewUrl(e.target.value)}
+                placeholder="https://mcp-server.example.com/sse"
+                className="placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1"
+                required
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={registering}>
+                {registering ? 'Registering...' : 'Register'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowForm(false)
+                  setNewName('')
+                  setNewUrl('')
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowForm(true)}
+            >
+              Add server
+            </Button>
+          </div>
+        )}
+
         <div className="space-y-3">
           {loading ? (
             <div className="rounded-lg border border-border p-6">
@@ -60,8 +161,8 @@ export default function IntegrationsPage() {
           ) : servers.length === 0 ? (
             <div className="rounded-lg border border-border p-6">
               <p className="text-muted-foreground text-sm">
-                No MCP servers registered. Servers can be added by an
-                administrator through the API.
+                No MCP servers registered. Use the &ldquo;Add server&rdquo;
+                button above to register one.
               </p>
             </div>
           ) : (

@@ -47,7 +47,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `backend/mcp/routes.py` - Proxy routes: /mcp/servers (list, get, register, delete)
 - `backend/mcp/schemas.py` - Pydantic models (MCPServerInfo, MCPServerRegister, MCPServerResponse)
 - `backend/mcp/validation.py` - BYOMCP URL validation (HTTPS-only, no private IPs, no cloud metadata)
-- `frontend/src/api/mcp.ts` - MCP Gateway API client (list, delete servers)
+- `frontend/src/api/mcp.ts` - MCP Gateway API client (list, register, delete servers)
 - `frontend/src/app/settings/integrations/page.tsx` - MCP Integrations settings page
 - `docker-compose.yaml` - Dev compose (3 core services + optional docs/m365/gateway profiles)
 - `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
@@ -204,7 +204,7 @@ Frontend (build-time): `NEXT_PUBLIC_AZURE_CLIENT_ID`, `NEXT_PUBLIC_AZURE_TENANT_
 - Mintlify site in `docs/` (MDX pages, `docs.json` config)
 - Preview on port 3333 (`mise run docs:dev`) to avoid frontend port conflict
 - Style guide at `docs/CLAUDE.md` (excluded from Mintlify build via `.mintignore`)
-- Sections: Getting started, Agents, Teams, Workflows, Configuration (environment, security, telemetry, A2A, M365, Docker), Reference, Contributing
+- Sections: Getting started, Agents, Teams, Workflows, Configuration (environment, security, telemetry, A2A, M365, MCP Gateway, Docker), Reference, Contributing
 
 ## Security & CI/CD
 

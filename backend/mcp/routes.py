@@ -67,16 +67,15 @@ async def get_server(request: Request, server_id: str) -> MCPServerInfo:
     """Get details for a specific MCP server."""
     _require_auth(request)
     client = _require_gateway()
-    gateways = await client.list_gateways()
-    for gw in gateways:
-        if gw.get("id") == server_id:
-            return MCPServerInfo(
-                id=gw["id"],
-                name=gw.get("name", ""),
-                url=gw.get("url", ""),
-                status=gw.get("status"),
-            )
-    raise HTTPException(status_code=404, detail="Server not found")
+    gw = await client.get_gateway(server_id)
+    if not gw:
+        raise HTTPException(status_code=404, detail="Server not found")
+    return MCPServerInfo(
+        id=gw.get("id", server_id),
+        name=gw.get("name", ""),
+        url=gw.get("url", ""),
+        status=gw.get("status"),
+    )
 
 
 @mcp_router.post("/servers", response_model=MCPServerResponse, status_code=201)
@@ -103,10 +102,6 @@ async def delete_server(request: Request, server_id: str) -> None:
     """Remove a registered MCP server (admin only — scoped via RBAC)."""
     _require_auth(request)
     client = _require_gateway()
-    resp = await client._http.delete(
-        f"/gateways/{server_id}",
-        headers=client._auth_headers(),
-    )
-    if resp.status_code == 404:
+    found = await client.delete_gateway(server_id)
+    if not found:
         raise HTTPException(status_code=404, detail="Server not found")
-    resp.raise_for_status()

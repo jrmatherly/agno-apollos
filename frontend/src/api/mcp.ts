@@ -37,6 +37,32 @@ export const listMCPServers = async (
   }
 }
 
+export const registerMCPServer = async (
+  endpoint: string,
+  name: string,
+  url: string,
+  authToken?: string
+): Promise<MCPServerInfo | null> => {
+  try {
+    const resp = await fetch(APIRoutes.MCPServers(endpoint), {
+      method: 'POST',
+      headers: createHeaders(authToken),
+      body: JSON.stringify({ name, url })
+    })
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}))
+      toast.error(
+        (data as { detail?: string }).detail || 'Failed to register server'
+      )
+      return null
+    }
+    return await resp.json()
+  } catch {
+    toast.error('Failed to register server')
+    return null
+  }
+}
+
 export const deleteMCPServer = async (
   endpoint: string,
   serverId: string,

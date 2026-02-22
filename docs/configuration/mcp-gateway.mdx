@@ -36,17 +36,20 @@ When the gateway is enabled, agents use `get_gateway_tools_factory()` to create 
 | **RBAC scopes** | `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call`. Mapped per role in `scope_mapper.py`. |
 | **BYOMCP validation** | HTTPS required for external URLs. Private IPs, localhost, and cloud metadata endpoints blocked. |
 | **Header passthrough** | `X-Upstream-Authorization` forwards per-user tokens through the gateway for auth-gated upstream servers. |
-| **SSRF protection** | ContextForge RC1 has built-in SSRF protection (`SSRF_PROTECTION_ENABLED=true`). Application-level validation adds defense-in-depth. |
+| **SSRF protection** | ContextForge RC1 has built-in SSRF protection (`SSRF_PROTECTION_ENABLED=true`). Application-level validation adds defense-in-depth. Admin registration allows HTTP for known Docker service names (e.g., `apollos-m365-mcp`). Localhost, private IP ranges, and cloud metadata endpoints are always blocked. |
 | **Default-deny routing** | Unmapped routes return 403. Only explicitly scoped endpoints are accessible. |
 
 ### RBAC scope mapping
 
 | Role | Scopes |
 |------|--------|
+| GlobalAdmin | All (bypasses scope checks via `agent_os:admin`) |
 | Admin | `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call` |
 | TeamLead | `mcp:servers:read`, `mcp:tools:call` |
 | Developer | `mcp:servers:read`, `mcp:tools:call` |
 | User | `mcp:servers:read`, `mcp:tools:call` |
+| DevOps | No MCP scopes. MCP endpoints return 403. |
+| InfoSec | No MCP scopes. MCP endpoints return 403. |
 
 ## Environment variables
 
@@ -135,7 +138,7 @@ For agents requiring per-user token forwarding (like M365), set `needs_user_toke
 
 ## Frontend
 
-The Settings > MCP Integrations page (`/settings/integrations`) displays registered MCP servers with their status, URLs, and management actions. Admins can remove servers through the UI.
+The Settings > MCP Integrations page (`/settings/integrations`) displays registered MCP servers with their status, URLs, and management actions. Admins can register new servers and remove existing ones through the UI.
 
 The coordinator team automatically routes MCP-related queries to the MCP agent when the gateway is enabled.
 

@@ -71,11 +71,11 @@ Key patterns:
 Key files:
 
 - `backend/mcp/config.py` — `MCP_GATEWAY_ENABLED` flag, lazy singleton `GatewayClient`, `get_gateway_tools_factory()`
-- `backend/mcp/gateway_client.py` — ContextForge API client (JWT generation, gateway list/register)
+- `backend/mcp/gateway_client.py` — ContextForge API client (JWT generation, gateway CRUD: list/get/register/delete)
 - `backend/mcp/tools_factory.py` — `create_gateway_header_provider()`, `create_gateway_tools_factory()`
 - `backend/mcp/routes.py` — Proxy routes at `/mcp/servers` (list, get, register, delete)
 - `backend/mcp/schemas.py` — Pydantic models for proxy responses
-- `backend/mcp/validation.py` — BYOMCP URL validation (HTTPS, no private IPs)
+- `backend/mcp/validation.py` — BYOMCP URL validation (HTTPS, no private IPs). `allow_internal=True` only permits hardcoded Docker service names — localhost and private IP ranges remain blocked.
 
 ## Entra ID Auth Package (backend/auth/)
 

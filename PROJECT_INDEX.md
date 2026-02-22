@@ -100,7 +100,7 @@ apollos-ai/
 │   │   ├── api/             # API client (browser-side fetch to backend)
 │   │   │   ├── os.ts        # AgentOS API functions (agents, teams, sessions, runs)
 │   │   │   ├── m365.ts      # M365 API client (status, connect, disconnect)
-│   │   │   ├── mcp.ts       # MCP Gateway API client (list, delete servers)
+│   │   │   ├── mcp.ts       # MCP Gateway API client (list, register, delete servers)
 │   │   │   └── routes.ts    # Route constants
 │   │   ├── hooks/           # React hooks
 │   │   │   ├── useAIResponseStream.tsx  # SSE stream handler
@@ -383,7 +383,7 @@ Uses **pnpm** for package management:
 ### backend/mcp/gateway_client.py
 
 - **Exports**: `GatewayClient` class
-- **Purpose**: ContextForge API client — JWT generation (jti+exp), gateway CRUD (list, register, delete)
+- **Purpose**: ContextForge API client — JWT generation (jti+exp), gateway CRUD (list, get, register, delete)
 - **Key pattern**: RC1 requires `jti` (uuid4) + `exp` claims in service JWTs
 
 ### backend/mcp/tools_factory.py

@@ -45,3 +45,9 @@ These must be passed as `build.args` in docker-compose **and** declared as `ARG`
 - All API calls in `src/api/os.ts` already inject `authToken` as `Authorization: Bearer`
 - `AuthUserButton.tsx` replaces `AuthToken.tsx` in the sidebar when MSAL is configured
 - For local dev without Entra ID: keep `NEXT_PUBLIC_AZURE_CLIENT_ID` empty — falls back to manual token entry
+
+## Forms
+
+- No shadcn `input.tsx` component — use native `<input>` with Tailwind classes (see `settings/integrations/page.tsx` and `settings/m365/page.tsx` for patterns)
+- Always associate `<label htmlFor="id">` with `<input id="id">` for accessibility
+- Mirror backend Pydantic field constraints as HTML5 attributes (`pattern`, `maxLength`, `title`) on form inputs

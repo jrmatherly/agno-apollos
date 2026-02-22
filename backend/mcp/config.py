@@ -10,6 +10,7 @@ Reads ``MCP_GATEWAY_ENABLED``, ``MCP_GATEWAY_URL``, and
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
 from os import getenv
 
@@ -45,21 +46,23 @@ def get_gateway_client() -> GatewayClient | None:
 
 
 # ---------------------------------------------------------------------------
-# Server ID cache — populated lazily from gateway registry
+# Server ID cache — populated lazily from gateway registry (5 min TTL)
 # ---------------------------------------------------------------------------
-_server_ids: dict[str, str] = {}
+_SERVER_ID_TTL = 300  # seconds
+_server_ids: dict[str, tuple[str, float]] = {}
 
 
 async def _resolve_server_id(name: str) -> str | None:
     """Resolve a server name to its gateway ID, caching the result."""
-    if name in _server_ids:
-        return _server_ids[name]
+    cached = _server_ids.get(name)
+    if cached and (time.monotonic() - cached[1]) < _SERVER_ID_TTL:
+        return cached[0]
     client = get_gateway_client()
     if not client:
         return None
     server_id = await client.get_server_id_by_name(name)
     if server_id:
-        _server_ids[name] = server_id
+        _server_ids[name] = (server_id, time.monotonic())
     return server_id
 
 
