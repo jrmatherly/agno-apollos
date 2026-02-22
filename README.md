@@ -17,9 +17,10 @@ Deploy a multi-agent system on Docker, powered by the [Agno](https://docs.agno.c
 
 ### Teams
 
-| Team          | Mode       | Description                                             |
-| ------------- | ---------- | ------------------------------------------------------- |
-| Research Team | Coordinate | Multi-agent research combining web search and analysis. |
+| Team             | Mode       | Description                                                                  |
+| ---------------- | ---------- | ---------------------------------------------------------------------------- |
+| Research Team    | Coordinate | Multi-agent research combining web search and analysis.                      |
+| Coordinator Team | Coordinate | Routes tasks to specialized agents (Knowledge, Web, Reasoning, Data, M365). |
 
 ### Workflows
 
@@ -257,6 +258,9 @@ This project uses [mise](https://mise.jdx.dev) to manage tools (Python, uv) and 
 | `mise run gateway:up`          | Start MCP Gateway (`--prod`, `--m365`)                                                           |
 | `mise run gateway:logs`        | Tail MCP Gateway logs (`--prod`)                                                                 |
 | `mise run schedules:setup`     | Initialize scheduler tables                                                                      |
+| `mise run evals:reliability`   | Run tool-call reliability evals for all agents and research team                                 |
+| `mise run hooks:install`       | Install git pre-commit hook (auto-formats + validates before each commit)                        |
+| `mise run maintenance:optimize-memories` | Summarize and compress agent memories for all users                                    |
 
 ### CLI Testing
 
@@ -330,8 +334,17 @@ This syncs code changes into the container and rebuilds when `pyproject.toml` or
 | `M365_CACHE_KEY`               | No       | (derived)                          | Fernet key for token cache encryption                                                   |
 | `MCP_GATEWAY_ENABLED`          | No       | `false`                            | Enable MCP Gateway integration (opt-in)                                                 |
 | `MCP_GATEWAY_URL`              | No       | `http://apollos-mcp-gateway:4444` | ContextForge gateway URL                                                                |
-| `MCP_GATEWAY_JWT_SECRET`       | No       | -                                  | Shared JWT secret for gateway auth                                                      |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`  | No       | -                                  | OTel trace export endpoint (empty = disabled)                                           |
+| `MCP_GATEWAY_JWT_SECRET`       | No       | `dev-gateway-secret`               | Shared JWT secret for gateway auth                                                      |
+| `TRACING_ENABLED`              | No       | `false`                            | Enable PostgreSQL trace storage (Layer 1)                                               |
+| `OTLP_ENDPOINTS`               | No       | -                                  | Comma-separated OTel export endpoints (Layer 2). Replaces legacy single endpoint.       |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`  | No       | -                                  | Legacy OTel export endpoint (fallback for `OTLP_ENDPOINTS`)                             |
+| `A2A_ENABLED`                  | No       | `false`                            | Enable Agent-to-Agent protocol endpoints                                                |
+| `A2A_BASE_URL`                 | No       | `http://localhost:8000`            | Base URL for A2A AgentCard discovery                                                    |
+| `MCP_GATEWAY_ADMIN_GROUPS`     | No       | -                                  | Comma-separated Entra group IDs for gateway admin access                                |
+| `MCP_GATEWAY_ROLE_MAPPINGS`    | No       | -                                  | JSON mapping of Entra groups to gateway roles                                           |
+| `NEXT_PUBLIC_AZURE_CLIENT_ID`  | No       | -                                  | Entra ID client ID for MSAL (build-time, baked into frontend)                           |
+| `NEXT_PUBLIC_AZURE_TENANT_ID`  | No       | -                                  | Entra ID tenant ID for MSAL (build-time)                                                |
+| `NEXT_PUBLIC_REDIRECT_URI`     | No       | `http://localhost:3000`            | MSAL redirect URI after login (build-time)                                              |
 | `NEXT_PUBLIC_OS_SECURITY_KEY`  | No       | -                                  | Pre-fill auth token in the frontend UI                                                  |
 
 ## Learn More

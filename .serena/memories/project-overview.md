@@ -66,6 +66,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 ## Teams
 
 1. **Research Team** (`research-team`): Coordinate-mode multi-agent research (web_researcher + analyst), safety parameters (max_iterations=5, num_history_runs=5, add_datetime_to_context)
+2. **Coordinator Team** (`coordinator-team`): Routes tasks to specialized agents (Knowledge, Web, Reasoning, Data, M365)
 
 ## Workflows
 
@@ -74,7 +75,7 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 ## Dependencies (pyproject.toml)
 
 agno, fastapi[standard], openai, pgvector, psycopg[binary], sqlalchemy, mcp, opentelemetry-\*, opentelemetry-exporter-otlp-proto-http, openinference-instrumentation-agno, a2a-sdk[all], litellm, ddgs, fastmcp, pypdf, aiofiles, pandas, httpx, rich
-Dev: mypy, ruff, pytest, requests, pandas-stubs
+Dev: mypy, ruff, pytest, pytest-asyncio, requests, pandas-stubs
 
 ## Frontend Dependencies (package.json)
 
@@ -116,6 +117,9 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run gateway:logs` - tail gateway logs (`--prod`)
 - `mise run docs:dev` - preview docs site locally (port 3333)
 - `mise run docs:validate` - validate docs build + check broken links
+- `mise run evals:reliability` - run tool-call reliability evals
+- `mise run hooks:install` - install git pre-commit hook (auto-formats + validates)
+- `mise run maintenance:optimize-memories` - summarize and compress agent memories
 
 ## Adding an Agent
 
@@ -151,6 +155,7 @@ Run `mise tasks` for full list. Key tasks:
 - `authProvider.tsx` — `MsalProvider` wrapper; passes through when unconfigured
 - `useAuth.ts` — `useMsal()` wrapper; silent token acquisition with redirect fallback
 - `useTokenSync.ts` — Syncs MSAL access token → Zustand `authToken` every 5 minutes
+- `useHasScope.ts` — `useHasScope()` and `useHasAnyScope()` hooks for RBAC-gated UI
 - `AuthUserButton.tsx` — Sidebar login/logout UI; replaces manual token entry when configured
 
 ### App Roles (Azure) → Scopes (Agno)

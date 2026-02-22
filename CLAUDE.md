@@ -79,7 +79,7 @@ Auth and scheduling tasks:
 - Use `#MISE` comment headers for metadata: `description`, `depends`, `alias`
 - Tasks must be executable (`chmod +x`)
 - Subdirectories create namespaced tasks: `mise-tasks/docker/up` → `mise run docker:up`
-- `scripts/` is container-only (just `entrypoint.sh`). Dev tasks go in `mise-tasks/`.
+- `scripts/` is container-only (`entrypoint.sh`, `init-contextforge-db.sh`). Dev tasks go in `mise-tasks/`.
 - `mise.local.toml` is gitignored — use for local developer overrides
 - Interactive tasks (prompts/input) must use `read < /dev/tty` and `echo > /dev/tty` — mise does not forward stdin/stderr
 

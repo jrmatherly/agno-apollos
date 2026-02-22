@@ -30,8 +30,8 @@ mise run <task>
 | Task | Description | Flags |
 |------|-------------|-------|
 | `mise run docker:up` | Start full stack | `--prod`, `--docs`, `--m365`, `--gateway` |
-| `mise run docker:down` | Stop all services | `--prod`, `--docs`, `--m365`, `--gateway` |
-| `mise run docker:logs` | Tail logs | `--prod`, `--docs`, `--m365`, `--gateway` |
+| `mise run docker:down` | Stop all services | `--prod`, `--m365`, `--gateway` |
+| `mise run docker:logs` | Tail logs | `--prod`, `--m365`, `--gateway` |
 | `mise run docker:build` | Build images locally | `--platform amd64\|arm64` |
 | `mise run dev` | Docker Compose watch (hot-reload) | `--m365`, `--gateway` |
 | `mise run db` | Start database only | |

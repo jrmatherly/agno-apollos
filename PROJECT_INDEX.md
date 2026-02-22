@@ -135,7 +135,12 @@ apollos-ai/
 │   ├── load-sample-data     # Load F1 sample data into PostgreSQL
 │   ├── load-knowledge       # Load knowledge files into vector DB
 │   ├── evals/               # Evaluation tasks
-│   │   └── run              # Run eval suite (Rich CLI, LLM grading, golden SQL)
+│   │   ├── run              # Run eval suite (Rich CLI, LLM grading, golden SQL)
+│   │   └── reliability      # Run tool-call reliability evals
+│   ├── hooks/               # Git hook tasks
+│   │   └── install          # Install git pre-commit hook (auto-formats + validates)
+│   ├── maintenance/         # Maintenance tasks
+│   │   └── optimize-memories # Summarize and compress agent memories
 │   ├── agent/               # Agent tasks
 │   │   └── cli              # Run agent via CLI (docker exec)
 │   ├── schedules/           # Scheduler tasks
@@ -477,6 +482,7 @@ Uses **pnpm** for package management:
   - `authProvider.tsx` — `AuthProvider` client component wrapping `MsalProvider`
   - `useAuth.ts` — `useAuth()` hook (login, logout, `getAccessToken()` with silent/redirect fallback)
   - `useTokenSync.ts` — Syncs MSAL access token → Zustand `authToken` every 5 minutes
+  - `useHasScope.ts` — `useHasScope()` and `useHasAnyScope()` hooks for RBAC-gated UI (checks Zustand `userScopes`)
   - `AuthUserButton.tsx` — Sidebar login/logout UI with user display name
   - `index.ts` — Re-exports
 - **Activation**: Set `NEXT_PUBLIC_AZURE_CLIENT_ID` at build time. Empty = falls back to manual token entry.
@@ -534,7 +540,7 @@ Uses **pnpm** for package management:
 | `pandas`                                 | DataFrame loading for F1 sample data scripts                                    |
 | `rich`                                   | Rich CLI output for eval runner                                                 |
 
-**Dev deps** (`[dependency-groups]`): `mypy`, `pandas-stubs`, `ruff`, `pytest`, `requests`
+**Dev deps** (`[dependency-groups]`): `mypy`, `pandas-stubs`, `ruff`, `pytest`, `pytest-asyncio`, `requests`
 
 ### Frontend
 

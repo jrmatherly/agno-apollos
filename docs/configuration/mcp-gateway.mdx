@@ -47,9 +47,9 @@ When the gateway is enabled, agents use `get_gateway_tools_factory()` to create 
 | Admin | Full CRUD: `mcp:servers:*`, `mcp:tools:*`, `mcp:virtual-servers:*`, `mcp:resources:*`, `mcp:prompts:*`, `mcp:config:*`, `mcp:preferences:*`, `mcp:tools:call` |
 | TeamLead | Read + preferences: `mcp:servers:read`, `mcp:tools:read`, `mcp:virtual-servers:read`, `mcp:resources:read`, `mcp:prompts:read`, `mcp:preferences:*`, `mcp:tools:call` |
 | Developer | Read + preferences: same as TeamLead |
-| User | Read + preferences: `mcp:tools:read`, `mcp:virtual-servers:read`, `mcp:resources:read`, `mcp:prompts:read`, `mcp:preferences:*` |
+| User | Read + preferences: `mcp:servers:read`, `mcp:tools:read`, `mcp:tools:call`, `mcp:virtual-servers:read`, `mcp:resources:read`, `mcp:prompts:read`, `mcp:preferences:*` |
 | DevOps | Read-only: `mcp:tools:read`, `mcp:virtual-servers:read`, `mcp:resources:read`, `mcp:prompts:read`, `mcp:config:read`, `mcp:preferences:*` |
-| InfoSec | No MCP scopes. MCP endpoints return 403. |
+| InfoSec | Read-only: `mcp:servers:read`, `mcp:tools:read`, `mcp:virtual-servers:read`, `mcp:resources:read`, `mcp:prompts:read`, `mcp:config:read` |
 
 ## Environment variables
 

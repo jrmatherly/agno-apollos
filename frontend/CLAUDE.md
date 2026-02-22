@@ -60,3 +60,5 @@ These must be passed as `build.args` in docker-compose **and** declared as `ARG`
 - RBAC filtering: `useHasScope()` from `src/auth/useHasScope.ts` checks Zustand `userScopes` (populated by `useTokenSync`)
 - Tabs only render if user has `useHasAnyScope()` for the relevant `mcp:*:read` scopes
 - API client: `src/api/mcp.ts` — all MCP gateway operations (servers, tools, virtual-servers, resources, prompts, tags, config, preferences)
+- Type aliases: `MCPVisibility = 'public' | 'private' | 'team'` and `MCPTab` union type in `src/api/mcp.ts` — use these instead of raw `string` for visibility and tab fields
+- MCP API error pattern: all catch blocks must include `console.error('MCP API error:', err)` and show `toast.error()` for non-503 responses (503 = gateway disabled, silently return empty)

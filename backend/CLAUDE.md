@@ -71,6 +71,9 @@ Key patterns:
 - **Preferences**: Per-user MCP workspace preferences (hidden tools/servers, default tab, compact view). Database-backed with per-user PostgreSQL storage (auth_users FK).
 - **MCPPreference model**: Follows M365Connection pattern — UUID PK, `user_id` FK to `auth_users.id` with `unique=True`, `ARRAY(Text)` for list fields. Table created via `create_auth_tables()` at startup (code-first, no Alembic).
 - **Preferences DB sessions**: Route handlers use `auth_session_factory()` with `async with` (not `Depends(get_auth_session)`). Use distinct variable names for different query results (`user_result`, `pref_result`) to avoid mypy type inference conflicts.
+- **Type aliases**: `MCPVisibility = Literal["public", "private", "team"]` and `MCPTab = Literal[...]` in `schemas.py` — use these instead of raw `str` for visibility and tab fields.
+- **Error handler**: `_handle_gateway_error()` uses `NoReturn` return type — catches `HTTPStatusError`, `ConnectError`, `TimeoutException` and always raises. Callers don't need `return` after calling it.
+- **TYPE_CHECKING imports**: `gateway_client.py` imports `MCPVisibility` under `TYPE_CHECKING` to avoid circular imports with `schemas.py`.
 
 Key files:
 
