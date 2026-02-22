@@ -37,7 +37,10 @@ import {
   ChevronUp,
   Trash,
   Settings,
-  LogOut
+  LogOut,
+  Search,
+  Database,
+  FileText
 } from 'lucide-react'
 
 import { PlusIcon } from '@radix-ui/react-icons'
@@ -79,5 +82,8 @@ export const ICONS: IconTypeMap = {
   references: ReferencesIcon,
   trash: Trash,
   settings: Settings,
-  'log-out': LogOut
+  'log-out': LogOut,
+  search: Search,
+  database: Database,
+  file: FileText
 }

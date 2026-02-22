@@ -14,12 +14,9 @@ import { getJsonMarkdown } from '@/lib/utils'
 const useAIChatStreamHandler = () => {
   const setMessages = useStore((state) => state.setMessages)
   const { addMessage, focusChatInput } = useChatActions()
-  const [agentId] = useQueryState('agent')
-  const [teamId] = useQueryState('team')
   const [sessionId, setSessionId] = useQueryState('session')
   const selectedEndpoint = useStore((state) => state.selectedEndpoint)
   const authToken = useStore((state) => state.authToken)
-  const mode = useStore((state) => state.mode)
   const setStreamingErrorMessage = useStore(
     (state) => state.setStreamingErrorMessage
   )
@@ -142,25 +139,22 @@ const useAIChatStreamHandler = () => {
       try {
         const endpointUrl = constructEndpointUrl(selectedEndpoint)
 
-        let RunUrl: string | null = null
-
-        if (mode === 'team' && teamId) {
-          RunUrl = APIRoutes.TeamRun(endpointUrl, teamId)
-        } else if (mode === 'agent' && agentId) {
-          RunUrl = APIRoutes.AgentRun(endpointUrl).replace(
-            '{agent_id}',
-            agentId
-          )
-        }
-
-        if (!RunUrl) {
-          updateMessagesWithErrorState()
-          setStreamingErrorMessage('Please select an agent or team first.')
-          setIsStreaming(false)
-          return
-        }
+        const RunUrl = APIRoutes.TeamRun(endpointUrl, 'apollos-coordinator')
 
         formData.append('stream', 'true')
+
+        // Capture clean message for session naming (before hints are injected)
+        const displayMessage = formData.get('message') as string
+
+        // Inject specialist hints from toggle chips into the message sent to the backend.
+        // IMPORTANT: This must happen AFTER addMessage() above which reads
+        // the clean message for UI display. The hints are only for the coordinator.
+        const activeSpecialists = useStore.getState().activeSpecialists
+        if (activeSpecialists.length > 0) {
+          const hints = activeSpecialists.join(',')
+          const originalMessage = formData.get('message') as string
+          formData.set('message', `[hints: ${hints}] ${originalMessage}`)
+        }
         formData.append('session_id', sessionId ?? '')
 
         // Create headers with auth token if available
@@ -188,7 +182,7 @@ const useAIChatStreamHandler = () => {
               ) {
                 const sessionData = {
                   session_id: chunk.session_id as string,
-                  session_name: formData.get('message') as string,
+                  session_name: displayMessage,
                   created_at: chunk.created_at
                 }
                 setSessionsData((prevSessionsData) => {
@@ -434,9 +428,6 @@ const useAIChatStreamHandler = () => {
       selectedEndpoint,
       authToken,
       streamResponse,
-      agentId,
-      teamId,
-      mode,
       setStreamingErrorMessage,
       setIsStreaming,
       focusChatInput,

@@ -33,6 +33,7 @@ from backend.auth.routes import limiter
 from backend.auth.security_headers import SecurityHeadersMiddleware
 from backend.db import get_postgres_db
 from backend.registry import create_registry
+from backend.teams.coordinator_team import coordinator_team
 from backend.teams.research_team import research_team
 from backend.telemetry import configure_telemetry
 from backend.workflows.research_workflow import research_workflow
@@ -100,7 +101,7 @@ agent_os = AgentOS(
     scheduler=True,
     db=get_postgres_db(),
     agents=_agents,
-    teams=[research_team],
+    teams=[coordinator_team, research_team],
     workflows=[research_workflow],
     config=str(Path(__file__).parent / "config.yaml"),
     enable_mcp_server=True,

@@ -38,6 +38,9 @@ export type IconType =
   | 'trash'
   | 'settings'
   | 'log-out'
+  | 'search'
+  | 'database'
+  | 'file'
 
 export interface IconProps {
   type: IconType

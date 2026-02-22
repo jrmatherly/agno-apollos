@@ -54,6 +54,11 @@ interface Store {
   ) => void
   isSessionsLoading: boolean
   setIsSessionsLoading: (isSessionsLoading: boolean) => void
+  activeSpecialists: string[]
+  toggleSpecialist: (id: string) => void
+  clearSpecialists: () => void
+  m365Connected: boolean
+  setM365Connected: (connected: boolean) => void
 }
 
 export const useStore = create<Store>()(
@@ -105,7 +110,17 @@ export const useStore = create<Store>()(
         })),
       isSessionsLoading: false,
       setIsSessionsLoading: (isSessionsLoading) =>
-        set(() => ({ isSessionsLoading }))
+        set(() => ({ isSessionsLoading })),
+      activeSpecialists: [],
+      toggleSpecialist: (id) =>
+        set((state) => ({
+          activeSpecialists: state.activeSpecialists.includes(id)
+            ? state.activeSpecialists.filter((s) => s !== id)
+            : [...state.activeSpecialists, id]
+        })),
+      clearSpecialists: () => set({ activeSpecialists: [] }),
+      m365Connected: false,
+      setM365Connected: (m365Connected) => set({ m365Connected })
     }),
     {
       name: 'endpoint-storage',

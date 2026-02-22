@@ -5,15 +5,12 @@ import { TextArea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/store'
 import useAIChatStreamHandler from '@/hooks/useAIStreamHandler'
-import { useQueryState } from 'nuqs'
 import Icon from '@/components/ui/icon'
 
 const ChatInput = () => {
   const { chatInputRef } = useStore()
 
   const { handleStreamResponse } = useAIChatStreamHandler()
-  const [selectedAgent] = useQueryState('agent')
-  const [teamId] = useQueryState('team')
   const [inputMessage, setInputMessage] = useState('')
   const isStreaming = useStore((state) => state.isStreaming)
   const handleSubmit = async () => {
@@ -51,14 +48,12 @@ const ChatInput = () => {
           }
         }}
         className="w-full border border-accent bg-primaryAccent px-4 text-sm text-primary shadow-[0_0_15px_rgba(36,131,163,0.35)] focus:border-brand/50 focus:shadow-[0_0_20px_rgba(36,131,163,0.5)]"
-        disabled={!(selectedAgent || teamId)}
+        disabled={false}
         ref={chatInputRef}
       />
       <Button
         onClick={handleSubmit}
-        disabled={
-          !(selectedAgent || teamId) || !inputMessage.trim() || isStreaming
-        }
+        disabled={!inputMessage.trim() || isStreaming}
         size="icon"
         className="rounded-xl bg-primary p-5 text-primaryAccent"
       >

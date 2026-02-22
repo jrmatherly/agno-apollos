@@ -3,8 +3,10 @@ import { toast } from 'sonner'
 
 import { useStore } from '../store'
 
-import { AgentDetails, TeamDetails, type ChatMessage } from '@/types/os'
+import { type ChatMessage } from '@/types/os'
 import { getAgentsAPI, getStatusAPI, getTeamsAPI } from '@/api/os'
+import { APIRoutes } from '@/api/routes'
+import { constructEndpointUrl } from '@/lib/constructEndpointUrl'
 import { useQueryState } from 'nuqs'
 
 const useChatActions = () => {
@@ -15,12 +17,11 @@ const useChatActions = () => {
   const setMessages = useStore((state) => state.setMessages)
   const setIsEndpointActive = useStore((state) => state.setIsEndpointActive)
   const setIsEndpointLoading = useStore((state) => state.setIsEndpointLoading)
-  const setAgents = useStore((state) => state.setAgents)
   const setTeams = useStore((state) => state.setTeams)
   const setSelectedModel = useStore((state) => state.setSelectedModel)
   const setMode = useStore((state) => state.setMode)
-  const [agentId, setAgentId] = useQueryState('agent')
-  const [teamId, setTeamId] = useQueryState('team')
+  const [, setAgentId] = useQueryState('agent')
+  const [, setTeamId] = useQueryState('team')
   const [, setDbId] = useQueryState('db_id')
 
   const getStatus = useCallback(async () => {
@@ -76,101 +77,68 @@ const useChatActions = () => {
     setIsEndpointLoading(true)
     try {
       const status = await getStatus()
-      let agents: AgentDetails[] = []
-      let teams: TeamDetails[] = []
       if (status === 200) {
         setIsEndpointActive(true)
-        teams = await getTeams()
-        agents = await getAgents()
+        // Fetch teams for session listing (coordinator team manages sessions)
+        const teams = await getTeams()
+        setTeams(teams)
 
-        if (!agentId && !teamId) {
-          const currentMode = useStore.getState().mode
+        // Clear any stale agent query param from bookmarked URLs
+        setAgentId(null)
 
-          if (currentMode === 'team' && teams.length > 0) {
-            const firstTeam = teams[0]
-            setTeamId(firstTeam.id)
-            setSelectedModel(firstTeam.model?.provider || '')
-            setDbId(firstTeam.db_id || '')
-            setAgentId(null)
-            setTeams(teams)
-          } else if (currentMode === 'agent' && agents.length > 0) {
-            const firstAgent = agents[0]
-            setMode('agent')
-            setAgentId(firstAgent.id)
-            setSelectedModel(firstAgent.model?.model || '')
-            setDbId(firstAgent.db_id || '')
-            setAgents(agents)
-          }
-        } else {
-          setAgents(agents)
-          setTeams(teams)
-          if (agentId) {
-            const agent = agents.find((a) => a.id === agentId)
-            if (agent) {
-              setMode('agent')
-              setSelectedModel(agent.model?.model || '')
-              setDbId(agent.db_id || '')
-              setTeamId(null)
-            } else if (agents.length > 0) {
-              const firstAgent = agents[0]
-              setMode('agent')
-              setAgentId(firstAgent.id)
-              setSelectedModel(firstAgent.model?.model || '')
-              setDbId(firstAgent.db_id || '')
-              setTeamId(null)
+        // Set coordinator team as the active team for session management
+        const coordinator = teams.find((t) => t.id === 'apollos-coordinator')
+        if (coordinator) {
+          setTeamId(coordinator.id)
+          setMode('team')
+          setSelectedModel(coordinator.model?.provider || '')
+          setDbId(coordinator.db_id || '')
+        }
+
+        // Check M365 connection status for toggle gating
+        try {
+          const m365Res = await fetch(
+            APIRoutes.M365Status(constructEndpointUrl(selectedEndpoint)),
+            {
+              headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
             }
-          } else if (teamId) {
-            const team = teams.find((t) => t.id === teamId)
-            if (team) {
-              setMode('team')
-              setSelectedModel(team.model?.provider || '')
-              setDbId(team.db_id || '')
-              setAgentId(null)
-            } else if (teams.length > 0) {
-              const firstTeam = teams[0]
-              setMode('team')
-              setTeamId(firstTeam.id)
-              setSelectedModel(firstTeam.model?.provider || '')
-              setDbId(firstTeam.db_id || '')
-              setAgentId(null)
-            }
+          )
+          if (m365Res.ok) {
+            const m365Data = await m365Res.json()
+            useStore.getState().setM365Connected(m365Data.connected === true)
           }
+        } catch {
+          // M365 not available or not enabled — leave as disconnected
         }
       } else {
         setIsEndpointActive(false)
-        setMode('agent')
         setSelectedModel('')
         setAgentId(null)
         setTeamId(null)
       }
-      return { agents, teams }
     } catch (error) {
-      console.error('Error initializing :', error)
+      console.error('Error initializing:', error)
       setIsEndpointActive(false)
-      setMode('agent')
       setSelectedModel('')
       setAgentId(null)
       setTeamId(null)
-      setAgents([])
       setTeams([])
     } finally {
       setIsEndpointLoading(false)
     }
   }, [
     getStatus,
-    getAgents,
     getTeams,
     setIsEndpointActive,
     setIsEndpointLoading,
-    setAgents,
     setTeams,
     setAgentId,
+    setTeamId,
     setSelectedModel,
     setMode,
-    setTeamId,
     setDbId,
-    agentId,
-    teamId
+    selectedEndpoint,
+    authToken
   ])
 
   return {

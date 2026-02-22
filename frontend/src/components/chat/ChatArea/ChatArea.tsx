@@ -1,6 +1,7 @@
 'use client'
 
 import ChatInput from './ChatInput'
+import { SpecialistBar } from './ChatInput/SpecialistBar'
 import MessageArea from './MessageArea'
 const ChatArea = () => {
   return (
@@ -8,6 +9,7 @@ const ChatArea = () => {
       <MessageArea />
       <div className="sticky bottom-0 ml-9 px-4 pb-2">
         <ChatInput />
+        <SpecialistBar />
       </div>
     </main>
   )

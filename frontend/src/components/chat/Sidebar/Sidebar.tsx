@@ -1,13 +1,10 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { ModeSelector } from '@/components/chat/Sidebar/ModeSelector'
-import { EntitySelector } from '@/components/chat/Sidebar/EntitySelector'
 import useChatActions from '@/hooks/useChatActions'
 import { useStore } from '@/store'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/ui/icon'
-import { getProviderIcon } from '@/lib/modelProvider'
 import Sessions from './Sessions'
 import AuthToken from './AuthToken'
 import { isMsalConfigured } from '@/auth'
@@ -16,7 +13,6 @@ import { isValidUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useQueryState } from 'nuqs'
 import { truncateText } from '@/lib/utils'
-import { Skeleton } from '@/components/ui/skeleton'
 
 const DEFAULT_ENDPOINT =
   process.env.NEXT_PUBLIC_DEFAULT_ENDPOINT || 'http://localhost:8000'
@@ -44,16 +40,6 @@ const NewChatButton = ({
     <Icon type="plus-icon" size="xs" className="text-primary" />
     <span>New Chat</span>
   </Button>
-)
-
-const ModelDisplay = ({ model }: { model: string }) => (
-  <div className="flex h-9 w-full items-center gap-3 rounded-xl border border-primary/15 bg-accent p-3 text-xs font-medium text-muted">
-    {(() => {
-      const icon = getProviderIcon(model)
-      return icon ? <Icon type={icon} className="shrink-0" size="xs" /> : null
-    })()}
-    {model}
-  </div>
 )
 
 const Endpoint = () => {
@@ -214,19 +200,9 @@ const Sidebar = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { clearChat, focusChatInput, initialize } = useChatActions()
-  const {
-    messages,
-    selectedEndpoint,
-    isEndpointActive,
-    selectedModel,
-    hydrated,
-    isEndpointLoading,
-    mode,
-    authToken
-  } = useStore()
+  const { messages, selectedEndpoint, isEndpointActive, hydrated, authToken } =
+    useStore()
   const [isMounted, setIsMounted] = useState(false)
-  const [agentId] = useQueryState('agent')
-  const [teamId] = useQueryState('team')
 
   useEffect(() => {
     setIsMounted(true)
@@ -234,7 +210,7 @@ const Sidebar = ({
     // Calling initialize() with an empty token sends unauthenticated requests that
     // return 401, causing spurious toast errors before the token is ready.
     if (hydrated && (!isMsalConfigured || authToken)) initialize()
-  }, [selectedEndpoint, initialize, hydrated, mode, authToken])
+  }, [selectedEndpoint, initialize, hydrated, authToken])
 
   const handleNewChat = () => {
     clearChat()
@@ -278,37 +254,7 @@ const Sidebar = ({
         {isMounted && (
           <>
             <Endpoint />
-            {isEndpointActive && (
-              <>
-                <motion.div
-                  className="flex w-full flex-col items-start gap-2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, ease: 'easeInOut' }}
-                >
-                  <div className="text-xs font-medium text-primary">Mode</div>
-                  {isEndpointLoading ? (
-                    <div className="flex w-full flex-col gap-2">
-                      {Array.from({ length: 3 }).map((_, index) => (
-                        <Skeleton
-                          key={index}
-                          className="h-9 w-full rounded-xl"
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <>
-                      <ModeSelector />
-                      <EntitySelector />
-                      {selectedModel && (agentId || teamId) && (
-                        <ModelDisplay model={selectedModel} />
-                      )}
-                    </>
-                  )}
-                </motion.div>
-                <Sessions />
-              </>
-            )}
+            {isEndpointActive && <Sessions />}
             {!isMsalConfigured && (
               <AuthToken hasEnvToken={hasEnvToken} envToken={envToken} />
             )}
