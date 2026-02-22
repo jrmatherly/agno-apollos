@@ -9,9 +9,13 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
 import httpx
 import jwt
+
+if TYPE_CHECKING:
+    from backend.mcp.schemas import MCPVisibility
 
 
 class GatewayClient:
@@ -165,7 +169,9 @@ class GatewayClient:
         resp.raise_for_status()
         return resp.json()
 
-    async def create_tool(self, tool_data: dict, *, team_id: str | None = None, visibility: str = "public") -> dict:
+    async def create_tool(
+        self, tool_data: dict, *, team_id: str | None = None, visibility: MCPVisibility = "public"
+    ) -> dict:
         """Register a tool.
 
         IMPORTANT: Body must be wrapped as {"tool": {...}, "team_id": "...", "visibility": "..."}
@@ -231,7 +237,7 @@ class GatewayClient:
         return resp.json()
 
     async def create_virtual_server(
-        self, server_data: dict, *, team_id: str | None = None, visibility: str = "public"
+        self, server_data: dict, *, team_id: str | None = None, visibility: MCPVisibility = "public"
     ) -> dict:
         """Create a virtual server.
 
@@ -312,7 +318,7 @@ class GatewayClient:
         return resp.json()
 
     async def create_resource(
-        self, resource_data: dict, *, team_id: str | None = None, visibility: str = "public"
+        self, resource_data: dict, *, team_id: str | None = None, visibility: MCPVisibility = "public"
     ) -> dict:
         """Create a resource. Body wrapped as {"resource": {...}, ...}."""
         body: dict[str, object] = {"resource": resource_data, "visibility": visibility}
@@ -370,7 +376,9 @@ class GatewayClient:
         resp.raise_for_status()
         return resp.json()
 
-    async def create_prompt(self, prompt_data: dict, *, team_id: str | None = None, visibility: str = "public") -> dict:
+    async def create_prompt(
+        self, prompt_data: dict, *, team_id: str | None = None, visibility: MCPVisibility = "public"
+    ) -> dict:
         """Create a prompt. Body wrapped as {"prompt": {...}, ...}."""
         body: dict[str, object] = {"prompt": prompt_data, "visibility": visibility}
         if team_id:

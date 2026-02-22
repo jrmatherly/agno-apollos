@@ -10,6 +10,17 @@ const createHeaders = (authToken?: string): HeadersInit => {
   return headers
 }
 
+// ── Constrained Types ───────────────────────────────────────────────────
+
+export type MCPVisibility = 'public' | 'private' | 'team'
+export type MCPTab =
+  | 'servers'
+  | 'tools'
+  | 'virtual-servers'
+  | 'resources'
+  | 'prompts'
+  | 'config'
+
 // ── Interfaces ──────────────────────────────────────────────────────────
 
 export interface MCPServerInfo {
@@ -28,7 +39,7 @@ export interface MCPToolInfo {
   is_active: boolean
   input_schema?: Record<string, unknown> | null
   annotations?: Record<string, unknown> | null
-  visibility?: string | null
+  visibility?: MCPVisibility | null
   team_id?: string | null
   created_at?: string | null
   updated_at?: string | null
@@ -40,7 +51,7 @@ export interface MCPVirtualServerInfo {
   description?: string | null
   is_active: boolean
   tags: string[]
-  visibility?: string | null
+  visibility?: MCPVisibility | null
   team_id?: string | null
 }
 
@@ -52,7 +63,7 @@ export interface MCPResourceInfo {
   mime_type?: string | null
   is_active: boolean
   annotations?: Record<string, unknown> | null
-  visibility?: string | null
+  visibility?: MCPVisibility | null
   team_id?: string | null
 }
 
@@ -68,7 +79,7 @@ export interface MCPPromptInfo {
   description?: string | null
   is_active: boolean
   arguments: MCPPromptArgument[]
-  visibility?: string | null
+  visibility?: MCPVisibility | null
   team_id?: string | null
 }
 
@@ -95,7 +106,7 @@ export interface MCPHealthInfo {
 export interface MCPUserPreferences {
   hidden_tools: string[]
   hidden_servers: string[]
-  default_tab: string
+  default_tab: MCPTab
   compact_view: boolean
 }
 
