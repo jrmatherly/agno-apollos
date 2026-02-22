@@ -12,25 +12,28 @@ export default {
     extend: {
       colors: {
         primary: '#FAFAFA',
-        primaryAccent: '#18181B',
-        brand: '#2483a3',
+        primaryAccent: '#0F141E',
+        brand: '#38bdf8',
         background: {
-          DEFAULT: '#111113',
-          secondary: '#27272A'
+          DEFAULT: '#0a0e14',
+          secondary: '#151b28'
         },
         secondary: '#f5f5f5',
         border: 'rgba(var(--color-border-default))',
-        accent: '#27272A',
+        accent: '#151b28',
         muted: '#A1A1AA',
         destructive: '#E53935',
         positive: '#34D399'
       },
       fontFamily: {
-        geist: 'var(--font-geist-sans)',
+        sans: 'var(--font-inter)',
+        heading: 'var(--font-source-sans)',
         dmmono: 'var(--font-dm-mono)'
       },
       borderRadius: {
-        xl: '14px'
+        xl: '1rem',
+        '2xl': '2rem',
+        '3xl': '2.5rem'
       }
     }
   },

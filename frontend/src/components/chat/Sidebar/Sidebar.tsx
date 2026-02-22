@@ -2,25 +2,29 @@
 import { Button } from '@/components/ui/button'
 import useChatActions from '@/hooks/useChatActions'
 import { useStore } from '@/store'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import Icon from '@/components/ui/icon'
 import Sessions from './Sessions'
 import AuthToken from './AuthToken'
 import { isMsalConfigured } from '@/auth'
 import { UserMenu } from './UserMenu'
-import { isValidUrl } from '@/lib/utils'
-import { toast } from 'sonner'
-import { useQueryState } from 'nuqs'
-import { truncateText } from '@/lib/utils'
-
-const DEFAULT_ENDPOINT =
-  process.env.NEXT_PUBLIC_DEFAULT_ENDPOINT || 'http://localhost:8000'
-const ENDPOINT_PLACEHOLDER = 'No Endpoint Added'
+import Image from 'next/image'
 const SidebarHeader = () => (
-  <div className="flex items-center gap-2">
-    <Icon type="agno" size="xs" />
-    <span className="text-xs font-medium text-white">Apollos AI</span>
+  <div className="flex items-center gap-3 px-2 pt-2">
+    <div className="relative flex h-10 w-10 items-center justify-center">
+      <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-md" />
+      <Image
+        src="/apollos_round_no_bg.svg"
+        alt="Apollos AI"
+        width={32}
+        height={32}
+        className="relative z-10"
+      />
+    </div>
+    <span className="bg-gradient-to-br from-white via-slate-200 to-slate-400 bg-clip-text font-heading text-lg font-semibold tracking-wide text-transparent">
+      Apollos AI
+    </span>
   </div>
 )
 
@@ -35,161 +39,13 @@ const NewChatButton = ({
     onClick={onClick}
     disabled={disabled}
     size="lg"
-    className="h-9 w-full rounded-xl border border-primary/30 bg-transparent text-xs font-medium text-primary hover:border-brand/40 hover:bg-brand/10"
+    className="metallic-border group relative h-11 w-full overflow-hidden rounded-xl bg-gradient-to-b from-white/5 to-white/0 text-sm font-medium tracking-wide text-slate-200 shadow-lg shadow-black/20 transition-all duration-300 hover:border-blue-400/30 hover:from-white/10 hover:to-white/5"
   >
-    <Icon type="plus-icon" size="xs" className="text-primary" />
+    <div className="absolute inset-0 translate-x-[-100%] transform bg-gradient-to-r from-brand/0 via-brand/5 to-brand/0 opacity-0 transition-opacity duration-500 group-hover:translate-x-[100%] group-hover:opacity-100" />
+    <Icon type="plus-icon" size="xs" className="mr-2 text-sky-400" />
     <span>New Chat</span>
   </Button>
 )
-
-const Endpoint = () => {
-  const {
-    selectedEndpoint,
-    isEndpointActive,
-    setSelectedEndpoint,
-    setAgents,
-    setSessionsData,
-    setMessages
-  } = useStore()
-  const { initialize } = useChatActions()
-  const [isEditing, setIsEditing] = useState(false)
-  const [endpointValue, setEndpointValue] = useState('')
-  const [isMounted, setIsMounted] = useState(false)
-  const [isHovering, setIsHovering] = useState(false)
-  const [isRotating, setIsRotating] = useState(false)
-  const [, setAgentId] = useQueryState('agent')
-  const [, setSessionId] = useQueryState('session')
-
-  useEffect(() => {
-    setEndpointValue(selectedEndpoint)
-    setIsMounted(true)
-  }, [selectedEndpoint])
-
-  const getStatusColor = (isActive: boolean) =>
-    isActive ? 'bg-positive' : 'bg-destructive'
-
-  const handleSave = async () => {
-    if (!isValidUrl(endpointValue)) {
-      toast.error('Please enter a valid URL')
-      return
-    }
-    const cleanEndpoint = endpointValue.replace(/\/$/, '').trim()
-    setSelectedEndpoint(cleanEndpoint)
-    setAgentId(null)
-    setSessionId(null)
-    setIsEditing(false)
-    setIsHovering(false)
-    setAgents([])
-    setSessionsData([])
-    setMessages([])
-  }
-
-  const handleCancel = () => {
-    setEndpointValue(selectedEndpoint)
-    setIsEditing(false)
-    setIsHovering(false)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSave()
-    } else if (e.key === 'Escape') {
-      handleCancel()
-    }
-  }
-
-  const handleRefresh = async () => {
-    setIsRotating(true)
-    await initialize()
-    setTimeout(() => setIsRotating(false), 500)
-  }
-
-  return (
-    <div className="flex flex-col items-start gap-2">
-      <div className="text-xs font-medium text-primary">AgentOS</div>
-      {isEditing ? (
-        <div className="flex w-full items-center gap-1">
-          <input
-            type="text"
-            value={endpointValue}
-            onChange={(e) => setEndpointValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex h-9 w-full items-center text-ellipsis rounded-xl border border-primary/15 bg-accent p-3 text-xs font-medium text-muted"
-            autoFocus
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSave}
-            className="hover:cursor-pointer hover:bg-transparent"
-          >
-            <Icon type="save" size="xs" />
-          </Button>
-        </div>
-      ) : (
-        <div className="flex w-full items-center gap-1">
-          <motion.div
-            className="relative flex h-9 w-full cursor-pointer items-center justify-between rounded-xl border border-primary/15 bg-accent p-3"
-            onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
-            onClick={() => setIsEditing(true)}
-            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-          >
-            <AnimatePresence mode="wait">
-              {isHovering ? (
-                <motion.div
-                  key="endpoint-display-hover"
-                  className="absolute inset-0 flex items-center justify-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <p className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-primary">
-                    <Icon type="edit" size="xxs" /> Edit AgentOS
-                  </p>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="endpoint-display"
-                  className="absolute inset-0 flex items-center justify-between px-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <p className="text-xs font-medium text-muted">
-                    {isMounted
-                      ? truncateText(selectedEndpoint, 21) ||
-                        ENDPOINT_PLACEHOLDER
-                      : truncateText(DEFAULT_ENDPOINT, 21)}
-                  </p>
-                  <div
-                    className={`size-2 shrink-0 rounded-full ${getStatusColor(isEndpointActive)}`}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleRefresh}
-            className="hover:cursor-pointer hover:bg-transparent"
-          >
-            <motion.div
-              key={isRotating ? 'rotating' : 'idle'}
-              animate={{ rotate: isRotating ? 360 : 0 }}
-              transition={{ duration: 0.5, ease: 'easeInOut' }}
-            >
-              <Icon type="refresh" size="xs" />
-            </motion.div>
-          </Button>
-        </div>
-      )}
-    </div>
-  )
-}
 
 const Sidebar = ({
   hasEnvToken,
@@ -219,7 +75,7 @@ const Sidebar = ({
 
   return (
     <motion.aside
-      className="relative my-1.5 ml-1.5 flex shrink-0 grow-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-border bg-background/60 px-2 py-3 font-geist backdrop-blur-lg"
+      className="sidebar-glass-premium relative flex h-screen shrink-0 grow-0 flex-col overflow-hidden font-sans"
       initial={{ width: '16rem' }}
       animate={{ width: isCollapsed ? '2.5rem' : '16rem' }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -238,7 +94,7 @@ const Sidebar = ({
         />
       </motion.button>
       <motion.div
-        className="flex w-60 flex-1 flex-col gap-5"
+        className="flex w-60 flex-1 flex-col gap-5 p-4"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -20 : 0 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
@@ -253,7 +109,6 @@ const Sidebar = ({
         />
         {isMounted && (
           <>
-            <Endpoint />
             {isEndpointActive && <Sessions />}
             {!isMsalConfigured && (
               <AuthToken hasEnvToken={hasEnvToken} envToken={envToken} />

@@ -12,14 +12,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { isMsalConfigured, useAuth, useTokenSync } from '@/auth'
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-  }
-  return name.slice(0, 2).toUpperCase()
-}
+import { getInitials } from '@/lib/utils'
 
 function MsalUserMenu() {
   useTokenSync()
@@ -29,10 +22,11 @@ function MsalUserMenu() {
     return (
       <button
         onClick={login}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-accent hover:text-primary"
+        className="group relative flex w-full items-center gap-3 overflow-hidden rounded-full border border-white/5 bg-primaryAccent p-3 text-xs font-medium text-muted transition-all hover:border-white/10"
       >
-        <Avatar className="h-7 w-7">
-          <AvatarFallback className="bg-accent text-[10px] text-muted">
+        <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+        <Avatar className="h-8 w-8">
+          <AvatarFallback className="bg-gradient-to-br from-slate-700 to-slate-800 text-[10px] text-slate-200 ring-1 ring-black/50">
             <Icon type="user" size="xs" />
           </AvatarFallback>
         </Avatar>
@@ -49,20 +43,26 @@ function MsalUserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-accent hover:text-primary focus:outline-none">
-          <Avatar className="h-7 w-7">
-            <AvatarFallback className="bg-brand/20 text-[10px] font-semibold text-brand">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <span className="flex-1 truncate text-left">{displayName}</span>
+        <button className="group relative flex w-full items-center gap-3 overflow-hidden rounded-full border border-white/5 bg-primaryAccent p-3 text-xs font-medium text-muted transition-all hover:border-white/10 focus:outline-none">
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <div className="relative">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="border border-white/10 bg-gradient-to-br from-slate-700 to-slate-800 text-[10px] font-semibold text-slate-200 ring-1 ring-black/50">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+          </div>
+          <span className="flex-1 truncate text-left text-sm font-medium text-slate-200">
+            {displayName}
+          </span>
           <Icon type="chevron-up" size="xs" className="shrink-0 opacity-50" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         side="top"
         align="start"
-        className="w-56 border-border bg-primaryAccent font-geist"
+        className="w-56 border border-white/10 bg-primaryAccent font-sans backdrop-blur-xl"
       >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col gap-1">
@@ -94,20 +94,26 @@ function TokenUserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-accent hover:text-primary focus:outline-none">
-          <Avatar className="h-7 w-7">
-            <AvatarFallback className="bg-accent text-[10px] text-muted">
-              <Icon type="user" size="xs" />
-            </AvatarFallback>
-          </Avatar>
-          <span className="flex-1 truncate text-left">User</span>
+        <button className="group relative flex w-full items-center gap-3 overflow-hidden rounded-full border border-white/5 bg-primaryAccent p-3 text-xs font-medium text-muted transition-all hover:border-white/10 focus:outline-none">
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <div className="relative">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="border border-white/10 bg-gradient-to-br from-slate-700 to-slate-800 text-[10px] text-slate-200 ring-1 ring-black/50">
+                <Icon type="user" size="xs" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+          </div>
+          <span className="flex-1 truncate text-left text-sm font-medium text-slate-200">
+            User
+          </span>
           <Icon type="chevron-up" size="xs" className="shrink-0 opacity-50" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         side="top"
         align="start"
-        className="w-56 border-border bg-primaryAccent font-geist"
+        className="w-56 border border-white/10 bg-primaryAccent font-sans backdrop-blur-xl"
       >
         <DropdownMenuItem asChild>
           <Link href="/settings" className="cursor-pointer">

@@ -1,4 +1,4 @@
-import Icon from '@/components/ui/icon'
+import { Bot, Copy, ThumbsUp, ThumbsDown } from 'lucide-react'
 import MarkdownRenderer from '@/components/ui/typography/MarkdownRenderer'
 import { useStore } from '@/store'
 import type { ChatMessage } from '@/types/os'
@@ -7,6 +7,8 @@ import Images from './Multimedia/Images'
 import Audios from './Multimedia/Audios'
 import { memo } from 'react'
 import AgentThinkingLoader from './AgentThinkingLoader'
+import { isMsalConfigured, useAuth } from '@/auth'
+import { getInitials } from '@/lib/utils'
 
 interface MessageProps {
   message: ChatMessage
@@ -69,22 +71,62 @@ const AgentMessage = ({ message }: MessageProps) => {
   }
 
   return (
-    <div className="flex flex-row items-start gap-4 font-geist">
-      <div className="flex-shrink-0">
-        <Icon type="agent" size="sm" />
+    <div className="group flex max-w-3xl items-start gap-4 font-sans">
+      <div className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-900/30 to-slate-900/50 shadow-[0_0_15px_rgba(56,189,248,0.15)]">
+        <Bot className="h-5 w-5 text-sky-400 opacity-90" />
       </div>
-      {messageContent}
+      <div className="flex flex-col gap-2">
+        <div className="glass-bubble-ai-refined rounded-2xl rounded-tl-sm p-6 text-sm leading-relaxed text-slate-200">
+          {messageContent}
+        </div>
+        <div className="flex items-center gap-2 px-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <button
+            className="cursor-pointer rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white/5 hover:text-sky-400"
+            title="Copy to clipboard"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+          <button
+            className="cursor-pointer rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white/5 hover:text-emerald-400"
+            title="Helpful"
+          >
+            <ThumbsUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            className="cursor-pointer rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white/5 hover:text-red-400"
+            title="Not helpful"
+          >
+            <ThumbsDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MsalUserAvatar() {
+  const { account } = useAuth()
+  const initials = account?.name ? getInitials(account.name) : 'U'
+  return (
+    <div className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-slate-700 to-slate-800 text-xs font-medium text-white shadow-md">
+      {initials}
+    </div>
+  )
+}
+
+function DefaultUserAvatar() {
+  return (
+    <div className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-700 text-xs text-white shadow-md">
+      U
     </div>
   )
 }
 
 const UserMessage = memo(({ message }: MessageProps) => {
   return (
-    <div className="flex items-start gap-4 pt-4 text-start max-md:break-words">
-      <div className="flex-shrink-0">
-        <Icon type="user" size="sm" />
-      </div>
-      <div className="text-md rounded-lg font-geist text-secondary">
+    <div className="ml-auto flex max-w-3xl flex-row-reverse items-start gap-4 font-sans">
+      {isMsalConfigured ? <MsalUserAvatar /> : <DefaultUserAvatar />}
+      <div className="glass-bubble-user-refined rounded-2xl rounded-tr-sm p-4 px-5 text-sm font-light leading-relaxed text-slate-200">
         {message.content}
       </div>
     </div>

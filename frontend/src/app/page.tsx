@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <AuthGuard>
       <Suspense fallback={<div>Loading...</div>}>
-        <div className="flex h-screen bg-background/80">
+        <div className="bg-refined-dark flex h-screen overflow-hidden font-sans text-slate-200 antialiased">
           <Sidebar hasEnvToken={hasEnvToken} envToken={envToken} />
           <ChatArea />
         </div>

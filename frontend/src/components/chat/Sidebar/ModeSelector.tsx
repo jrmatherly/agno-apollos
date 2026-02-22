@@ -39,10 +39,10 @@ export function ModeSelector() {
         value={mode}
         onValueChange={(value) => handleModeChange(value as 'agent' | 'team')}
       >
-        <SelectTrigger className="h-9 w-full rounded-xl border border-primary/15 bg-primaryAccent text-xs font-medium">
+        <SelectTrigger className="h-9 w-full rounded-lg border border-white/5 bg-slate-800/30 text-xs font-medium">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="border-none bg-primaryAccent font-geist shadow-lg">
+        <SelectContent className="border border-white/10 bg-primaryAccent font-sans shadow-lg">
           <SelectItem value="agent" className="cursor-pointer">
             <div className="text-xs font-medium">Agent</div>
           </SelectItem>

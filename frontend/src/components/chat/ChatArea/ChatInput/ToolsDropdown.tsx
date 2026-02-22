@@ -53,19 +53,23 @@ export function ToolsDropdown() {
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+          'group flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
           open
-            ? 'border-brand/40 bg-brand/15 text-brand'
-            : 'border-primary/15 bg-primaryAccent text-muted hover:border-primary/30'
+            ? 'border-brand/30 bg-brand/10 text-brand'
+            : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20 hover:bg-white/10 hover:text-slate-200'
         )}
       >
-        <Icon type="settings" size="xxs" />
+        <Icon
+          type="settings"
+          size="xxs"
+          className="text-slate-500 transition-colors group-hover:text-purple-400"
+        />
         <span>Tools</span>
-        <Icon type="chevron-down" size="xxs" />
+        <Icon type="chevron-down" size="xxs" className="ml-0.5 opacity-50" />
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-52 rounded-xl border border-primary/15 bg-primaryAccent p-1 shadow-lg backdrop-blur-lg">
+        <div className="absolute bottom-full left-0 mb-2 w-52 rounded-xl border border-white/10 bg-background/90 p-1 shadow-lg backdrop-blur-2xl">
           {items.map((item) => {
             const isActive = activeSpecialists.includes(item.id)
             return (
@@ -77,7 +81,7 @@ export function ToolsDropdown() {
                   'flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-colors',
                   item.disabled
                     ? 'cursor-not-allowed opacity-50'
-                    : 'hover:bg-accent',
+                    : 'hover:bg-white/5',
                   isActive && !item.disabled && 'text-brand'
                 )}
               >

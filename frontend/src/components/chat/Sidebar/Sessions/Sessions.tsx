@@ -124,7 +124,9 @@ const Sessions = () => {
   if (isSessionsLoading || isEndpointLoading) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="mb-2 text-xs font-medium">Sessions</div>
+        <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          Sessions
+        </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <SkeletonList skeletonCount={5} />
         </div>
@@ -134,9 +136,11 @@ const Sessions = () => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="mb-2 w-full text-xs font-medium">Sessions</div>
+      <div className="mb-2 w-full px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+        Sessions
+      </div>
       <div
-        className={`min-h-0 flex-1 overflow-y-auto font-geist transition-all duration-300 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:transition-opacity [&::-webkit-scrollbar]:duration-300 ${
+        className={`min-h-0 flex-1 overflow-y-auto font-sans transition-all duration-300 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:transition-opacity [&::-webkit-scrollbar]:duration-300 ${
           isScrolling
             ? '[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-background [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:opacity-0'
             : '[&::-webkit-scrollbar]:opacity-100'
