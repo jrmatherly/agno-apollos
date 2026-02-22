@@ -388,7 +388,7 @@ Uses **pnpm** for package management:
 ### backend/mcp/gateway_client.py
 
 - **Exports**: `GatewayClient` class
-- **Purpose**: ContextForge API client — JWT generation (jti+exp), gateway CRUD (list, get, register, delete)
+- **Purpose**: ContextForge API client — JWT generation (jti+exp), full CRUD for servers/tools/virtual-servers/resources/prompts, tags, import/export, health
 - **Key pattern**: RC1 requires `jti` (uuid4) + `exp` claims in service JWTs
 
 ### backend/mcp/tools_factory.py
@@ -400,8 +400,19 @@ Uses **pnpm** for package management:
 ### backend/mcp/routes.py
 
 - **Exports**: `mcp_router` (APIRouter)
-- **Purpose**: Proxy routes to ContextForge gateway — GET/POST `/mcp/servers`, GET/DELETE `/mcp/servers/{id}`
-- **Security**: Auth-gated, rate-limited, URL validation on registration
+- **Purpose**: Full admin proxy routes at `/mcp/*` (servers, tools, virtual-servers, resources, prompts, tags, import/export, health, preferences)
+- **Security**: Auth-gated, rate-limited, RBAC-scoped, URL validation on registration
+
+### backend/mcp/schemas.py
+
+- **Exports**: Pydantic models for all MCP entity types
+- **Purpose**: Request/response schemas for servers, tools, virtual-servers, resources, prompts, tags, import/export, preferences
+
+### backend/mcp/preferences.py
+
+- **Exports**: `get_preferences()`, `save_preferences()`
+- **Purpose**: Per-user MCP workspace preferences (database-backed, uses auth_users FK)
+- **Pattern**: Async functions with AsyncSession, Entra OID to UUID resolution, upsert semantics
 
 ### backend/mcp/validation.py
 

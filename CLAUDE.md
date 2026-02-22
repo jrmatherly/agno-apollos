@@ -134,6 +134,10 @@ Auth and scheduling tasks:
 - `backend/Dockerfile.dockerignore` uses BuildKit naming convention (build context is root `.`, not `backend/`)
 - Docker images publish to GHCR (`ghcr.io/<owner>/apollos-backend`, `ghcr.io/<owner>/apollos-frontend`, `ghcr.io/<owner>/apollos-docs`)
 
+### Testing
+
+- `pytest-asyncio` is a dev dependency for async test support (database-backed preference tests, etc.)
+
 ### CI/CD
 
 - CI workflows use pinned action SHAs (not tags) for supply-chain security

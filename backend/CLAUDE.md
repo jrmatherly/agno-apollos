@@ -69,6 +69,8 @@ Key patterns:
 - **Full admin proxy**: `backend/mcp/routes.py` proxies full CRUD for servers, tools, virtual-servers, resources, prompts, plus tags, import/export, health, and preferences.
 - **RBAC scopes**: `mcp:servers:*`, `mcp:tools:*`, `mcp:virtual-servers:*`, `mcp:resources:*`, `mcp:prompts:*`, `mcp:config:*`, `mcp:preferences:*`, `mcp:tools:call`. Route mappings in `scope_mapper.py`.
 - **Preferences**: Per-user MCP workspace preferences (hidden tools/servers, default tab, compact view). Database-backed with per-user PostgreSQL storage (auth_users FK).
+- **MCPPreference model**: Follows M365Connection pattern — UUID PK, `user_id` FK to `auth_users.id` with `unique=True`, `ARRAY(Text)` for list fields. Table created via `create_auth_tables()` at startup (code-first, no Alembic).
+- **Preferences DB sessions**: Route handlers use `auth_session_factory()` with `async with` (not `Depends(get_auth_session)`). Use distinct variable names for different query results (`user_result`, `pref_result`) to avoid mypy type inference conflicts.
 
 Key files:
 
