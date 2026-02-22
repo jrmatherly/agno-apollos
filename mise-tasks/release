@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #MISE description="Create a GitHub release (triggers Docker image builds)"
 #MISE depends=["validate"]
+#MISE raw=true
 #USAGE flag "-f --force" help="Skip CI status check"
 set -e
 
@@ -29,8 +30,8 @@ echo "  2) minor  → ${NEXT_MINOR}"
 echo "  3) major  → ${NEXT_MAJOR}"
 echo "  4) custom"
 echo ""
-echo -n "Select [1]: " > /dev/tty
-read -r CHOICE < /dev/tty
+echo -n "Select [1]: "
+read -r CHOICE
 CHOICE="${CHOICE:-1}"
 
 case "$CHOICE" in
@@ -38,8 +39,8 @@ case "$CHOICE" in
   2) VERSION="$NEXT_MINOR" ;;
   3) VERSION="$NEXT_MAJOR" ;;
   4)
-    echo -n "Enter version (e.g. 2.1.0): " > /dev/tty
-    read -r VERSION < /dev/tty
+    echo -n "Enter version (e.g. 2.1.0): "
+    read -r VERSION
     # Strip v prefix if user entered one
     VERSION="${VERSION#v}"
     ;;
