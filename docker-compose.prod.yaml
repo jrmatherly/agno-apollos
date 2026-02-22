@@ -16,6 +16,10 @@ services:
       - "5432:5432"
     networks:
       - apollos
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ai} -d ${DB_DATABASE:-ai}"]
+      interval: 10s
+      timeout: 5s
 
   ###############################################################
   # Apollos AI - Backend (pre-built GHCR image)
@@ -135,6 +139,28 @@ services:
       - "3333:3333"
     profiles:
       - docs
+
+  ###############################################################
+  # Apollos AI - pgAdmin for database management UI
+  ###############################################################
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: apollos-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@apollos.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      apollos-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - apollos
+    profiles:
+      - tools # Only start if explicitly requested with --profile tools
 
 networks:
   apollos:
