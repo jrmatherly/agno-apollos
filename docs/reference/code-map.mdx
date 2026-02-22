@@ -169,7 +169,11 @@ app/
 ├── layout.tsx               # Root layout, fonts, providers
 ├── page.tsx                 # Home (chat interface)
 └── settings/
-    └── m365/page.tsx        # M365 connection settings
+    ├── m365/page.tsx        # M365 connection settings
+    ├── mcp/                 # MCP Gateway admin
+    │   ├── page.tsx         # 6 RBAC-filtered tabs
+    │   └── components/      # ServersTab, ToolsTab, VirtualServersTab, ResourcesTab, PromptsTab, ConfigTab
+    └── integrations/page.tsx  # Redirect to /settings/mcp
 
 auth/                        # MSAL.js v5 integration (Entra ID SSO)
 ├── msalConfig.ts            # Entra ID configuration

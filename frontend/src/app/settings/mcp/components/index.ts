@@ -1,0 +1,6 @@
+export { ServersTab } from './ServersTab'
+export { ToolsTab } from './ToolsTab'
+export { VirtualServersTab } from './VirtualServersTab'
+export { ResourcesTab } from './ResourcesTab'
+export { PromptsTab } from './PromptsTab'
+export { ConfigTab } from './ConfigTab'

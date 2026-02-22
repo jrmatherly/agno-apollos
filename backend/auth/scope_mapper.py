@@ -42,6 +42,22 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "mcp:servers:write",
         "mcp:servers:delete",
         "mcp:tools:call",
+        "mcp:tools:read",
+        "mcp:tools:write",
+        "mcp:tools:delete",
+        "mcp:virtual-servers:read",
+        "mcp:virtual-servers:write",
+        "mcp:virtual-servers:delete",
+        "mcp:resources:read",
+        "mcp:resources:write",
+        "mcp:resources:delete",
+        "mcp:prompts:read",
+        "mcp:prompts:write",
+        "mcp:prompts:delete",
+        "mcp:config:read",
+        "mcp:config:write",
+        "mcp:preferences:read",
+        "mcp:preferences:write",
     ],
     "TeamLead": [
         "agents:run",
@@ -55,6 +71,12 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "memories:delete",
         "mcp:servers:read",
         "mcp:tools:call",
+        "mcp:tools:read",
+        "mcp:virtual-servers:read",
+        "mcp:resources:read",
+        "mcp:prompts:read",
+        "mcp:preferences:read",
+        "mcp:preferences:write",
     ],
     "Developer": [
         "agents:run",
@@ -63,6 +85,12 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "sessions:write",
         "mcp:servers:read",
         "mcp:tools:call",
+        "mcp:tools:read",
+        "mcp:virtual-servers:read",
+        "mcp:resources:read",
+        "mcp:prompts:read",
+        "mcp:preferences:read",
+        "mcp:preferences:write",
     ],
     "DevOps": [
         "system:read",
@@ -72,6 +100,13 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "agents:read",
         "traces:read",
         "schedules:read",
+        "mcp:tools:read",
+        "mcp:virtual-servers:read",
+        "mcp:resources:read",
+        "mcp:prompts:read",
+        "mcp:config:read",
+        "mcp:preferences:read",
+        "mcp:preferences:write",
     ],
     "InfoSec": [
         "system:read",
@@ -85,6 +120,12 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "evals:read",
         "traces:read",
         "approvals:read",
+        "mcp:servers:read",
+        "mcp:tools:read",
+        "mcp:virtual-servers:read",
+        "mcp:resources:read",
+        "mcp:prompts:read",
+        "mcp:config:read",
     ],
     "User": [
         "agents:read",
@@ -92,6 +133,12 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "sessions:write",
         "mcp:servers:read",
         "mcp:tools:call",
+        "mcp:tools:read",
+        "mcp:virtual-servers:read",
+        "mcp:resources:read",
+        "mcp:prompts:read",
+        "mcp:preferences:read",
+        "mcp:preferences:write",
     ],
 }
 
@@ -101,10 +148,64 @@ _ROUTE_SCOPE_MAP: dict[str, list[str]] = get_default_scope_mappings()
 # MCP Gateway route scopes (added on top of Agno defaults)
 _ROUTE_SCOPE_MAP.update(
     {
+        # Gateways (registered upstream MCP servers)
         "GET /mcp/servers": ["mcp:servers:read"],
         "GET /mcp/servers/*": ["mcp:servers:read"],
         "POST /mcp/servers": ["mcp:servers:write"],
         "DELETE /mcp/servers/*": ["mcp:servers:delete"],
+        # Gateway mutations (HIGH-1 fix: previously missing)
+        "PUT /mcp/servers/*": ["mcp:servers:write"],
+        "POST /mcp/servers/*/state": ["mcp:servers:write"],
+        "POST /mcp/servers/*/refresh": ["mcp:servers:write"],
+        # Tools
+        "GET /mcp/tools": ["mcp:tools:read"],
+        "GET /mcp/tools/*": ["mcp:tools:read"],
+        "POST /mcp/tools": ["mcp:tools:write"],
+        "PUT /mcp/tools/*": ["mcp:tools:write"],
+        "DELETE /mcp/tools/*": ["mcp:tools:delete"],
+        "POST /mcp/tools/*/state": ["mcp:tools:write"],
+        # Virtual servers
+        "GET /mcp/virtual-servers": ["mcp:virtual-servers:read"],
+        "GET /mcp/virtual-servers/*": ["mcp:virtual-servers:read"],
+        "POST /mcp/virtual-servers": ["mcp:virtual-servers:write"],
+        "PUT /mcp/virtual-servers/*": ["mcp:virtual-servers:write"],
+        "DELETE /mcp/virtual-servers/*": ["mcp:virtual-servers:delete"],
+        "POST /mcp/virtual-servers/*/state": ["mcp:virtual-servers:write"],
+        # Virtual server sub-resources (HIGH-1 fix: previously missing)
+        "GET /mcp/virtual-servers/*/tools": ["mcp:virtual-servers:read"],
+        "GET /mcp/virtual-servers/*/resources": ["mcp:virtual-servers:read"],
+        "GET /mcp/virtual-servers/*/prompts": ["mcp:virtual-servers:read"],
+        # Resources
+        "GET /mcp/resources": ["mcp:resources:read"],
+        "GET /mcp/resources/*": ["mcp:resources:read"],
+        "POST /mcp/resources": ["mcp:resources:write"],
+        "PUT /mcp/resources/*": ["mcp:resources:write"],
+        "DELETE /mcp/resources/*": ["mcp:resources:delete"],
+        "POST /mcp/resources/*/state": ["mcp:resources:write"],
+        # Resource sub-routes (HIGH-1 fix: previously missing)
+        "GET /mcp/resources/*/info": ["mcp:resources:read"],
+        "GET /mcp/resources/templates": ["mcp:resources:read"],
+        # Prompts
+        "GET /mcp/prompts": ["mcp:prompts:read"],
+        "GET /mcp/prompts/*": ["mcp:prompts:read"],
+        "POST /mcp/prompts": ["mcp:prompts:write"],
+        "PUT /mcp/prompts/*": ["mcp:prompts:write"],
+        "DELETE /mcp/prompts/*": ["mcp:prompts:delete"],
+        "POST /mcp/prompts/*/state": ["mcp:prompts:write"],
+        # Tags — any authenticated user (MEDIUM-5 fix)
+        "GET /mcp/tags": [],
+        "GET /mcp/tags/*": [],
+        # Import/Export
+        "GET /mcp/export": ["mcp:config:read"],
+        "POST /mcp/import": ["mcp:config:write"],
+        "GET /mcp/import/status": ["mcp:config:read"],
+        "GET /mcp/import/status/*": ["mcp:config:read"],
+        # Health (no auth required)
+        "GET /mcp/health": [],
+        "GET /mcp/version": [],
+        # Preferences
+        "GET /mcp/preferences": ["mcp:preferences:read"],
+        "PUT /mcp/preferences": ["mcp:preferences:write"],
     }
 )
 

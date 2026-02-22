@@ -60,7 +60,7 @@ Next.js 15 (App Router) with standalone output. Connects to the backend via brow
 | `frontend/src/auth/` | MSAL.js v5 integration (Entra ID SSO, token sync) |
 | `frontend/src/hooks/` | React hooks (AI streaming, chat actions, session loader) |
 | `frontend/src/components/` | React components (shadcn/ui based) |
-| `frontend/src/app/settings/` | Settings pages (M365 connect, MCP integrations) |
+| `frontend/src/app/settings/` | Settings pages (M365 connect, MCP Gateway admin with 6 RBAC-filtered tabs) |
 
 ### Database (`apollos-db`)
 
@@ -119,10 +119,11 @@ apollos-ai/
 │   │   └── server.py        # AgentCard + A2AStarletteApplication
 │   ├── mcp/                 # MCP Gateway integration
 │   │   ├── config.py        # Feature flag, gateway client factory
-│   │   ├── gateway_client.py # ContextForge API client
+│   │   ├── gateway_client.py # ContextForge API client (full CRUD)
 │   │   ├── tools_factory.py # Gateway-aware MCPTools factories
-│   │   ├── routes.py        # Proxy routes (/mcp/servers)
-│   │   ├── schemas.py       # Pydantic models
+│   │   ├── routes.py        # Full admin proxy routes (/mcp/*)
+│   │   ├── schemas.py       # Pydantic models for all entity types
+│   │   ├── preferences.py   # Per-user workspace preferences (DB-backed)
 │   │   └── validation.py    # BYOMCP URL validation
 │   ├── tools/               # Custom tools
 │   │   ├── search.py

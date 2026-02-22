@@ -71,10 +71,11 @@ apollos-ai/
 │   ├── mcp/                 # MCP Gateway integration (ContextForge)
 │   │   ├── __init__.py
 │   │   ├── config.py             # MCP_GATEWAY_ENABLED flag, lazy singleton, get_gateway_tools_factory()
-│   │   ├── gateway_client.py     # GatewayClient: JWT generation (jti+exp), gateway CRUD
+│   │   ├── gateway_client.py     # GatewayClient: JWT generation, full CRUD (servers/tools/virtual-servers/resources/prompts/tags/import-export)
 │   │   ├── tools_factory.py      # Gateway-aware header_provider + tools factory
-│   │   ├── routes.py             # Proxy routes: /mcp/servers (list, get, register, delete)
-│   │   ├── schemas.py            # Pydantic models (MCPServerInfo, MCPServerRegister, MCPServerResponse)
+│   │   ├── routes.py             # Full admin proxy routes: /mcp/* (servers, tools, virtual-servers, resources, prompts, tags, import/export, health, preferences)
+│   │   ├── schemas.py            # Pydantic models for all MCP entity types (servers, tools, virtual-servers, resources, prompts, tags, import/export, preferences)
+│   │   ├── preferences.py        # Per-user MCP workspace preferences (database-backed, uses auth_users FK)
 │   │   └── validation.py         # BYOMCP URL validation (HTTPS-only, no private IPs)
 │   ├── maintenance.py       # Scheduled maintenance: memory optimization (MemoryManager) + usage warnings
 │   └── db/                  # Database layer
@@ -93,14 +94,16 @@ apollos-ai/
 │   ├── postcss.config.mjs   # PostCSS config
 │   ├── src/                 # App source code
 │   │   ├── app/             # Next.js App Router pages (layout.tsx, page.tsx)
-│   │   │   └── settings/    # Settings pages (hub + M365 + MCP Integrations)
+│   │   │   └── settings/    # Settings pages (hub + M365 + MCP Gateway admin)
+│   │   │       ├── mcp/     # MCP Gateway admin (6 RBAC-filtered tabs: Servers, Tools, Virtual Servers, Resources, Prompts, Config)
+│   │   │       └── integrations/  # Redirects to /settings/mcp (backward compat)
 │   │   ├── components/      # React components
 │   │   │   ├── chat/        # Chat UI (ChatArea, Sidebar, Messages, Multimedia)
 │   │   │   └── ui/          # shadcn/ui primitives (button, dialog, select, etc.)
 │   │   ├── api/             # API client (browser-side fetch to backend)
 │   │   │   ├── os.ts        # AgentOS API functions (agents, teams, sessions, runs)
 │   │   │   ├── m365.ts      # M365 API client (status, connect, disconnect)
-│   │   │   ├── mcp.ts       # MCP Gateway API client (list, register, delete servers)
+│   │   │   ├── mcp.ts       # MCP Gateway API client (full CRUD for servers, tools, virtual-servers, resources, prompts, tags, config, preferences)
 │   │   │   └── routes.ts    # Route constants
 │   │   ├── hooks/           # React hooks
 │   │   │   ├── useAIResponseStream.tsx  # SSE stream handler
@@ -209,7 +212,9 @@ apollos-ai/
 │   ├── test_m365_tools.py          # MCP tools layer tests (5)
 │   ├── test_m365_middleware.py     # Token middleware tests (4)
 │   ├── test_m365_hooks.py          # Tool hook tests (3)
-│   └── test_m365_integration.py   # M365 integration tests (3, skip when disabled)
+│   ├── test_m365_integration.py   # M365 integration tests (3, skip when disabled)
+│   ├── test_gateway_client.py     # GatewayClient tests (20: JWT claims, CRUD, body wrapping)
+│   └── test_mcp_routes.py         # MCP proxy routes tests (21: route wiring, RBAC scopes, preferences)
 ├── example.env              # Template for .env (LiteLLM, model, DB, auth, telemetry, frontend config)
 └── README.md                # Setup guide, agent docs, common tasks
 ```
@@ -383,7 +388,7 @@ Uses **pnpm** for package management:
 ### backend/mcp/gateway_client.py
 
 - **Exports**: `GatewayClient` class
-- **Purpose**: ContextForge API client — JWT generation (jti+exp), gateway CRUD (list, get, register, delete)
+- **Purpose**: ContextForge API client — JWT generation (jti+exp), full CRUD for servers/tools/virtual-servers/resources/prompts, tags, import/export, health
 - **Key pattern**: RC1 requires `jti` (uuid4) + `exp` claims in service JWTs
 
 ### backend/mcp/tools_factory.py
@@ -395,8 +400,19 @@ Uses **pnpm** for package management:
 ### backend/mcp/routes.py
 
 - **Exports**: `mcp_router` (APIRouter)
-- **Purpose**: Proxy routes to ContextForge gateway — GET/POST `/mcp/servers`, GET/DELETE `/mcp/servers/{id}`
-- **Security**: Auth-gated, rate-limited, URL validation on registration
+- **Purpose**: Full admin proxy routes at `/mcp/*` (servers, tools, virtual-servers, resources, prompts, tags, import/export, health, preferences)
+- **Security**: Auth-gated, rate-limited, RBAC-scoped, URL validation on registration
+
+### backend/mcp/schemas.py
+
+- **Exports**: Pydantic models for all MCP entity types
+- **Purpose**: Request/response schemas for servers, tools, virtual-servers, resources, prompts, tags, import/export, preferences
+
+### backend/mcp/preferences.py
+
+- **Exports**: `get_preferences()`, `save_preferences()`
+- **Purpose**: Per-user MCP workspace preferences (database-backed, uses auth_users FK)
+- **Pattern**: Async functions with AsyncSession, Entra OID to UUID resolution, upsert semantics
 
 ### backend/mcp/validation.py
 
@@ -606,7 +622,7 @@ open http://localhost:8000/docs
 
 ## Test Coverage
 
-- **Integration tests**: `tests/` — 5 files (health, agents, teams, schedules). Run via `mise run test` (requires running backend).
+- **Integration tests**: `tests/` — 5 core + 6 M365 + 2 MCP gateway test files. Run via `mise run test` (requires running backend).
 - **Eval harness**: `backend/evals/` — LLM-based grading of agent responses. Run via `mise run evals:run`.
 - **CI validation**: Format, lint, type-check (backend + frontend). No test runner in CI yet (tests require live backend).
 

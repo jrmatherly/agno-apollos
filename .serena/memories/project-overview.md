@@ -42,13 +42,15 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `frontend/src/app/settings/` - Settings hub + M365 connect/disconnect page
 - `frontend/src/api/m365.ts` - M365 API client (status, connect, disconnect)
 - `backend/mcp/config.py` - MCP_GATEWAY_ENABLED flag, lazy singleton GatewayClient, get_gateway_tools_factory()
-- `backend/mcp/gateway_client.py` - GatewayClient: JWT generation (jti+exp), gateway CRUD
+- `backend/mcp/gateway_client.py` - GatewayClient: JWT generation, full CRUD for servers/tools/virtual-servers/resources/prompts/tags/import-export
 - `backend/mcp/tools_factory.py` - Gateway-aware header_provider + tools factory
-- `backend/mcp/routes.py` - Proxy routes: /mcp/servers (list, get, register, delete)
-- `backend/mcp/schemas.py` - Pydantic models (MCPServerInfo, MCPServerRegister, MCPServerResponse)
+- `backend/mcp/routes.py` - Full admin proxy routes: /mcp/* (servers, tools, virtual-servers, resources, prompts, tags, import/export, health, preferences)
+- `backend/mcp/schemas.py` - Pydantic models for all MCP entity types and API responses
+- `backend/mcp/preferences.py` - Per-user MCP workspace preferences (database-backed, uses auth_users FK)
 - `backend/mcp/validation.py` - BYOMCP URL validation (HTTPS-only, no private IPs, no cloud metadata)
-- `frontend/src/api/mcp.ts` - MCP Gateway API client (list, register, delete servers)
-- `frontend/src/app/settings/integrations/page.tsx` - MCP Integrations settings page
+- `frontend/src/api/mcp.ts` - MCP Gateway API client (full CRUD for all entity types, tags, config, preferences)
+- `frontend/src/app/settings/mcp/page.tsx` - MCP Gateway admin page (6 RBAC-filtered tabs)
+- `frontend/src/app/settings/integrations/page.tsx` - Redirects to /settings/mcp (backward compat)
 - `docker-compose.yaml` - Dev compose (3 core services + optional docs/m365/gateway profiles)
 - `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
 

@@ -90,3 +90,21 @@ class M365Connection(AuthBase):
     scopes: Mapped[str | None] = mapped_column(Text, nullable=True)  # space-separated scope names
     cache_state: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)  # Fernet-encrypted MSAL cache
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class MCPPreference(AuthBase):
+    """Per-user MCP workspace preferences stored in PostgreSQL."""
+
+    __tablename__ = "mcp_preferences"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("auth_users.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
+    hidden_tools: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    hidden_servers: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    default_tab: Mapped[str] = mapped_column(String(50), nullable=False, default="servers")
+    compact_view: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
