@@ -69,6 +69,7 @@ Preferences:
 from __future__ import annotations
 
 import logging
+from typing import NoReturn
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
@@ -127,13 +128,22 @@ def _require_gateway():
     return client
 
 
-def _handle_gateway_error(exc: httpx.HTTPStatusError) -> None:
+def _handle_gateway_error(
+    exc: httpx.HTTPStatusError | httpx.ConnectError | httpx.TimeoutException,
+) -> NoReturn:
     """Convert ContextForge HTTP errors to meaningful proxy responses."""
+    if isinstance(exc, (httpx.ConnectError, httpx.TimeoutException)):
+        log.error("Gateway connection error: %s", exc)
+        raise HTTPException(status_code=502, detail="MCP Gateway unreachable") from exc
+
     status = exc.response.status_code
     try:
-        detail = exc.response.json().get("detail", str(exc))
-    except Exception:
-        detail = str(exc)
+        body = exc.response.json()
+        detail = body.get("detail", str(exc)) if isinstance(body, dict) else str(body)
+    except (ValueError, UnicodeDecodeError):
+        detail = exc.response.text or str(exc)
+
+    log.error("Gateway error: status=%d detail=%s", status, detail)
 
     if status in (401, 403):
         raise HTTPException(status_code=502, detail=f"Gateway auth error: {detail}") from exc
@@ -143,6 +153,8 @@ def _handle_gateway_error(exc: httpx.HTTPStatusError) -> None:
         raise HTTPException(status_code=409, detail=detail) from exc
     elif status == 422:
         raise HTTPException(status_code=422, detail=detail) from exc
+    elif status == 429:
+        raise HTTPException(status_code=429, detail=detail) from exc
     raise HTTPException(status_code=502, detail=f"Gateway error ({status}): {detail}") from exc
 
 
@@ -210,7 +222,7 @@ async def update_server(request: Request, server_id: str, body: MCPServerUpdate)
     client = _require_gateway()
     try:
         result = await client.update_gateway(server_id, body.model_dump(exclude_none=True))
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPServerInfo(
         id=result.get("id", server_id),
@@ -239,7 +251,7 @@ async def toggle_server(request: Request, server_id: str, body: MCPStateToggle) 
     client = _require_gateway()
     try:
         return await client.toggle_gateway(server_id, activate=body.activate)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
         return {}  # unreachable — _handle_gateway_error always raises
 
@@ -252,7 +264,7 @@ async def refresh_server(request: Request, server_id: str) -> dict:
     client = _require_gateway()
     try:
         return await client.refresh_gateway(server_id)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
         return {}
 
@@ -294,8 +306,8 @@ async def create_tool(request: Request, body: MCPToolCreate) -> MCPToolInfo:
     client = _require_gateway()
     tool_data = body.model_dump(exclude={"team_id", "visibility"})
     try:
-        result = await client.create_tool(tool_data, team_id=body.team_id)
-    except httpx.HTTPStatusError as exc:
+        result = await client.create_tool(tool_data, team_id=body.team_id, visibility=body.visibility)
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPToolInfo.model_validate(result)
 
@@ -308,7 +320,7 @@ async def update_tool(request: Request, tool_id: str, body: MCPToolUpdate) -> MC
     client = _require_gateway()
     try:
         result = await client.update_tool(tool_id, body.model_dump(exclude_none=True))
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPToolInfo.model_validate(result)
 
@@ -321,7 +333,7 @@ async def delete_tool(request: Request, tool_id: str) -> None:
     client = _require_gateway()
     try:
         found = await client.delete_tool(tool_id)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     if not found:
         raise HTTPException(status_code=404, detail="Tool not found")
@@ -335,7 +347,7 @@ async def toggle_tool(request: Request, tool_id: str, body: MCPStateToggle) -> d
     client = _require_gateway()
     try:
         return await client.toggle_tool(tool_id, activate=body.activate)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
         return {}
 
@@ -377,7 +389,7 @@ async def create_virtual_server(request: Request, body: MCPVirtualServerCreate) 
     server_data = body.model_dump(exclude={"team_id", "visibility"})
     try:
         result = await client.create_virtual_server(server_data, team_id=body.team_id, visibility=body.visibility)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPVirtualServerInfo.model_validate(result)
 
@@ -390,7 +402,7 @@ async def update_virtual_server(request: Request, vs_id: str, body: MCPVirtualSe
     client = _require_gateway()
     try:
         result = await client.update_virtual_server(vs_id, body.model_dump(exclude_none=True))
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPVirtualServerInfo.model_validate(result)
 
@@ -403,7 +415,7 @@ async def delete_virtual_server(request: Request, vs_id: str) -> None:
     client = _require_gateway()
     try:
         found = await client.delete_virtual_server(vs_id)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     if not found:
         raise HTTPException(status_code=404, detail="Virtual server not found")
@@ -417,7 +429,7 @@ async def toggle_virtual_server(request: Request, vs_id: str, body: MCPStateTogg
     client = _require_gateway()
     try:
         return await client.toggle_virtual_server(vs_id, activate=body.activate)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
         return {}
 
@@ -510,7 +522,7 @@ async def create_resource(request: Request, body: MCPResourceCreate) -> MCPResou
     resource_data = body.model_dump(exclude={"team_id", "visibility"})
     try:
         result = await client.create_resource(resource_data, team_id=body.team_id, visibility=body.visibility)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPResourceInfo.model_validate(result)
 
@@ -523,7 +535,7 @@ async def update_resource(request: Request, resource_id: str, body: MCPResourceU
     client = _require_gateway()
     try:
         result = await client.update_resource(resource_id, body.model_dump(exclude_none=True))
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPResourceInfo.model_validate(result)
 
@@ -536,7 +548,7 @@ async def delete_resource(request: Request, resource_id: str) -> None:
     client = _require_gateway()
     try:
         found = await client.delete_resource(resource_id)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     if not found:
         raise HTTPException(status_code=404, detail="Resource not found")
@@ -550,7 +562,7 @@ async def toggle_resource(request: Request, resource_id: str, body: MCPStateTogg
     client = _require_gateway()
     try:
         return await client.toggle_resource(resource_id, activate=body.activate)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
         return {}
 
@@ -592,7 +604,7 @@ async def create_prompt(request: Request, body: MCPPromptCreate) -> MCPPromptInf
     prompt_data = body.model_dump(exclude={"team_id", "visibility"})
     try:
         result = await client.create_prompt(prompt_data, team_id=body.team_id, visibility=body.visibility)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPPromptInfo.model_validate(result)
 
@@ -605,7 +617,7 @@ async def update_prompt(request: Request, prompt_id: str, body: MCPPromptUpdate)
     client = _require_gateway()
     try:
         result = await client.update_prompt(prompt_id, body.model_dump(exclude_none=True))
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPPromptInfo.model_validate(result)
 
@@ -618,7 +630,7 @@ async def delete_prompt(request: Request, prompt_id: str) -> None:
     client = _require_gateway()
     try:
         found = await client.delete_prompt(prompt_id)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     if not found:
         raise HTTPException(status_code=404, detail="Prompt not found")
@@ -632,7 +644,7 @@ async def toggle_prompt(request: Request, prompt_id: str, body: MCPStateToggle) 
     client = _require_gateway()
     try:
         return await client.toggle_prompt(prompt_id, activate=body.activate)
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
         return {}
 
@@ -708,7 +720,7 @@ async def import_config(request: Request, body: MCPImportRequest) -> MCPImportRe
             conflict_strategy=body.conflict_strategy,
             dry_run=body.dry_run,
         )
-    except httpx.HTTPStatusError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         _handle_gateway_error(exc)
     return MCPImportResponse(
         import_id=result.get("import_id"),
@@ -737,9 +749,7 @@ async def gateway_health(request: Request) -> MCPHealthResponse:
     try:
         health = await client.health()
         version_info = await client.version()
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(status_code=502, detail="Gateway unreachable") from exc
-    except httpx.ConnectError as exc:
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
         raise HTTPException(status_code=502, detail="Gateway unreachable") from exc
     return MCPHealthResponse(
         status=health.get("status", "unknown"),
@@ -770,6 +780,9 @@ async def update_preferences(request: Request, body: MCPUserPreferences) -> MCPU
     from backend.mcp.preferences import save_preferences
 
     user_id = _require_auth(request)
-    async with auth_session_factory() as session:
-        await save_preferences(session, user_id, body)
+    try:
+        async with auth_session_factory() as session:
+            await save_preferences(session, user_id, body)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="User profile not synced yet")
     return body

@@ -120,6 +120,12 @@ ROLE_SCOPE_MAP: dict[str, list[str]] = {
         "evals:read",
         "traces:read",
         "approvals:read",
+        "mcp:servers:read",
+        "mcp:tools:read",
+        "mcp:virtual-servers:read",
+        "mcp:resources:read",
+        "mcp:prompts:read",
+        "mcp:config:read",
     ],
     "User": [
         "agents:read",

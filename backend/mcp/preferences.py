@@ -46,8 +46,7 @@ async def save_preferences(session: AsyncSession, user_id: str, prefs: MCPUserPr
     user_result = await session.execute(select(AuthUser.id).where(AuthUser.oid == user_id))
     auth_user_id = user_result.scalar_one_or_none()
     if not auth_user_id:
-        log.warning("Cannot save preferences: user %s not found in auth_users", user_id)
-        return
+        raise ValueError(f"User {user_id} not found in auth_users")
 
     pref_result = await session.execute(select(MCPPreference).where(MCPPreference.user_id == auth_user_id))
     row = pref_result.scalar_one_or_none()

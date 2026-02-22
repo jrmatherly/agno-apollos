@@ -132,7 +132,8 @@ export const listMCPServers = async (
       return []
     }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -271,7 +272,8 @@ export const listMCPTools = async (
       return []
     }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -392,7 +394,8 @@ export const listMCPVirtualServers = async (
       return []
     }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -501,9 +504,14 @@ export const listMCPVirtualServerTools = async (
       method: 'GET',
       headers: createHeaders(authToken)
     })
-    if (!resp.ok) return []
+    if (!resp.ok) {
+      if (resp.status !== 503)
+        toast.error(`Failed to fetch virtual server tools: ${resp.statusText}`)
+      return []
+    }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -521,9 +529,16 @@ export const listMCPVirtualServerResources = async (
         headers: createHeaders(authToken)
       }
     )
-    if (!resp.ok) return []
+    if (!resp.ok) {
+      if (resp.status !== 503)
+        toast.error(
+          `Failed to fetch virtual server resources: ${resp.statusText}`
+        )
+      return []
+    }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -541,9 +556,16 @@ export const listMCPVirtualServerPrompts = async (
         headers: createHeaders(authToken)
       }
     )
-    if (!resp.ok) return []
+    if (!resp.ok) {
+      if (resp.status !== 503)
+        toast.error(
+          `Failed to fetch virtual server prompts: ${resp.statusText}`
+        )
+      return []
+    }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -569,7 +591,8 @@ export const listMCPResources = async (
       return []
     }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -691,7 +714,8 @@ export const listMCPPrompts = async (
       return []
     }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -803,10 +827,12 @@ export const listMCPTags = async (
     })
     if (!resp.ok) {
       if (resp.status === 503) return []
+      toast.error(`Failed to fetch tags: ${resp.statusText}`)
       return []
     }
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return []
   }
 }
@@ -823,7 +849,8 @@ export const getMCPTagEntities = async (
     })
     if (!resp.ok) return null
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return null
   }
 }
@@ -899,7 +926,8 @@ export const getMCPImportStatus = async (
     })
     if (!resp.ok) return null
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return null
   }
 }
@@ -917,7 +945,8 @@ export const getMCPHealth = async (
     })
     if (!resp.ok) return null
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return null
   }
 }
@@ -935,7 +964,8 @@ export const getMCPPreferences = async (
     })
     if (!resp.ok) return null
     return await resp.json()
-  } catch {
+  } catch (err) {
+    console.error('MCP API error:', err)
     return null
   }
 }

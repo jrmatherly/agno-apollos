@@ -99,7 +99,7 @@ class MCPPreference(AuthBase):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("auth_users.id"), unique=True, nullable=False
+        UUID(as_uuid=True), ForeignKey("auth_users.id", ondelete="CASCADE"), unique=True, nullable=False
     )
     hidden_tools: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
     hidden_servers: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)

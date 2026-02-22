@@ -165,13 +165,13 @@ class GatewayClient:
         resp.raise_for_status()
         return resp.json()
 
-    async def create_tool(self, tool_data: dict, *, team_id: str | None = None) -> dict:
+    async def create_tool(self, tool_data: dict, *, team_id: str | None = None, visibility: str = "public") -> dict:
         """Register a tool.
 
-        IMPORTANT: Body must be wrapped as {"tool": {...}, "team_id": "..."} because
-        ContextForge's POST /tools has multiple Body() parameters (ToolCreate + team_id).
+        IMPORTANT: Body must be wrapped as {"tool": {...}, "team_id": "...", "visibility": "..."}
+        because ContextForge's POST /tools has multiple Body() parameters.
         """
-        body: dict[str, object] = {"tool": tool_data}
+        body: dict[str, object] = {"tool": tool_data, "visibility": visibility}
         if team_id:
             body["team_id"] = team_id
         resp = await self._http.post("/tools", headers=self._auth_headers(), json=body)
