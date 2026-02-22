@@ -1,47 +1,71 @@
-"""Per-user MCP workspace preferences.
-
-Stores preferences as JSON files. Designed for easy migration to database
-storage if needed.
-"""
+"""Per-user MCP workspace preferences (PostgreSQL-backed)."""
 
 from __future__ import annotations
 
 import logging
-from os import getenv
-from pathlib import Path
+from datetime import datetime, timezone
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.auth.models import MCPPreference
 from backend.mcp.schemas import MCPUserPreferences
 
 log = logging.getLogger(__name__)
 
-# Use env var instead of /tmp (volatile in Docker containers)
-_PREFS_DIR = Path(getenv("MCP_PREFERENCES_DIR", "/app/data/mcp-preferences"))
-
 _DEFAULT_PREFS = MCPUserPreferences()
 
-_MAX_ID_LENGTH = 200  # Prevent excessively long filenames
 
-
-def _prefs_path(user_id: str) -> Path:
-    """Get the preferences file path for a user (safe filename)."""
-    safe_id = "".join(c if c.isalnum() or c in "-_" else "_" for c in user_id[:_MAX_ID_LENGTH])
-    return _PREFS_DIR / f"{safe_id}.json"
-
-
-def get_preferences(user_id: str) -> MCPUserPreferences:
+async def get_preferences(session: AsyncSession, user_id: str) -> MCPUserPreferences:
     """Load preferences for a user, returning defaults if none exist."""
-    path = _prefs_path(user_id)
-    if not path.exists():
-        return _DEFAULT_PREFS
-    try:
-        return MCPUserPreferences.model_validate_json(path.read_text())
-    except Exception:
-        log.warning("Failed to read preferences for %s, returning defaults", user_id)
+    from backend.auth.models import AuthUser
+
+    # Resolve Entra OID string to internal UUID
+    user_result = await session.execute(select(AuthUser.id).where(AuthUser.oid == user_id))
+    auth_user_id = user_result.scalar_one_or_none()
+    if not auth_user_id:
         return _DEFAULT_PREFS
 
+    pref_result = await session.execute(select(MCPPreference).where(MCPPreference.user_id == auth_user_id))
+    row = pref_result.scalar_one_or_none()
+    if not row:
+        return _DEFAULT_PREFS
 
-def save_preferences(user_id: str, prefs: MCPUserPreferences) -> None:
-    """Save preferences for a user."""
-    _PREFS_DIR.mkdir(parents=True, exist_ok=True)
-    path = _prefs_path(user_id)
-    path.write_text(prefs.model_dump_json(indent=2))
+    return MCPUserPreferences(
+        hidden_tools=row.hidden_tools,
+        hidden_servers=row.hidden_servers,
+        default_tab=row.default_tab,
+        compact_view=row.compact_view,
+    )
+
+
+async def save_preferences(session: AsyncSession, user_id: str, prefs: MCPUserPreferences) -> None:
+    """Save preferences for a user (upsert)."""
+    from backend.auth.models import AuthUser
+
+    user_result = await session.execute(select(AuthUser.id).where(AuthUser.oid == user_id))
+    auth_user_id = user_result.scalar_one_or_none()
+    if not auth_user_id:
+        log.warning("Cannot save preferences: user %s not found in auth_users", user_id)
+        return
+
+    pref_result = await session.execute(select(MCPPreference).where(MCPPreference.user_id == auth_user_id))
+    row = pref_result.scalar_one_or_none()
+
+    if row:
+        row.hidden_tools = prefs.hidden_tools
+        row.hidden_servers = prefs.hidden_servers
+        row.default_tab = prefs.default_tab
+        row.compact_view = prefs.compact_view
+        row.updated_at = datetime.now(timezone.utc)
+    else:
+        row = MCPPreference(
+            user_id=auth_user_id,
+            hidden_tools=prefs.hidden_tools,
+            hidden_servers=prefs.hidden_servers,
+            default_tab=prefs.default_tab,
+            compact_view=prefs.compact_view,
+        )
+        session.add(row)
+
+    await session.commit()

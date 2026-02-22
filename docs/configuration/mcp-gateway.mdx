@@ -33,7 +33,7 @@ When the gateway is enabled, agents use `get_gateway_tools_factory()` to create 
 | Layer | Mechanism |
 |-------|-----------|
 | **Service JWT** | Backend generates HS256 tokens with `jti` + `exp` claims (RC1 requirement). Shared secret via `MCP_GATEWAY_JWT_SECRET`. |
-| **RBAC scopes** | `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call`. Mapped per role in `scope_mapper.py`. |
+| **RBAC scopes** | Full scope set for servers, tools, virtual-servers, resources, prompts, config, and preferences. Mapped per role in `scope_mapper.py`. |
 | **BYOMCP validation** | HTTPS required for external URLs. Private IPs, localhost, and cloud metadata endpoints blocked. |
 | **Header passthrough** | `X-Upstream-Authorization` forwards per-user tokens through the gateway for auth-gated upstream servers. |
 | **SSRF protection** | ContextForge RC1 has built-in SSRF protection (`SSRF_PROTECTION_ENABLED=true`). Application-level validation adds defense-in-depth. Admin registration allows HTTP for known Docker service names (e.g., `apollos-m365-mcp`). Localhost, private IP ranges, and cloud metadata endpoints are always blocked. |
@@ -44,11 +44,11 @@ When the gateway is enabled, agents use `get_gateway_tools_factory()` to create 
 | Role | Scopes |
 |------|--------|
 | GlobalAdmin | All (bypasses scope checks via `agent_os:admin`) |
-| Admin | `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call` |
-| TeamLead | `mcp:servers:read`, `mcp:tools:call` |
-| Developer | `mcp:servers:read`, `mcp:tools:call` |
-| User | `mcp:servers:read`, `mcp:tools:call` |
-| DevOps | No MCP scopes. MCP endpoints return 403. |
+| Admin | Full CRUD: `mcp:servers:*`, `mcp:tools:*`, `mcp:virtual-servers:*`, `mcp:resources:*`, `mcp:prompts:*`, `mcp:config:*`, `mcp:preferences:*`, `mcp:tools:call` |
+| TeamLead | Read + preferences: `mcp:servers:read`, `mcp:tools:read`, `mcp:virtual-servers:read`, `mcp:resources:read`, `mcp:prompts:read`, `mcp:preferences:*`, `mcp:tools:call` |
+| Developer | Read + preferences: same as TeamLead |
+| User | Read + preferences: `mcp:tools:read`, `mcp:virtual-servers:read`, `mcp:resources:read`, `mcp:prompts:read`, `mcp:preferences:*` |
+| DevOps | Read-only: `mcp:tools:read`, `mcp:virtual-servers:read`, `mcp:resources:read`, `mcp:prompts:read`, `mcp:config:read`, `mcp:preferences:*` |
 | InfoSec | No MCP scopes. MCP endpoints return 403. |
 
 ## Environment variables
@@ -112,16 +112,81 @@ The gateway shares the PostgreSQL instance but uses a separate `contextforge` da
 
 ## API routes
 
-The backend proxies gateway operations through authenticated endpoints:
+The backend proxies gateway operations through authenticated endpoints. All require authentication and are rate-limited (30/min for reads, 10/min for writes).
+
+### Servers
 
 | Method | Path | Description | RBAC scope |
 |--------|------|-------------|------------|
 | `GET` | `/mcp/servers` | List registered servers | `mcp:servers:read` |
 | `GET` | `/mcp/servers/{id}` | Get server details | `mcp:servers:read` |
 | `POST` | `/mcp/servers` | Register a server | `mcp:servers:write` |
+| `PUT` | `/mcp/servers/{id}` | Update server properties | `mcp:servers:write` |
 | `DELETE` | `/mcp/servers/{id}` | Remove a server | `mcp:servers:delete` |
+| `POST` | `/mcp/servers/{id}/state` | Enable/disable a server | `mcp:servers:write` |
+| `POST` | `/mcp/servers/{id}/refresh` | Trigger tool re-discovery | `mcp:servers:write` |
 
-All endpoints require authentication and are rate-limited (30/min for reads, 10/min for writes).
+### Tools
+
+| Method | Path | Description | RBAC scope |
+|--------|------|-------------|------------|
+| `GET` | `/mcp/tools` | List tools (optional `gateway_id` filter) | `mcp:tools:read` |
+| `GET` | `/mcp/tools/{id}` | Get a tool | `mcp:tools:read` |
+| `POST` | `/mcp/tools` | Create a tool | `mcp:tools:write` |
+| `PUT` | `/mcp/tools/{id}` | Update a tool | `mcp:tools:write` |
+| `DELETE` | `/mcp/tools/{id}` | Delete a tool | `mcp:tools:delete` |
+| `POST` | `/mcp/tools/{id}/state` | Enable/disable a tool | `mcp:tools:write` |
+
+### Virtual servers
+
+| Method | Path | Description | RBAC scope |
+|--------|------|-------------|------------|
+| `GET` | `/mcp/virtual-servers` | List virtual servers | `mcp:virtual-servers:read` |
+| `GET` | `/mcp/virtual-servers/{id}` | Get a virtual server | `mcp:virtual-servers:read` |
+| `POST` | `/mcp/virtual-servers` | Create a virtual server | `mcp:virtual-servers:write` |
+| `PUT` | `/mcp/virtual-servers/{id}` | Update a virtual server | `mcp:virtual-servers:write` |
+| `DELETE` | `/mcp/virtual-servers/{id}` | Delete a virtual server | `mcp:virtual-servers:delete` |
+| `POST` | `/mcp/virtual-servers/{id}/state` | Enable/disable | `mcp:virtual-servers:write` |
+| `GET` | `/mcp/virtual-servers/{id}/tools` | List tools in virtual server | `mcp:virtual-servers:read` |
+| `GET` | `/mcp/virtual-servers/{id}/resources` | List resources in virtual server | `mcp:virtual-servers:read` |
+| `GET` | `/mcp/virtual-servers/{id}/prompts` | List prompts in virtual server | `mcp:virtual-servers:read` |
+
+### Resources
+
+| Method | Path | Description | RBAC scope |
+|--------|------|-------------|------------|
+| `GET` | `/mcp/resources` | List resources | `mcp:resources:read` |
+| `GET` | `/mcp/resources/templates` | List resource templates | `mcp:resources:read` |
+| `GET` | `/mcp/resources/{id}` | Get a resource | `mcp:resources:read` |
+| `GET` | `/mcp/resources/{id}/info` | Get resource metadata | `mcp:resources:read` |
+| `POST` | `/mcp/resources` | Create a resource | `mcp:resources:write` |
+| `PUT` | `/mcp/resources/{id}` | Update a resource | `mcp:resources:write` |
+| `DELETE` | `/mcp/resources/{id}` | Delete a resource | `mcp:resources:delete` |
+| `POST` | `/mcp/resources/{id}/state` | Enable/disable a resource | `mcp:resources:write` |
+
+### Prompts
+
+| Method | Path | Description | RBAC scope |
+|--------|------|-------------|------------|
+| `GET` | `/mcp/prompts` | List prompts | `mcp:prompts:read` |
+| `GET` | `/mcp/prompts/{id}` | Get a prompt | `mcp:prompts:read` |
+| `POST` | `/mcp/prompts` | Create a prompt | `mcp:prompts:write` |
+| `PUT` | `/mcp/prompts/{id}` | Update a prompt | `mcp:prompts:write` |
+| `DELETE` | `/mcp/prompts/{id}` | Delete a prompt | `mcp:prompts:delete` |
+| `POST` | `/mcp/prompts/{id}/state` | Enable/disable a prompt | `mcp:prompts:write` |
+
+### Tags, import/export, health, preferences
+
+| Method | Path | Description | RBAC scope |
+|--------|------|-------------|------------|
+| `GET` | `/mcp/tags` | List tags with usage stats | Any authenticated |
+| `GET` | `/mcp/tags/{name}` | Get entities for a tag | Any authenticated |
+| `GET` | `/mcp/export` | Export configuration | `mcp:config:read` |
+| `POST` | `/mcp/import` | Import configuration | `mcp:config:write` |
+| `GET` | `/mcp/import/status/{id}` | Check import status | `mcp:config:read` |
+| `GET` | `/mcp/health` | Gateway health check | No auth required |
+| `GET` | `/mcp/preferences` | Get user preferences | `mcp:preferences:read` |
+| `PUT` | `/mcp/preferences` | Update user preferences | `mcp:preferences:write` |
 
 ## Agent integration
 
@@ -138,7 +203,20 @@ For agents requiring per-user token forwarding (like M365), set `needs_user_toke
 
 ## Frontend
 
-The Settings > MCP Integrations page (`/settings/integrations`) displays registered MCP servers with their status, URLs, and management actions. Admins can register new servers and remove existing ones through the UI.
+The MCP Gateway admin page at `/settings/mcp` provides full management of all gateway entities. The page uses 6 RBAC-filtered tabs. Tabs only appear if the user has the required read scope for that entity type.
+
+| Tab | Entities | Scopes |
+|-----|----------|--------|
+| Servers | Registered upstream MCP servers | `mcp:servers:read` |
+| Tools | Discovered and custom tools | `mcp:tools:read` |
+| Virtual Servers | Logical tool groupings | `mcp:virtual-servers:read` |
+| Resources | MCP resources | `mcp:resources:read` |
+| Prompts | MCP prompts | `mcp:prompts:read` |
+| Config | Gateway health, tags, import/export | `mcp:config:read` |
+
+Each tab provides full CRUD operations gated by write and delete scopes. The old `/settings/integrations` path redirects to `/settings/mcp` for backward compatibility.
+
+Per-user preferences (hidden tools, hidden servers, default tab, compact view) persist across sessions via the preferences endpoints.
 
 The coordinator team automatically routes MCP-related queries to the MCP agent when the gateway is enabled.
 
@@ -147,11 +225,17 @@ The coordinator team automatically routes MCP-related queries to the MCP agent w
 | File | Purpose |
 |------|---------|
 | `backend/mcp/config.py` | Feature flag, lazy `GatewayClient` singleton, `get_gateway_tools_factory()` |
-| `backend/mcp/gateway_client.py` | ContextForge API client (JWT generation, server CRUD) |
+| `backend/mcp/gateway_client.py` | ContextForge API client (JWT generation, full CRUD for all entity types) |
 | `backend/mcp/tools_factory.py` | `create_gateway_header_provider()`, `create_gateway_tools_factory()` |
-| `backend/mcp/routes.py` | Proxy routes at `/mcp/servers` |
-| `backend/mcp/schemas.py` | Pydantic models for API responses |
+| `backend/mcp/routes.py` | Full admin proxy routes at `/mcp/*` |
+| `backend/mcp/schemas.py` | Pydantic models for all MCP entity types and API responses |
+| `backend/mcp/preferences.py` | Per-user MCP workspace preferences |
 | `backend/mcp/validation.py` | BYOMCP URL validation (HTTPS, no private IPs, no metadata endpoints) |
 | `backend/agents/mcp_agent.py` | Dedicated MCP agent with gateway tools |
-| `frontend/src/app/settings/integrations/page.tsx` | MCP server management UI |
-| `frontend/src/api/mcp.ts` | Frontend API client for gateway endpoints |
+| `frontend/src/app/settings/mcp/page.tsx` | MCP Gateway admin page (6 RBAC-filtered tabs) |
+| `frontend/src/app/settings/mcp/components/` | Tab components (ServersTab, ToolsTab, VirtualServersTab, ResourcesTab, PromptsTab, ConfigTab) |
+| `frontend/src/app/settings/integrations/page.tsx` | Redirect to `/settings/mcp` |
+| `frontend/src/api/mcp.ts` | Frontend API client for all gateway endpoints |
+| `frontend/src/auth/useHasScope.ts` | RBAC scope checks (`useHasScope`, `useHasAnyScope`) |
+| `tests/test_gateway_client.py` | GatewayClient unit tests (20 tests) |
+| `tests/test_mcp_routes.py` | Proxy route and RBAC tests (21 tests) |

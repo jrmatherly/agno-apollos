@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,12 +13,6 @@ from backend.mcp.routes import (
     _require_auth,
     _require_gateway,
 )
-
-
-def _run(coro):
-    """Helper to run async code in sync tests."""
-    return asyncio.get_event_loop().run_until_complete(coro)
-
 
 # ── Helper Tests ─────────────────────────────────────────────────────────
 
@@ -124,7 +118,7 @@ class TestRoutePatterns:
         """Every gateway-proxied route handler must call _require_gateway."""
         import inspect
 
-        # Preferences are local (file-based), not proxied through gateway
+        # Preferences are database-backed, not proxied through gateway
         skip = {"get_preferences", "update_preferences"}
         for name, obj in self._route_handlers():
             if name in skip:
@@ -231,31 +225,66 @@ class TestScopeMapper:
 
 class TestPreferences:
     def test_default_preferences(self):
-        from backend.mcp.preferences import get_preferences
+        """get_preferences returns defaults for unknown user."""
+        from backend.mcp.schemas import MCPUserPreferences
 
-        prefs = get_preferences("nonexistent-user")
+        prefs = MCPUserPreferences()
         assert prefs.default_tab == "servers"
         assert prefs.hidden_tools == []
         assert prefs.compact_view is False
 
-    def test_save_and_load(self, tmp_path):
-        from backend.mcp.preferences import get_preferences, save_preferences
+    def test_preferences_schema_validation(self):
+        """MCPUserPreferences validates and serializes correctly."""
+        from backend.mcp.schemas import MCPUserPreferences
 
-        with patch("backend.mcp.preferences._PREFS_DIR", tmp_path):
-            prefs = MagicMock()
-            prefs.model_dump_json.return_value = (
-                '{"hidden_tools": ["t1"], "hidden_servers": [], "default_tab": "tools", "compact_view": true}'
-            )
+        prefs = MCPUserPreferences(
+            hidden_tools=["t1"],
+            hidden_servers=["s1"],
+            default_tab="tools",
+            compact_view=True,
+        )
+        data = prefs.model_dump()
+        assert data["hidden_tools"] == ["t1"]
+        assert data["default_tab"] == "tools"
+        assert data["compact_view"] is True
 
-            save_preferences("user-1", prefs)
-            loaded = get_preferences("user-1")
-            assert loaded.hidden_tools == ["t1"]
-            assert loaded.default_tab == "tools"
-            assert loaded.compact_view is True
+    def test_mcp_preference_model_exists(self):
+        """MCPPreference ORM model is defined with correct columns."""
+        from backend.auth.models import MCPPreference
 
-    def test_safe_filename(self):
-        from backend.mcp.preferences import _prefs_path
+        assert MCPPreference.__tablename__ == "mcp_preferences"
+        assert hasattr(MCPPreference, "user_id")
+        assert hasattr(MCPPreference, "hidden_tools")
+        assert hasattr(MCPPreference, "default_tab")
+        assert hasattr(MCPPreference, "compact_view")
 
-        path = _prefs_path("user@example.com/../../etc")
-        assert ".." not in path.name
-        assert "/" not in path.name
+    @pytest.mark.asyncio
+    async def test_save_and_load_roundtrip(self):
+        """save_preferences creates a new row when none exists."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from backend.mcp.preferences import save_preferences
+        from backend.mcp.schemas import MCPUserPreferences
+
+        mock_session = AsyncMock()
+        test_user_uuid = uuid.uuid4()
+
+        # Mock AuthUser lookup -> returns a UUID
+        auth_result = MagicMock()
+        auth_result.scalar_one_or_none.return_value = test_user_uuid
+
+        # Mock MCPPreference lookup -> returns None (first save)
+        pref_result = MagicMock()
+        pref_result.scalar_one_or_none.return_value = None
+
+        mock_session.execute.side_effect = [auth_result, pref_result]
+
+        prefs = MCPUserPreferences(
+            hidden_tools=["t1"],
+            hidden_servers=["s1"],
+            default_tab="tools",
+            compact_view=True,
+        )
+        await save_preferences(mock_session, "test-oid", prefs)
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_awaited_once()

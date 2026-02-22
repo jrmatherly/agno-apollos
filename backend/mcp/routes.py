@@ -751,18 +751,22 @@ async def gateway_health(request: Request) -> MCPHealthResponse:
 @limiter.limit("30/minute")
 async def get_preferences(request: Request) -> MCPUserPreferences:
     """Get MCP workspace preferences for the authenticated user."""
+    from backend.auth.database import auth_session_factory
     from backend.mcp.preferences import get_preferences
 
     user_id = _require_auth(request)
-    return get_preferences(user_id)
+    async with auth_session_factory() as session:
+        return await get_preferences(session, user_id)
 
 
 @mcp_router.put("/preferences", response_model=MCPUserPreferences)
 @limiter.limit("10/minute")
 async def update_preferences(request: Request, body: MCPUserPreferences) -> MCPUserPreferences:
     """Update MCP workspace preferences for the authenticated user."""
+    from backend.auth.database import auth_session_factory
     from backend.mcp.preferences import save_preferences
 
     user_id = _require_auth(request)
-    save_preferences(user_id, body)
+    async with auth_session_factory() as session:
+        await save_preferences(session, user_id, body)
     return body

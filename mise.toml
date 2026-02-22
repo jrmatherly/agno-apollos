@@ -94,7 +94,6 @@ MCP_GATEWAY_ENTRA_CLIENT_ID = ""
 MCP_GATEWAY_ENTRA_CLIENT_SECRET = ""
 MCP_GATEWAY_ADMIN_GROUPS = "[]"
 MCP_GATEWAY_ROLE_MAPPINGS = "{}"
-MCP_PREFERENCES_DIR = "/app/data/mcp-preferences"
 
 [[env]]
 _.file = ".env"

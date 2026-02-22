@@ -48,6 +48,15 @@ These must be passed as `build.args` in docker-compose **and** declared as `ARG`
 
 ## Forms
 
-- No shadcn `input.tsx` component — use native `<input>` with Tailwind classes (see `settings/integrations/page.tsx` and `settings/m365/page.tsx` for patterns)
+- No shadcn `input.tsx` component — use native `<input>` with Tailwind classes (see `settings/mcp/components/*.tsx` and `settings/m365/page.tsx` for patterns)
 - Always associate `<label htmlFor="id">` with `<input id="id">` for accessibility
 - Mirror backend Pydantic field constraints as HTML5 attributes (`pattern`, `maxLength`, `title`) on form inputs
+
+## MCP Settings Page
+
+- `/settings/mcp` — MCP Gateway admin with 6 RBAC-filtered tabs (Servers, Tools, Virtual Servers, Resources, Prompts, Config)
+- `/settings/integrations` — redirects to `/settings/mcp` (backward compat)
+- Tab components at `src/app/settings/mcp/components/` — each tab has full CRUD with scope-gated write/delete actions
+- RBAC filtering: `useHasScope()` from `src/auth/useHasScope.ts` checks Zustand `userScopes` (populated by `useTokenSync`)
+- Tabs only render if user has `useHasAnyScope()` for the relevant `mcp:*:read` scopes
+- API client: `src/api/mcp.ts` — all MCP gateway operations (servers, tools, virtual-servers, resources, prompts, tags, config, preferences)
