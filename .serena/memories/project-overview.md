@@ -41,8 +41,16 @@ Multi-agent system using the Agno framework. Provides a FastAPI-based AgentOS wi
 - `backend/agents/m365_agent.py` - Read-only M365 agent (opt-in via M365_ENABLED)
 - `frontend/src/app/settings/` - Settings hub + M365 connect/disconnect page
 - `frontend/src/api/m365.ts` - M365 API client (status, connect, disconnect)
-- `docker-compose.yaml` - Dev compose (3 core services + optional docs behind `docs` profile + optional `apollos-m365-mcp` behind `m365` profile)
-- `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure + M365 service)
+- `backend/mcp/config.py` - MCP_GATEWAY_ENABLED flag, lazy singleton GatewayClient, get_gateway_tools_factory()
+- `backend/mcp/gateway_client.py` - GatewayClient: JWT generation (jti+exp), gateway CRUD
+- `backend/mcp/tools_factory.py` - Gateway-aware header_provider + tools factory
+- `backend/mcp/routes.py` - Proxy routes: /mcp/servers (list, get, register, delete)
+- `backend/mcp/schemas.py` - Pydantic models (MCPServerInfo, MCPServerRegister, MCPServerResponse)
+- `backend/mcp/validation.py` - BYOMCP URL validation (HTTPS-only, no private IPs, no cloud metadata)
+- `frontend/src/api/mcp.ts` - MCP Gateway API client (list, delete servers)
+- `frontend/src/app/settings/integrations/page.tsx` - MCP Integrations settings page
+- `docker-compose.yaml` - Dev compose (3 core services + optional docs/m365/gateway profiles)
+- `docker-compose.prod.yaml` - Prod compose (GHCR images, same profile structure)
 
 ## Agents
 
@@ -102,6 +110,8 @@ Run `mise tasks` for full list. Key tasks:
 - `mise run schedules:setup` - initialize scheduler tables
 - `mise run frontend:setup` / `frontend:dev` / `frontend:build`
 - `mise run frontend:lint` / `frontend:format` / `frontend:typecheck` / `frontend:validate`
+- `mise run gateway:up` - start MCP Gateway (`--prod`, `--m365`)
+- `mise run gateway:logs` - tail gateway logs (`--prod`)
 - `mise run docs:dev` - preview docs site locally (port 3333)
 - `mise run docs:validate` - validate docs build + check broken links
 
@@ -183,6 +193,9 @@ Frontend (build-time): `NEXT_PUBLIC_AZURE_CLIENT_ID`, `NEXT_PUBLIC_AZURE_TENANT_
 - `M365_MCP_URL` (Softeria MCP server URL, default: http://apollos-m365-mcp:9000/mcp)
 - `M365_MCP_PORT` (host port for MCP server, default: 9000)
 - `M365_CACHE_KEY` (Fernet key for token cache encryption; derives from AZURE_CLIENT_SECRET if unset)
+- `MCP_GATEWAY_ENABLED` (set to `true` to route MCP traffic through ContextForge gateway; opt-in)
+- `MCP_GATEWAY_URL` (ContextForge gateway URL, default: http://apollos-mcp-gateway:4444)
+- `MCP_GATEWAY_JWT_SECRET` (shared JWT secret for gateway service auth)
 - `NEXT_PUBLIC_DEFAULT_ENDPOINT` (default endpoint shown in frontend UI, default: http://localhost:8000)
 - `NEXT_PUBLIC_OS_SECURITY_KEY` (optional: pre-fill auth token in frontend)
 
