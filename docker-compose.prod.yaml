@@ -78,6 +78,7 @@ services:
       - MCP_GATEWAY_ENABLED=${MCP_GATEWAY_ENABLED:-false}
       - MCP_GATEWAY_URL=${MCP_GATEWAY_URL:-http://apollos-mcp-gateway:4444}
       - MCP_GATEWAY_JWT_SECRET=${MCP_GATEWAY_JWT_SECRET:-dev-gateway-secret}
+      - MCP_PREFERENCES_DIR=${MCP_PREFERENCES_DIR:-/app/data/mcp-preferences}
     depends_on:
       - apollos-db
     networks:
