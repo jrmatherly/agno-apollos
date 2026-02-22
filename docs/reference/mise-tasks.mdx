@@ -29,12 +29,14 @@ mise run <task>
 
 | Task | Description | Flags |
 |------|-------------|-------|
-| `mise run docker:up` | Start full stack | `--prod` for GHCR images, `--docs` to include docs |
-| `mise run docker:down` | Stop all services | `--prod` for production compose |
-| `mise run docker:logs` | Tail logs | `--prod` for production compose |
+| `mise run docker:up` | Start full stack | `--prod`, `--docs`, `--m365`, `--gateway` |
+| `mise run docker:down` | Stop all services | `--prod`, `--m365`, `--gateway` |
+| `mise run docker:logs` | Tail logs | `--prod`, `--m365`, `--gateway` |
 | `mise run docker:build` | Build images locally | `--platform amd64\|arm64` |
-| `mise run dev` | Docker Compose watch (hot-reload) | |
+| `mise run dev` | Docker Compose watch (hot-reload) | `--m365`, `--gateway` |
 | `mise run db` | Start database only | |
+| `mise run gateway:up` | Start MCP Gateway standalone | |
+| `mise run gateway:logs` | Tail MCP Gateway logs | |
 
 ## Frontend tasks
 

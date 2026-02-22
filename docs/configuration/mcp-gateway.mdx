@@ -1,0 +1,154 @@
+---
+title: "MCP Gateway"
+description: "Centralized MCP server management through IBM ContextForge with service-level JWT auth, RBAC, and BYOMCP validation."
+---
+
+The MCP Gateway integration routes agent MCP traffic through an [IBM ContextForge](https://github.com/IBM/mcp-context-forge) gateway. ContextForge provides centralized server registration, admin UI, and SSRF protection for all MCP servers in the stack.
+
+Enable it with a single env var:
+
+```bash
+# .env
+MCP_GATEWAY_ENABLED=true
+```
+
+## Architecture
+
+```
+Agno Agent (MCPTools, transport="streamable-http")
+    |
+    | header_provider injects service JWT + optional user token
+    v
+apollos-mcp-gateway (ContextForge RC1, :4444)
+    |
+    | Routes to registered upstream MCP server
+    v
+Upstream MCP Server (e.g., apollos-m365-mcp, external services)
+```
+
+When the gateway is enabled, agents use `get_gateway_tools_factory()` to create callable tools factories that route through the gateway instead of connecting to MCP servers directly. The factory pattern matches the established M365 convention, using `header_provider` (sync callable) for per-run auth injection.
+
+## Security
+
+| Layer | Mechanism |
+|-------|-----------|
+| **Service JWT** | Backend generates HS256 tokens with `jti` + `exp` claims (RC1 requirement). Shared secret via `MCP_GATEWAY_JWT_SECRET`. |
+| **RBAC scopes** | `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call`. Mapped per role in `scope_mapper.py`. |
+| **BYOMCP validation** | HTTPS required for external URLs. Private IPs, localhost, and cloud metadata endpoints blocked. |
+| **Header passthrough** | `X-Upstream-Authorization` forwards per-user tokens through the gateway for auth-gated upstream servers. |
+| **SSRF protection** | ContextForge RC1 has built-in SSRF protection (`SSRF_PROTECTION_ENABLED=true`). Application-level validation adds defense-in-depth. |
+| **Default-deny routing** | Unmapped routes return 403. Only explicitly scoped endpoints are accessible. |
+
+### RBAC scope mapping
+
+| Role | Scopes |
+|------|--------|
+| Admin | `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call` |
+| TeamLead | `mcp:servers:read`, `mcp:tools:call` |
+| Developer | `mcp:servers:read`, `mcp:tools:call` |
+| User | `mcp:servers:read`, `mcp:tools:call` |
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MCP_GATEWAY_ENABLED` | `false` | Enable gateway integration |
+| `MCP_GATEWAY_URL` | `http://apollos-mcp-gateway:4444` | Gateway base URL (Docker service name) |
+| `MCP_GATEWAY_JWT_SECRET` | `dev-gateway-secret` | Shared HS256 secret for service tokens |
+| `MCP_GATEWAY_ADMIN_EMAIL` | `admin@localhost` | Gateway admin email |
+| `MCP_GATEWAY_ADMIN_PASSWORD` | `changeme` | Gateway admin password |
+| `MCP_GATEWAY_PORT` | `4444` | Host port for gateway access |
+| `MCP_GATEWAY_ENTRA_CLIENT_ID` | (empty) | Entra ID app registration for gateway SSO |
+| `MCP_GATEWAY_ENTRA_CLIENT_SECRET` | (empty) | Entra ID client secret for gateway SSO |
+
+<Warning>
+Generate a strong `MCP_GATEWAY_JWT_SECRET` for production: `openssl rand -base64 32`. The default `dev-gateway-secret` is for local development only.
+</Warning>
+
+## Docker
+
+ContextForge runs as an opt-in Docker service using the `gateway` profile:
+
+```bash
+# Start with gateway service
+mise run docker:up --gateway
+
+# Watch mode with gateway
+mise run dev --gateway
+
+# Composable with other profiles
+mise run dev --m365 --gateway
+```
+
+```yaml
+# docker-compose.yaml
+apollos-mcp-gateway:
+  image: ghcr.io/ibm/mcp-context-forge:1.0.0-RC1
+  depends_on:
+    apollos-db:
+      condition: service_healthy
+  environment:
+    DATABASE_URL: postgresql+psycopg://${DB_USER}:${DB_PASS}@apollos-db:5432/contextforge
+    CACHE_TYPE: database
+    JWT_SECRET_KEY: ${MCP_GATEWAY_JWT_SECRET:-dev-gateway-secret}
+    REQUIRE_JTI: "true"
+    REQUIRE_TOKEN_EXPIRATION: "true"
+    AUTH_REQUIRED: "true"
+  profiles:
+    - gateway
+```
+
+The gateway shares the PostgreSQL instance but uses a separate `contextforge` database, initialized automatically by `scripts/init-contextforge-db.sh`.
+
+### Gateway-specific tasks
+
+| Task | Description |
+|------|-------------|
+| `mise run gateway:up` | Start gateway standalone |
+| `mise run gateway:logs` | Tail gateway logs |
+
+## API routes
+
+The backend proxies gateway operations through authenticated endpoints:
+
+| Method | Path | Description | RBAC scope |
+|--------|------|-------------|------------|
+| `GET` | `/mcp/servers` | List registered servers | `mcp:servers:read` |
+| `GET` | `/mcp/servers/{id}` | Get server details | `mcp:servers:read` |
+| `POST` | `/mcp/servers` | Register a server | `mcp:servers:write` |
+| `DELETE` | `/mcp/servers/{id}` | Remove a server | `mcp:servers:delete` |
+
+All endpoints require authentication and are rate-limited (30/min for reads, 10/min for writes).
+
+## Agent integration
+
+Agents opt into gateway routing with `get_gateway_tools_factory()`. When the gateway is disabled, the function returns `None` and agents fall back to direct connections:
+
+```python
+from backend.mcp.config import get_gateway_tools_factory
+
+# Falls back to direct factory when gateway is disabled
+tools = get_gateway_tools_factory("m365", needs_user_token=True) or m365_tools_factory
+```
+
+For agents requiring per-user token forwarding (like M365), set `needs_user_token=True`. The factory injects the user's Graph token via `X-Upstream-Authorization`.
+
+## Frontend
+
+The Settings > MCP Integrations page (`/settings/integrations`) displays registered MCP servers with their status, URLs, and management actions. Admins can remove servers through the UI.
+
+The coordinator team automatically routes MCP-related queries to the MCP agent when the gateway is enabled.
+
+## Implementation
+
+| File | Purpose |
+|------|---------|
+| `backend/mcp/config.py` | Feature flag, lazy `GatewayClient` singleton, `get_gateway_tools_factory()` |
+| `backend/mcp/gateway_client.py` | ContextForge API client (JWT generation, server CRUD) |
+| `backend/mcp/tools_factory.py` | `create_gateway_header_provider()`, `create_gateway_tools_factory()` |
+| `backend/mcp/routes.py` | Proxy routes at `/mcp/servers` |
+| `backend/mcp/schemas.py` | Pydantic models for API responses |
+| `backend/mcp/validation.py` | BYOMCP URL validation (HTTPS, no private IPs, no metadata endpoints) |
+| `backend/agents/mcp_agent.py` | Dedicated MCP agent with gateway tools |
+| `frontend/src/app/settings/integrations/page.tsx` | MCP server management UI |
+| `frontend/src/api/mcp.ts` | Frontend API client for gateway endpoints |

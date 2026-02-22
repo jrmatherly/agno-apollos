@@ -3,7 +3,7 @@ title: "Docker"
 description: "Docker Compose configuration for development and production."
 ---
 
-Apollos AI runs as three core Docker services managed by Docker Compose, plus an optional docs service.
+Apollos AI runs as three core Docker services managed by Docker Compose, plus optional services behind profiles.
 
 | Service | Port | Image | Profile |
 |---------|------|-------|---------|
@@ -11,6 +11,8 @@ Apollos AI runs as three core Docker services managed by Docker Compose, plus an
 | `apollos-backend` | 8000 | Built from `backend/Dockerfile` | default |
 | `apollos-frontend` | 3000 | Built from `frontend/Dockerfile` | default |
 | `apollos-docs` | 3333 | Built from `docs/Dockerfile` | `docs` (opt-in) |
+| `apollos-m365-mcp` | 9000 | `node:24-alpine` (npx) | `m365` (opt-in) |
+| `apollos-mcp-gateway` | 4444 | `ghcr.io/ibm/mcp-context-forge:1.0.0-RC1` | `gateway` (opt-in) |
 
 ## Two compose files
 
@@ -27,16 +29,20 @@ Start the full stack with local builds:
 mise run docker:up
 ```
 
-Include the docs service:
+Include optional services:
 
 ```bash
-mise run docker:up --docs
+mise run docker:up --docs                    # docs service
+mise run docker:up --m365                    # M365 MCP server
+mise run docker:up --gateway                 # MCP Gateway (ContextForge)
+mise run docker:up --m365 --gateway --docs   # all optional services
 ```
 
 For hot-reload with automatic rebuilds:
 
 ```bash
 mise run dev
+mise run dev --m365 --gateway   # watch mode with optional services
 ```
 
 This runs Docker Compose in watch mode. Backend code changes sync into the container. Changes to `pyproject.toml` or `uv.lock` trigger a full rebuild.
@@ -78,11 +84,15 @@ mise run docker:build --platform arm64
 | Start full stack | `mise run docker:up` |
 | Start full stack (production) | `mise run docker:up --prod` |
 | Include docs service | `mise run docker:up --docs` |
+| Include M365 MCP server | `mise run docker:up --m365` |
+| Include MCP Gateway | `mise run docker:up --gateway` |
 | Stop all services | `mise run docker:down` |
 | Tail logs | `mise run docker:logs` |
 | Start database only | `mise run db` |
 | Build images | `mise run docker:build` |
 | Start docs standalone | `mise run docs:docker` |
+| Start gateway standalone | `mise run gateway:up` |
+| Tail gateway logs | `mise run gateway:logs` |
 
 ## Dockerfiles
 

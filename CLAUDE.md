@@ -106,8 +106,9 @@ Auth and scheduling tasks:
 - Auth architecture: `EntraJWTMiddleware` on `base_app` (FastAPI), passed to `AgentOS(base_app=base_app)`. No `authorization=True` on AgentOS.
 - `backend/auth/` package: config, middleware, jwks_cache, scope_mapper, models, database, graph, sync_service, dependencies, routes, security_headers, m365_token_service, m365_routes, m365_middleware, **init**
 - New auth API routes: `GET /auth/health`, `GET /auth/me`, `POST /auth/sync`, `GET /auth/teams`, `GET /auth/users`
+- MCP proxy routes (when gateway enabled): `GET /mcp/servers`, `GET /mcp/servers/{id}`, `POST /mcp/servers`, `DELETE /mcp/servers/{id}`
 - M365 integration is opt-in: `M365_ENABLED=true` registers the M365 agent and mounts `/m365/` API routes. Requires Entra ID auth (Azure vars must be set). OBO token exchange in `backend/auth/m365_token_service.py`. MCP tools in `backend/tools/m365.py`. Frontend settings at `frontend/src/app/settings/m365/page.tsx`. Docker service `apollos-m365-mcp` uses `profiles: [m365]`.
-- MCP Gateway is opt-in: `MCP_GATEWAY_ENABLED=true` routes MCP traffic through IBM ContextForge. Gateway client in `backend/mcp/gateway_client.py`. Tools factories in `backend/mcp/tools_factory.py`. Proxy routes at `/mcp/servers`. Docker service `apollos-mcp-gateway` uses `profiles: [gateway]`. RBAC scopes: `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call`.
+- MCP Gateway is opt-in: `MCP_GATEWAY_ENABLED=true` routes MCP traffic through IBM ContextForge. Gateway client in `backend/mcp/gateway_client.py`. Tools factories in `backend/mcp/tools_factory.py`. Proxy routes at `/mcp/servers`. Frontend settings at `frontend/src/app/settings/integrations/page.tsx`. API client at `frontend/src/api/mcp.ts`. Docker service `apollos-mcp-gateway` uses `profiles: [gateway]`. RBAC scopes: `mcp:servers:read`, `mcp:servers:write`, `mcp:servers:delete`, `mcp:tools:call`.
 - Telemetry is opt-in: `TRACING_ENABLED=true` stores traces in PostgreSQL (Layer 1). `OTLP_ENDPOINTS` exports to Langfuse/Phoenix/etc (Layer 2). Legacy `OTEL_EXPORTER_OTLP_ENDPOINT` supported as fallback.
 - A2A Protocol: `A2A_ENABLED=true` exposes each agent at `/a2a/agents/{id}` via the Agent-to-Agent protocol (a2a-sdk v0.3.x). Set `A2A_BASE_URL` for production AgentCard URLs.
 - Agent-as-Config: Central Registry in `backend/registry.py` maps tools/functions by name for save/load persistence via Agno Registry.
@@ -142,7 +143,7 @@ Auth and scheduling tasks:
 
 ### Documentation
 
-- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, mise.toml (task listing comment block), docs/ (especially agents/\*.mdx, reference/architecture.mdx, reference/code-map.mdx, configuration/environment.mdx)
+- When updating project docs, keep in sync: CLAUDE.md, README.md, PROJECT_INDEX.md, .serena/memories/project-overview.md, frontend/README.md, mise.toml (task listing comment block), docs/ (especially docs.json navigation, agents/\*.mdx, configuration/environment.mdx, configuration/docker.mdx, reference/architecture.mdx, reference/code-map.mdx, reference/mise-tasks.mdx)
 - example.env must stay in sync when env vars are added/changed across the project
 - VS Code settings in `.vscode/` — format-on-save, ruff for Python, prettier for TS, file associations
 - Docs style guide: follow `docs/CLAUDE.md` when writing or editing any Mintlify MDX pages

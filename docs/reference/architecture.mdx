@@ -11,10 +11,14 @@ graph TD
         FE["apollos-frontend<br/>:3000<br/>Next.js 15"]
         BE["apollos-backend<br/>:8000<br/>FastAPI · AgentOS"]
         DB["apollos-db<br/>:5432<br/>PG 18 + pgvector"]
+        GW["apollos-mcp-gateway<br/>:4444<br/>ContextForge (opt-in)"]
         FE --> BE --> DB
+        BE -.->|MCP traffic| GW
+        GW --> DB
     end
     BE --> PROXY["LiteLLM Proxy<br/>(external)"]
     PROXY --> LLM["LLM Provider<br/>(OpenAI, etc.)"]
+    GW -.-> MCP["Upstream MCP<br/>Servers"]
 ```
 
 ## Components
@@ -29,6 +33,7 @@ FastAPI application using Agno's `AgentOS` as the runtime. Registers agents, tea
 | `backend/models.py` | Shared model factory (`get_model()`) for all agents |
 | `backend/config.yaml` | Quick-prompt configuration for the UI |
 | `backend/agents/` | Agent modules (each exports an `Agent` instance) |
+| `backend/mcp/` | MCP Gateway integration (ContextForge client, tools factories, proxy routes) |
 | `backend/teams/` | Multi-agent team definitions |
 | `backend/workflows/` | Multi-step workflow pipelines |
 | `backend/tools/` | Custom tools (search, awareness, approval-gated ops, introspect, save_query, save_discovery) |
@@ -88,6 +93,13 @@ apollos-ai/
 │   │   ├── web_search_agent.py
 │   │   ├── reasoning_agent.py
 │   │   └── data_agent.py
+│   ├── mcp/                 # MCP Gateway integration
+│   │   ├── config.py        # Feature flag, gateway client factory
+│   │   ├── gateway_client.py # ContextForge API client
+│   │   ├── tools_factory.py # Gateway-aware MCPTools factories
+│   │   ├── routes.py        # Proxy routes (/mcp/servers)
+│   │   ├── schemas.py       # Pydantic models
+│   │   └── validation.py    # BYOMCP URL validation
 │   ├── teams/               # Multi-agent teams
 │   │   └── research_team.py
 │   ├── workflows/           # Multi-step workflows

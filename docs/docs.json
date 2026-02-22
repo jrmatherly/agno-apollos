@@ -50,6 +50,7 @@
           "configuration/telemetry",
           "configuration/a2a",
           "configuration/m365",
+          "configuration/mcp-gateway",
           "configuration/docker"
         ]
       },
