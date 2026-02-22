@@ -495,7 +495,10 @@ async def get_resource_info(request: Request, resource_id: str) -> dict:
     """Get resource metadata."""
     _require_auth(request)
     client = _require_gateway()
-    return await client.get_resource_info(resource_id)
+    info = await client.get_resource_info(resource_id)
+    if not info:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    return info
 
 
 @mcp_router.post("/resources", response_model=MCPResourceInfo, status_code=201)
@@ -588,7 +591,7 @@ async def create_prompt(request: Request, body: MCPPromptCreate) -> MCPPromptInf
     client = _require_gateway()
     prompt_data = body.model_dump(exclude={"team_id", "visibility"})
     try:
-        result = await client.create_prompt(prompt_data, team_id=body.team_id)
+        result = await client.create_prompt(prompt_data, team_id=body.team_id, visibility=body.visibility)
     except httpx.HTTPStatusError as exc:
         _handle_gateway_error(exc)
     return MCPPromptInfo.model_validate(result)

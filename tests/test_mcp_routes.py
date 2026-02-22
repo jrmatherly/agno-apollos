@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -258,11 +259,8 @@ class TestPreferences:
         assert hasattr(MCPPreference, "default_tab")
         assert hasattr(MCPPreference, "compact_view")
 
-    @pytest.mark.asyncio
-    async def test_save_and_load_roundtrip(self):
+    def test_save_and_load_roundtrip(self):
         """save_preferences creates a new row when none exists."""
-        from unittest.mock import AsyncMock, MagicMock
-
         from backend.mcp.preferences import save_preferences
         from backend.mcp.schemas import MCPUserPreferences
 
@@ -285,6 +283,6 @@ class TestPreferences:
             default_tab="tools",
             compact_view=True,
         )
-        await save_preferences(mock_session, "test-oid", prefs)
+        asyncio.get_event_loop().run_until_complete(save_preferences(mock_session, "test-oid", prefs))
         mock_session.add.assert_called_once()
         mock_session.commit.assert_awaited_once()
