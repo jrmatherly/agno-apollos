@@ -26,13 +26,13 @@ export default function SettingsPage() {
             </p>
           </Link>
           <Link
-            href="/settings/integrations"
+            href="/settings/mcp"
             className="block rounded-lg border border-border p-4 transition-colors hover:bg-muted"
           >
-            <h2 className="font-medium">MCP Integrations</h2>
+            <h2 className="font-medium">MCP Gateway</h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              View MCP servers registered through the ContextForge gateway for
-              tool discovery and agent access.
+              Manage MCP servers, tools, virtual servers, resources, and prompts
+              through the ContextForge gateway.
             </p>
           </Link>
         </nav>
