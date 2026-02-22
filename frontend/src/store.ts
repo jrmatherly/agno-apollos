@@ -59,6 +59,8 @@ interface Store {
   clearSpecialists: () => void
   m365Connected: boolean
   setM365Connected: (connected: boolean) => void
+  userScopes: string[]
+  setUserScopes: (scopes: string[]) => void
 }
 
 export const useStore = create<Store>()(
@@ -120,7 +122,9 @@ export const useStore = create<Store>()(
         })),
       clearSpecialists: () => set({ activeSpecialists: [] }),
       m365Connected: false,
-      setM365Connected: (m365Connected) => set({ m365Connected })
+      setM365Connected: (m365Connected) => set({ m365Connected }),
+      userScopes: [],
+      setUserScopes: (userScopes) => set({ userScopes })
     }),
     {
       name: 'endpoint-storage',
